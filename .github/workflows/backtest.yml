@@ -1,0 +1,42 @@
+name: 回測點位規則
+
+# 回測 App 裡「觀察股點位」和「ETF 補倉點」的規則，結果寫到 data/backtest.json
+on:
+  workflow_dispatch:
+    inputs:
+      market:
+        description: "要回測哪一塊"
+        required: true
+        default: "all"
+        type: choice
+        options: [all, tw, us, core]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: market-update
+  cancel-in-progress: false
+
+jobs:
+  backtest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: 安裝套件
+        run: pip install -r requirements.txt
+      - name: 回測
+        run: python backtest.py --market "${{ inputs.market }}"
+      - name: 存回 repo
+        run: |
+          git config user.name "kunbao-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/backtest.json
+          git diff --cached --quiet && exit 0
+          git commit -m "回測結果 $(date -u +%F)"
+          for i in 1 2 3; do git pull --rebase && git push && break; sleep 5; done
