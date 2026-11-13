@@ -392,12 +392,15 @@ def metrics(dc, dv, mc, mh, ml):
     tv60 = float(tv.iloc[-60:].mean()) if len(tv) >= 60 else None
     r["vr"] = r["tv5"] / tv60 if tv60 else None
     r["dd52"] = px / float(dc.iloc[-250:].max()) - 1
+    r["hi52"] = float(dc.iloc[-250:].max())
+    r["ma240"] = float(dc.iloc[-240:].mean()) if len(dc) >= 240 else None
     r["wma"] = r["wma_up"] = None
     wk = dc.resample("W-FRI").last().dropna()
     if len(wk) >= 57:
         ma = wk.rolling(52).mean()
         r["wma"] = px / float(ma.iloc[-1]) - 1
         r["wma_up"] = bool(ma.iloc[-1] > ma.iloc[-5])
+        r["wma_v"] = float(ma.iloc[-1])
     k = dd5 = pos5 = ma60 = None
     r["macd_x"] = None
     if mc is not None and len(mc.dropna()) >= 2:
@@ -543,6 +546,7 @@ def build_rows(uni, tick, dly, mon, fund, extra_fn, market, today):
                "v": rnd(m["value"], 1), "lt": rnd(lt, 1), "l": light, "f": rnd(mean_ok(flow_parts), 1),
                "q": rnd(q, 1), "val": rnd(val, 1), "fin": fin, "trig": buy_triggers(m),
                "liq": (m["tv20"] or 0) >= LIQ_MIN[market], "tags": tags_of(m) + warn,
+               "lv": [rnd(m.get("wma_v"), 2), rnd(m.get("hi52"), 2), rnd(m.get("ma240"), 2)], "wu": m.get("wma_up"),
                "pe": rnd(ex.get("pe"), 1), "dy": rnd(ex.get("dy"), 2), "_tv5": m["tv5"], "_tvp": m["tv_prev20"],
                "_tv20": m["tv20"]}
         if is_etf:
@@ -581,6 +585,7 @@ def bench_rows(items, dly, mon):
             out.append({"c": t.replace(".TW", ""), "n": name, "px": rnd(m["px"], 2), "ch": rnd(m["ch"], 4),
                         "b": rnd(m["bias"], 4), "k": rnd(m["k"], 1), "dd": rnd(m["dd5"], 4), "pos": rnd(m["pos5"], 3),
                         "lt": rnd(m["value"], 1), "l": light_of(m["value"]), "below52": (m["wma"] or 0) < 0 if m["wma"] is not None else None,
+                        "lv": [rnd(m.get("wma_v"), 2), rnd(m.get("hi52"), 2), rnd(m.get("ma240"), 2)],
                         "etf": True})
     return out
 

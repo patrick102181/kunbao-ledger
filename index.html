@@ -57,7 +57,7 @@ main{display:grid;gap:14px;padding-top:14px}
 /* 記帳頁頂：一張海報——大數字＋收入去向的比例條 */
 .hero{display:grid;gap:12px;padding:4px 0 2px}
 .hero .mrow{display:flex;align-items:center;gap:0;border:1.5px solid var(--ink);background:var(--card);width:max-content}
-.hero .mrow b{font-weight:700;font-size:15px;letter-spacing:.08em;min-width:128px;text-align:center;border-left:1.5px solid var(--ink);border-right:1.5px solid var(--ink);padding:.12em 10px 0;line-height:calc(34px - .12em)}
+.hero .mrow b{font-weight:700;font-size:15px;letter-spacing:.08em;min-width:128px;text-align:center;border-left:1.5px solid var(--ink);border-right:1.5px solid var(--ink);padding:0 10px;line-height:34px}
 .hero .mrow .ib{border:0;width:36px;height:34px}
 .hero .k{font-size:13px;color:var(--muted);font-weight:500}
 .hero .big{font-family:var(--f-num);font-variant-numeric:tabular-nums lining-nums;font-weight:500;font-size:68px;line-height:.95;letter-spacing:-.02em;color:var(--ink)}
@@ -135,7 +135,7 @@ nav.tabs button[aria-current="page"][data-tab="recs"] .g .f{fill:var(--yellow)}
 .seg{display:flex;border:1.5px solid var(--ink);border-radius:0;background:var(--card)}
 .seg button{flex:1;border:0;border-left:1.5px solid var(--ink);background:none;border-radius:0;font-size:14px;color:var(--ink)}
 .seg button:first-child{border-left:0}
-.seg button .n{font-family:var(--f-num);font-weight:500;margin-left:4px}
+.seg button .n{font-family:var(--f-num);font-weight:500;margin-left:4px;font-size:1em;line-height:0}
 .seg button.on{background:var(--ink);color:#fff;font-weight:700}
 .cats{display:flex;flex-wrap:wrap;gap:6px}
 .cats button{border:1.5px solid var(--ink);background:var(--card);border-radius:999px;font-size:14px}
@@ -177,17 +177,17 @@ details summary{cursor:pointer;color:var(--blue);font-size:14px;font-weight:700;
 .lvl b{font-family:var(--f-num);font-size:34px;font-weight:500}
 .badges{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));border-top:1.5px solid var(--ink);border-left:1.5px solid var(--ink)}
 .badge{border-right:1.5px solid var(--ink);border-bottom:1.5px solid var(--ink);padding:10px 6px;text-align:center;font-size:12px;background:var(--card)}
-.badge .m{padding-top:.1em;display:grid;place-items:center;width:34px;height:34px;margin:0 auto 6px;border:1.5px dashed var(--faint);color:var(--faint);font-weight:700;font-size:14px;border-radius:50%}
+.badge .m{display:block;text-align:center;width:34px;height:34px;margin:0 auto 6px;border:1.5px dashed var(--faint);color:var(--faint);font-weight:700;font-size:14px;border-radius:50%}
 .badge.got .m{border:0;background:var(--red);color:#fff}
 .badge.got:nth-child(3n+2) .m{background:var(--blue);border-radius:0}
-.badge.got:nth-child(3n) .m{background:var(--yellow);color:var(--ink);border-radius:0;clip-path:polygon(50% 0,100% 100%,0 100%);padding-top:.5em}
+
 .badge:not(.got){color:var(--faint)}
 .quest{display:grid;grid-template-columns:24px 1fr auto;gap:10px;align-items:center;padding:9px 0;border-top:1px solid var(--hair)}
 .quest:first-child{border-top:0}
 .quest .ck{width:20px;height:20px;border:1.5px solid var(--ink);display:grid;place-items:center;font-size:12px;color:#fff;border-radius:0}
 .quest.done .ck{background:var(--blue);border-color:var(--blue)}
 .mini{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:var(--card);border:1.5px solid var(--ink);border-radius:0;padding:8px 12px 8px 8px}
-.mini .dot{padding-top:3px;width:40px;height:40px;background:var(--ink);display:grid;place-items:center;color:#fff;font-family:var(--f-num);font-weight:500;font-size:14px;flex:none}
+.mini .dot{width:40px;height:40px;background:var(--ink);display:grid;place-items:center;color:#fff;font-family:var(--f-num);font-weight:500;font-size:14px;flex:none}
 .mini .t{flex:1;min-width:0;font-size:13px;color:var(--muted)}
 .mini .t b{font-size:14px;color:var(--ink);font-weight:700}
 .mini .tiny.num{font-size:15px;color:var(--ink)}
@@ -200,14 +200,6 @@ details summary{cursor:pointer;color:var(--blue);font-size:14px;font-weight:700;
 .pick .e{grid-column:2/4;font-size:12px;color:var(--muted)}
 .dca{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:6px}
 .dca .why{flex-basis:100%;font-size:12px;color:var(--muted)}
-/* 置中：Noto Sans TC 放在框裡會偏上約 0.05em，用上下不對稱的內距補回 */
-.chip{padding:calc(2px + .055em) 8px calc(2px - .055em)}
-.btn{padding:calc(8px + .08em) 16px calc(8px - .08em);display:inline-flex;align-items:center;justify-content:center}
-.btn.sm{padding:calc(5px + .07em) 12px calc(5px - .07em)}
-.sync{padding:calc(4px + .055em) 10px calc(4px - .055em)}
-.seg button{padding:calc(7px + .05em) 0 calc(7px - .05em)}
-.cats button{padding:calc(5px + .05em) 13px calc(5px - .05em)}
-.toast{padding:calc(9px + .05em) 18px calc(9px - .05em)}
 .ib,.x{display:inline-grid;place-items:center;padding:0}
 .ib svg,.x svg{width:16px;height:16px;display:block}
 @media (prefers-reduced-motion:no-preference){
@@ -235,7 +227,7 @@ details summary{cursor:pointer;color:var(--blue);font-size:14px;font-weight:700;
 .cand .ct .chip{background:var(--paper);border-color:var(--hair)}
 .cand .ca{display:flex;align-items:center;gap:8px;justify-self:end}
 .cand .ct,.cand .ca{align-self:start}
-.cand .chip,.cand .btn.sm{height:30px;padding-top:.055em;padding-bottom:0}
+
 .cand .ca .chip{min-width:68px;justify-content:center}
 .cand .ca .btn.sm{min-width:64px}
 
@@ -309,6 +301,67 @@ details summary{cursor:pointer;color:var(--blue);font-size:14px;font-weight:700;
 .hx .hv .cur{font-size:11px}
 .hx .hs b+.cur{margin-left:2px}
 .cur-u{font-family:var(--f-body);font-size:10.5px;color:var(--muted);font-weight:400;line-height:1.2}
+
+/* 勾選框：全 App 同一款方塊（20×20 黑框，勾起來是紅底白勾）；不能被輸入框的統一高度規則拉長 */
+input[type=checkbox]{-webkit-appearance:none;appearance:none;width:20px!important;height:20px!important;min-width:20px;max-width:20px;flex:none;margin:0;padding:0!important;border:1.5px solid var(--ink)!important;border-radius:0;background:var(--card);display:inline-block;vertical-align:middle;cursor:pointer}
+input[type=checkbox]:checked{background:var(--red) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 10'%3E%3Cpath d='M1 5.2 4.3 8.5 11 1.5' fill='none' stroke='%23fff' stroke-width='2'/%3E%3C/svg%3E") center/12px 10px no-repeat;border-color:var(--red)!important}
+input[type=checkbox]:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+.chk{display:flex;align-items:center;gap:10px;font-size:14px;cursor:pointer;line-height:1.4}
+
+/* 置中（用網頁字體實測）：所有有字的框一律 line-height:1，再用 text-box 把字框修到「大寫字高到基線」，
+   上下內距相等就會真的置中；高度 = 字高(0.733em) + 上下內距。舊瀏覽器不支援 text-box 時只會略高一點、不會歪。 */
+.btn,.chip,.seg button,.cats button,.sync,.toast,.pick .ty,nav.tabs .lb,.hero .mrow b,.mini .dot,.badge .m,.quest .ck{line-height:1;text-box:trim-both cap alphabetic;white-space:nowrap}
+:root{--ko:0px}
+.btn,.chip,.seg button,.cats button,.sync,.toast,.pick .ty{--ko:.022em}
+.btn{display:inline-block;text-align:center;vertical-align:middle;padding:calc((40px - .733em) / 2 + var(--ko)) 16px calc((40px - .733em) / 2 - var(--ko))}
+.btn.sm{padding:calc((32px - .733em) / 2 + var(--ko)) 12px calc((32px - .733em) / 2 - var(--ko))}
+.chip{display:inline-block;vertical-align:middle;position:relative;padding:calc((24px - .733em) / 2 + var(--ko)) 8px calc((24px - .733em) / 2 - var(--ko))}
+.chip.cheap,.chip.go,.chip.okc,.chip.exp,.chip.alert,.chip.trap{padding-left:22px}
+.chip.cheap::before,.chip.go::before,.chip.okc::before,.chip.exp::before,.chip.alert::before,.chip.trap::before{position:absolute;left:8px;top:50%;transform:translateY(-50%)}
+.seg button{padding:calc((36px - .733em) / 2 + var(--ko)) 0 calc((36px - .733em) / 2 - var(--ko))}
+.cats button{padding:calc((34px - .733em) / 2 + var(--ko)) 13px calc((34px - .733em) / 2 - var(--ko))}
+.sync{display:inline-block;position:relative;padding:calc((28px - .733em) / 2 + var(--ko)) 10px calc((28px - .733em) / 2 - var(--ko)) 23px}
+.sync::before{position:absolute;left:10px;top:50%;transform:translateY(-50%);margin:0;vertical-align:0}
+.toast{padding:calc((38px - .733em) / 2 + var(--ko)) 18px calc((38px - .733em) / 2 - var(--ko))}
+.pick .ty{padding:calc((22px - .733em) / 2 + var(--ko)) 6px calc((22px - .733em) / 2 - var(--ko));line-height:1}
+.cand .chip,.cand .btn.sm{height:auto;padding-top:calc((30px - .733em) / 2 + var(--ko));padding-bottom:calc((30px - .733em) / 2 - var(--ko))}
+.cand .ca .chip{display:inline-block;text-align:center}
+nav.tabs button{gap:6px;padding:9px 0}
+nav.tabs .lb{display:block}
+.hero .mrow b{--ko:.022em;line-height:1;padding:calc((34px - .733em) / 2 + var(--ko)) 10px calc((34px - .733em) / 2 - var(--ko)) calc(10px + .08em)}
+.mini .dot{display:block;text-align:center;padding:calc((40px - .733em) / 2) 0;height:auto}
+.badge .m{padding:calc((34px - .733em) / 2) 0;height:auto}
+.quest .ck{display:block;text-align:center;padding:calc((20px - .733em) / 2) 0;height:auto}
+.btns .tiny{align-self:center}
+.badge.got:nth-child(3n) .m{background:var(--yellow);color:var(--ink);border-radius:0;clip-path:polygon(50% 0,100% 100%,0 100%);height:34px;padding:16px 0 0}
+
+/* 行高取整數像素：避免 23.25px 這種小數行高一路累加，讓下面的框跟字落在半個像素上（框跟字會各自取整，看起來就不在正中間） */
+@supports (line-height: round(nearest, 1.55em, 1px)) {
+  body, p, li, td, th, label, .item, .hold, .tiny, .muted, .empty, .aiout, .dayh, .brow, .f>span, .card h2, .hx .hm, .hx .hs, .pick .e, .dca .why, .mini .t { line-height: round(nearest, 1.55em, 1px) }
+}
+
+/* 觀察股點位 */
+.hold .lv{grid-column:1/-1;display:grid;grid-template-columns:max-content minmax(0,1fr) minmax(0,1fr);gap:8px 18px;border-top:1px dashed var(--hair);padding-top:8px;margin-top:4px}
+.hold .lv>span{display:flex;flex-direction:column;gap:4px;min-width:0}
+.hold .lv>.lt{grid-column:1/-1;flex-direction:row;align-items:center;justify-content:space-between}
+.hold .lv small{font-size:11px;color:var(--muted);line-height:1}
+.hold .lv b{font-weight:500;font-size:14px;line-height:1.2;white-space:nowrap}
+.lvbox{border:1.5px solid var(--ink);padding:12px;margin-bottom:14px}
+.lvh{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.lvr{display:grid;grid-template-columns:12px auto 1fr auto;column-gap:8px;align-items:baseline;padding:7px 0;border-top:1px solid var(--hair)}
+.lvr .sq{width:10px;height:10px;align-self:center}
+.lvr .sq.b{background:var(--blue)} .lvr .sq.r{background:var(--red)} .lvr .sq.y{background:var(--yellow)}
+.lvr span{font-size:13px;font-weight:700}
+.lvr b{font-size:17px;font-weight:600;text-align:right}
+.lvr small{font-size:11px;color:var(--muted)}
+.lvr em{grid-column:2/-1;font-style:normal;font-size:12px;color:var(--muted);margin-top:2px}
+
+.lv.add{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));column-gap:10px;border-top:1px dashed var(--hair);padding-top:7px;margin-top:6px}
+.lv.add>span{display:flex;flex-direction:column;gap:3px;padding-left:8px;border-left:3px solid var(--hair)}
+.lv.add>span.hit{border-left-color:var(--blue)}
+.lv.add small{font-size:11px;color:var(--muted);line-height:1}
+.lv.add b{font-weight:500;font-size:14px;line-height:1.2}
+.lv.add em{grid-column:1/-1;font-style:normal;font-size:12px;color:var(--muted);margin-top:6px}
 </style>
 </head>
 <body>
@@ -324,11 +377,11 @@ details summary{cursor:pointer;color:var(--blue);font-size:14px;font-weight:700;
 <button class="cam" id="cam" type="button" aria-label="拍照讓 AI 記帳"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8.5A1.5 1.5 0 0 1 5.5 7h2l1.4-2h6.2l1.4 2h2A1.5 1.5 0 0 1 20 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 17.5z"/><circle cx="12" cy="12.5" r="3.4"/></svg></button>
 <input type="file" id="camIn" accept="image/*" multiple hidden>
 <nav class="tabs" aria-label="分頁"><div class="in">
-  <button type="button" data-tab="book"><svg class="g" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="miter"><rect class="f" x="5" y="5" width="14" height="14"/></svg>記帳</button>
-  <button type="button" data-tab="invest"><svg class="g" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="miter"><path class="f" d="M12 4.5 20 19H4z"/></svg>投資</button>
-  <button type="button" data-tab="recs"><svg class="g" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="miter"><circle class="f" cx="12" cy="12" r="7.5"/></svg>推薦</button>
-  <button type="button" data-tab="game"><svg class="g" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="miter"><path class="f" d="M4.5 19.5h15v-6a7.5 7.5 0 0 0-15 0z"/></svg>雨林箱</button>
-  <button type="button" data-tab="settings"><svg class="g" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="miter"><path d="M4 8h16M4 16h16"/><rect class="f" x="13" y="5.5" width="5" height="5"/><circle class="f" cx="8.5" cy="16" r="2.6"/></svg>設定</button>
+  <button type="button" data-tab="book"><svg class="g" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="miter"><rect class="f" x="5" y="5" width="14" height="14"/></svg><span class="lb">記帳</span></button>
+  <button type="button" data-tab="invest"><svg class="g" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="miter"><path class="f" d="M12 4.5 20 19H4z"/></svg><span class="lb">投資</span></button>
+  <button type="button" data-tab="recs"><svg class="g" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="miter"><circle class="f" cx="12" cy="12" r="7.5"/></svg><span class="lb">推薦</span></button>
+  <button type="button" data-tab="game"><svg class="g" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="miter"><path class="f" d="M4.5 19.5h15v-6a7.5 7.5 0 0 0-15 0z"/></svg><span class="lb">雨林箱</span></button>
+  <button type="button" data-tab="settings"><svg class="g" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="miter"><path d="M4 8h16M4 16h16"/><rect class="f" x="13" y="5.5" width="5" height="5"/><circle class="f" cx="8.5" cy="16" r="2.6"/></svg><span class="lb">設定</span></button>
 </div></nav>
 
 <script>
@@ -574,6 +627,23 @@ function radarItem(m, sym) {
   const hit = (arr) => (arr || []).find((x) => String(x.c).toUpperCase() === s && isNum(x.px));
   return hit(d.stocks) || hit(d.benchmarks) || null;
 }
+/* 觀察股點位：照四道濾網自己的買點規則算（回測週 MA52 不破），不是喊盤。
+   買進區＝週 MA52 到上方 4%；出場線＝週 MA52 下方 3%（週收盤跌破就代表買點失效）；
+   目標 1＝52 週高點（前高，先賣一半）；目標 2＝年線 ×1.3（長線燈號轉「偏貴」的位置，剩下的賣掉） */
+function recLv(m, sym) {
+  const it = radarItem(m, sym); if (!it || !Array.isArray(it.lv) || !isNum(it.lv[0])) return null;
+  const [w, hi, y] = it.lv, pr = priceOf(m, sym), px = pr ? pr.p : it.px;
+  const bLo = w, bHi = w * 1.04, stop = w * 0.97;
+  const tg = [isNum(hi) && hi > bHi * 1.05 ? hi : null, isNum(y) ? y * 1.3 : null].filter((x) => isNum(x) && x > bHi * 1.05).sort((a, b) => a - b);
+  const mid = (bLo + bHi) / 2, rr = tg.length ? (tg[0] - mid) / (mid - stop) : NaN;
+  let tag, cls, st;
+  if (it.wu === false) { tag = "條件不成立"; cls = "alert"; st = "週 MA52 還在往下彎，這個買點規則不適用，先看就好"; }
+  else if (px < stop) { tag = "買點失效"; cls = "alert"; st = "已經跌破出場線：還沒買就先別買；已經買了就照規則停損，不要往下攤平"; }
+  else if (px < bLo) { tag = "等站回"; cls = ""; st = "跌到週 MA52 下方、還沒破出場線，等週收盤站回 " + fmtP(bLo) + " 再買"; }
+  else if (px <= bHi) { tag = "在買進區"; cls = "go"; st = "現價就在買進區內，可以照計畫分批買"; }
+  else { tag = "等回檔"; cls = ""; st = "比買進區高 " + pct(px / bHi - 1, 0) + "，等回到 " + fmtP(bLo) + "～" + fmtP(bHi) + " 再買，不追高"; }
+  return { px, w, hi, y, bLo, bHi, stop, tg, rr, tag, cls, st };
+}
 function priceOf(m, sym) {
   const ov = S.prices[m + ":" + sym];
   if (ov && isNum(ov.p)) return { p: ov.p, src: "手動 " + (ov.d || "") };
@@ -693,7 +763,7 @@ function renderBook() {
   </section>
   ${miniTerra()}
   ${pending.length ? `<div class="card"><h2>本月固定收支還沒記<span class="r">${pending.map((r) => esc(r.name)).join("、")}</span></h2>
-    <div class="btns">${pendFix.length ? `<button class="btn pri sm" type="button" id="applyRec">一鍵記上 ${pendFix.map((r) => esc(r.name)).join("、")}</button>` : ""}${pendVary.map((r) => `<button class="btn sm" type="button" data-recv="${esc(r.id)}">記${esc(r.name)}（填實際金額）</button>`).join("")}</div>
+    <div class="btns">${pendFix.length ? `<button class="btn pri sm" type="button" id="applyRec">一鍵記上 ${pendFix.map((r) => esc(r.name)).join("、")}</button>` : ""}${pendVary.map((r) => `<button class="btn sm" type="button" data-recv="${esc(r.id)}">記實領${esc(r.name)}</button>`).join("")}</div>
     ${pendVary.length ? `<div class="tiny" style="margin-top:6px">${pendVary.map((r) => esc(r.name)).join("、")}每個月金額不一定（例如請假扣薪），會先帶上次的金額，改成實拿的再記</div>` : ""}</div>` : ""}
   <div class="card"><h2>本月預算<span class="r num">${fmt(exp)} / ${fmt(totalBudget)}</span></h2>
     ${bar(exp, totalBudget)}
@@ -795,10 +865,19 @@ function renderInvest() {
       <div class="stack"><i style="width:${(r.cur * 100).toFixed(1)}%;${Math.abs(r.dev) > 0.05 ? "background:var(--seal)" : ""}"></i><u style="left:calc(${(r.tgt * 100).toFixed(1)}% - 1px)"></u></div></div>`).join("")}</div>
       ${needReb ? `<p class="tiny" style="margin:8px 0 0">${rebalanceHint(allocRows, tot)}</p>` : ""}` : `<div class="empty">記下第一筆買進後，這裡會顯示台股、美股、加密貨幣的比例</div>`}
   </div>
+  ${(() => { const tm = R.macro && R.macro.tactical && R.macro.tactical.markets; const row = (t, chip, b) => `<div class="item" style="cursor:default"><span class="a">${t}</span><span class="amt">${chip}</span><span class="b" style="grid-column:1/-1">${b}</span></div>`;
+    const tac = tm ? ["tw", "us"].filter((k) => tm[k]).map((k) => tm[k].on ? `<span class="chip alert">${esc(tm[k].name)}減 ${tm[k].step} 個百分點</span>` : "").join("") || `<span class="chip okc">未觸發</span>` : `<span class="chip">讀取中</span>`;
+    return `<div class="card"><h2>ETF 什麼時候賣<span class="r">核心層</span></h2>
+    <p class="tiny" style="margin:-4px 0 4px;color:var(--ink)">核心 ETF 原則上不賣，偏貴也照常扣。只有下面三種情況才動：</p>
+    <div class="list">${row("配置跑掉", tot > 0 ? (needReb ? `<span class="chip alert">現在要動</span>` : `<span class="chip okc">沒有</span>`) : `<span class="chip">還沒持股</span>`, "某一類偏離目標超過 5 個百分點，賣多的那邊補少的那邊；不想賣就把新錢先投到少的那邊")}
+    ${row("市場轉弱", tac, "總經、財報、資金流三個訊號都轉弱才動：核心股票部位減 5 個百分點，大盤週線再跌破 MA52 就減到 10；訊號解除再買回")}
+    ${row("要用錢", `<span class="chip">自己判斷</span>`, "3 年內要用的錢（頭期款、學費、創業）不該放在 ETF，提早分批賣到現金，不要等到要用才賣")}</div>
+    <p class="tiny" style="margin:6px 0 0">以上是策略規則算出的提醒，不是投資建議，我也不是持牌投資顧問；要不要賣由你決定。</p></div>`; })()}
   <div class="card"><h2>本月定期定額（台幣）<span class="r num">${fmt(monthBuysTWD(mo))} / ${fmt(st.investMonthly)}</span></h2>
     ${monthFull ? `<div class="tiny" style="margin:-4px 0 4px">這個月已投入 ${fmt(monthBuysTWD(mo))}，額度用完了，下面的燈號給下個月參考</div>` : ""}
     <div class="list">${st.plans.map((p) => { const d = planDone(p), g = dcaSig(p); return `<div class="item" style="cursor:default"><span class="a">${esc(p.sym)} <span class="muted">${esc(p.name)}</span>${p.role ? ` <span class="chip">${esc(p.role)}</span>` : ""}${d >= p.amt * 0.9 ? ` <span class="chip okc">已扣</span>` : ""}</span><span class="amt num">${fmt(d)} <span class="tiny">/ ${fmt(p.amt)}</span></span><span class="b">${MK[p.m]}${p.day ? `，每月 ${p.day} 號` : ""}${p.bk ? `，${esc(p.bk)}` : ""}${p.auto ? `<br>${esc(p.auto)}` : ""}</span><span><button class="btn sm" type="button" data-plan="${esc(p.id)}">記這筆</button></span>
-      <span class="dca" style="grid-column:1/3"><span class="chip ${g.cls}">今天：${esc(g.label)}</span>${g.why ? `<span class="why">${esc(g.why)}</span>` : ""}</span></div>`; }).join("") || `<div class="empty">到設定加入定期定額計畫</div>`}</div>
+      <span class="dca" style="grid-column:1/3"><span class="chip ${g.cls}">今天：${esc(g.label)}</span>${g.why ? `<span class="why">${esc(g.why)}</span>` : ""}</span>${(() => { const a = addLv(p); return a ? `
+      <span class="lv add" style="grid-column:1/3">${a.lv.map((x) => `<span class="${x.hit ? "hit" : ""}"><small>${x.k}</small><b class="num">${fmtP(x.p)}</b></span>`).join("")}<em>${a.note}</em></span>` : ""; })()}</div>`; }).join("") || `<div class="empty">到設定加入定期定額計畫</div>`}</div>
     <div class="btns" style="margin-top:10px"><button class="btn sm" type="button" id="dcaAi"${dcaBusy ? " disabled" : ""}>問 AI 今天怎麼買</button>${ghCfg() ? "" : `<span class="tiny" style="align-self:center">要先到設定連上 GitHub</span>`}</div>
     ${dcaOut ? `<div class="aiout" style="margin-top:10px">${esc(dcaOut)}</div>` : ""}
   </div>
@@ -859,7 +938,8 @@ function renderRecs() {
       <span class="a"><b>${esc(r.sym)}</b> <span class="muted">${esc(r.name || "")}</span> <span class="chip">${MK[r.m]}</span> <span class="chip">${esc(r.src || "")}</span></span>
       <span class="amt num ${signCls(ch)}" style="text-align:right">${isNum(ch) ? pct(ch) : "－"}</span>
       <span class="b">${esc(r.date || "")}${r.reason ? "・" + esc(r.reason) : ""}</span>
-      <span class="b num" style="text-align:right">${isNum(r.px) ? fmtP(r.px) : "－"} → ${pr ? fmtP(pr.p) : "－"}</span></button>`; }).join("") || `<div class="empty">${recFilter === "watch" ? "按候選名單的「觀察」或右下角 ＋ 新增，之後會自動追蹤推薦後漲跌" : "沒有紀錄"}</div>`}</div>
+      <span class="b num" style="text-align:right">${isNum(r.px) ? fmtP(r.px) : "－"} → ${pr ? fmtP(pr.p) : "－"}</span>${(() => { const v = r.status !== "pass" && recLv(r.m, r.sym); return v ? `
+      <span class="lv"><span class="lt"><span class="chip ${v.cls}">${v.tag}</span><small>點位（${CUR[r.m]}）</small></span><span><small>買進區</small><b class="num">${fmtP(v.bLo)}～${fmtP(v.bHi)}</b></span><span><small>出場線</small><b class="num">${fmtP(v.stop)}</b></span><span><small>目標</small><b class="num">${v.tg.length ? fmtP(v.tg[0]) : "－"}</b></span></span>` : ""; })()}</button>`; }).join("") || `<div class="empty">${recFilter === "watch" ? "按候選名單的「觀察」或右下角 ＋ 新增，之後會自動追蹤推薦後漲跌" : "沒有紀錄"}</div>`}</div>
   </div>
   <div class="card"><h2>AI 助手<span class="r">${ghCfg() ? "在 GitHub Actions 上執行" : "要先到設定連上 GitHub"}</span></h2>
     <div class="btns"><button class="btn pri sm" type="button" id="aiCheck"${aiBusy ? " disabled" : ""}>幫我健檢記帳與持股</button><button class="btn sm" type="button" id="aiPaste">貼上別人的推薦，讓 AI 整理</button></div>
@@ -1212,7 +1292,7 @@ function txForm(t, pre) {
 function efForm() {
   const st = S.settings;
   openSheet("存入緊急預備金", `<form class="form" id="efF"><label class="f big"><span>這次存入</span><input id="efAmt" inputmode="decimal" value="${st.emergencyMonthly}"></label>
-    <label class="f"><span><input type="checkbox" id="efTx" checked style="width:auto"> 同時記一筆支出「預備金」（從可用的錢扣掉）</span></label>
+    <label class="chk"><input type="checkbox" id="efTx" checked><span>同時記一筆支出「預備金」（從可用的錢扣掉）</span></label>
     <div class="btns"><button class="btn pri" type="submit" style="flex:1">存入</button></div></form>`, (o, close) => {
     $("#efF", o).onsubmit = (e) => {
       e.preventDefault(); const v = toNum($("#efAmt", o).value); if (!isNum(v) || v <= 0) return;
@@ -1327,7 +1407,15 @@ function holdSheet(h) {
 function recForm(r) {
   const isNew = !r;
   r = r ? clone(r) : { id: uid(), m: "TW", sym: "", name: "", src: "Claude", date: today(), px: "", reason: "", status: "watch" };
-  openSheet(isNew ? "新增推薦" : "推薦紀錄", `<form class="form" id="rcF">
+  const lv = !isNew && recLv(r.m, r.sym), u = cur(r.m);
+  openSheet(isNew ? "新增推薦" : "推薦紀錄", `${lv ? `<div class="lvbox">
+      <div class="lvh"><span class="chip ${lv.cls}">${lv.tag}</span><span class="tiny">現價 <b class="num">${fmtP(lv.px)}</b> ${u}</span></div>
+      <p class="tiny" style="color:var(--ink);margin:8px 0">${esc(lv.st)}</p>
+      <div class="lvr"><i class="sq b"></i><span>買進區</span><b class="num">${fmtP(lv.bLo)}～${fmtP(lv.bHi)}</b><small>${u}</small><em>週 MA52 到上方 4%，回測不破才買；分 2～3 筆進場，補倉也只補在這一區</em></div>
+      <div class="lvr"><i class="sq r"></i><span>出場線</span><b class="num">${fmtP(lv.stop)}</b><small>${u}</small><em>週收盤跌破這裡＝買點失效，賣出停損</em></div>
+      ${lv.tg.map((t, i) => `<div class="lvr"><i class="sq y"></i><span>目標 ${i + 1}</span><b class="num">${fmtP(t)}</b><small>${u}</small><em>${t === lv.hi ? "52 週高點（前高）" : "年線 ×1.3，長線燈號轉偏貴"}，${i === 0 && lv.tg.length > 1 ? "先賣一半" : "剩下的賣掉"}</em></div>`).join("")}
+      <div class="tiny" style="margin-top:8px">${isNum(lv.rr) ? `從買進區中間買、到目標 1 的報酬是停損風險的 ${lv.rr.toFixed(1)} 倍${lv.rr < 2 ? "，不到 2 倍，賺賠不划算，可以略過" : ""}。` : ""}點位照濾網規則每天重算，不是保證；單股不超過衛星層 10%。</div>
+    </div>` : ""}<form class="form" id="rcF">
     ${segHtml("m", MK, r.m)}
     <div class="two"><label class="f"><span>代號</span><input id="cSym" value="${esc(r.sym)}" autocapitalize="characters" autocomplete="off" required></label>
     <label class="f"><span>名稱</span><input id="cName" value="${esc(r.name || "")}"></label></div>
@@ -1396,7 +1484,7 @@ function aiPasteSheet() {
         const arr = Array.isArray(r.items) ? r.items : [];
         const items = arr.filter((x) => x && x.sym && ["TW", "US", "CR"].includes(x.m)).map((x) => ({ m: x.m, sym: normSym(x.m, x.sym), name: x.name || "", reason: x.reason || "" }));
         if (!items.length) { $("#apOut", o).innerHTML = `<div class="empty">沒有找到具體標的</div>`; return; }
-        $("#apOut", o).innerHTML = `<div class="list">${items.map((x, i) => `<label class="item" style="cursor:pointer"><span class="a"><input type="checkbox" data-ap="${i}" checked style="width:auto"> <b>${esc(x.sym)}</b> ${esc(x.name)} <span class="chip">${MK[x.m]}</span></span><span></span><span class="b">${esc(x.reason)}</span></label>`).join("")}</div><div class="btns" style="margin-top:8px"><button class="btn pri" type="button" id="apSave">加入觀察清單</button></div>`;
+        $("#apOut", o).innerHTML = `<div class="list">${items.map((x, i) => `<label class="item" style="cursor:pointer"><span class="a"><input type="checkbox" data-ap="${i}" checked> <b>${esc(x.sym)}</b> ${esc(x.name)} <span class="chip">${MK[x.m]}</span></span><span></span><span class="b">${esc(x.reason)}</span></label>`).join("")}</div><div class="btns" style="margin-top:8px"><button class="btn pri" type="button" id="apSave">加入觀察清單</button></div>`;
         $("#apSave", o).onclick = () => {
           const src = $("#apSrc", o).value;
           $$("[data-ap]", o).filter((c) => c.checked).forEach((c) => { const x = items[+c.dataset.ap]; const pr = priceOf(x.m, x.sym); S.recs.push({ id: uid(), ua: now(), m: x.m, sym: x.sym, name: x.name || (radarItem(x.m, x.sym)?.n || ""), src, date: today(), px: pr ? pr.p : null, reason: x.reason, status: "watch" }); });
@@ -1429,6 +1517,17 @@ async function loadBtcMayer() {
     BTCM = { t: Date.now(), px, ma, m: px / ma, ch: +t.priceChangePercent / 100 };
     render();
   } catch (e) {}
+}
+/* 核心 ETF／比特幣的補倉點：只在跌到便宜區時多扣，不追高、不攤平個股。
+   ETF：回到年線、年線 -10%、年線 -20% 各多扣一期；比特幣：回到 200 日線、200 日線 ×0.8（便宜區）各多扣一期。戰術層觸發時不補 */
+function addLv(p) {
+  let base, ks, px;
+  if (p.m === "CR") { if (p.sym !== "BTC" || !BTCM) return null; base = BTCM.ma; px = BTCM.px; ks = [["200 日線", 1], ["便宜區", 0.8], ["深跌", 0.6]]; }
+  else { const it = radarItem(p.m, p.sym); if (!it || !Array.isArray(it.lv) || !isNum(it.lv[2])) return null; base = it.lv[2]; px = priceOf(p.m, p.sym)?.p ?? it.px; ks = [["回到年線", 1], ["年線 -10%", 0.9], ["年線 -20%", 0.8]]; }
+  const tm = R.macro && R.macro.tactical && R.macro.tactical.markets, tac = p.m !== "CR" && tm && tm[p.m === "TW" ? "tw" : "us"] && tm[p.m === "TW" ? "tw" : "us"].on;
+  const lv = ks.map(([k, f], i) => ({ k: i ? k : k + "（" + CUR[p.m] + "）", p: base * f, hit: isNum(px) && px <= base * f }));
+  const n = lv.filter((x) => x.hit).length;
+  return { lv, note: tac ? "戰術層觸發中，先不補倉。" : n ? `現價已到第 ${n} 個補倉點，這期可以多扣 ${n} 期。` : "補倉點：跌到哪一格就多扣一期，沒到就照常扣。" };
 }
 function dcaSig(p) {
   const out = (label, cls, why) => ({ label, cls, why });
