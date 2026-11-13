@@ -38,11 +38,24 @@ jobs:
         run: pip install -r requirements.txt
       - name: 回測
         run: python backtest.py --market "${{ inputs.market }}" --period "${{ inputs.period }}"
+      - name: 結果先存成 artifact（推不上去也不會不見）
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backtest-${{ inputs.period }}
+          path: data/backtest.json
+          if-no-files-found: ignore
       - name: 存回 repo
         run: |
           git config user.name "kunbao-bot"
           git config user.email "actions@users.noreply.github.com"
           git add data/backtest.json
           git diff --cached --quiet && exit 0
-          git commit -m "回測結果 $(date -u +%F)"
-          for i in 1 2 3; do git pull --rebase && git push && break; sleep 5; done
+          git commit -m "回測結果 ${{ inputs.period }} $(date -u +%F)"
+          git reset --hard HEAD   # 丟掉下載時改到的快取檔，只留回測結果這個 commit
+          git clean -fd
+          for i in 1 2 3; do
+            git pull --rebase origin main && git push origin HEAD:main && exit 0
+            sleep 10
+          done
+          exit 1
