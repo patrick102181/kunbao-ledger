@@ -359,7 +359,7 @@ nav.tabs .lb{display:block}
 .lv.add{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));column-gap:10px;border-top:1px dashed var(--hair);padding-top:7px;margin-top:6px}
 .lv.add>span{display:flex;flex-direction:column;gap:3px;padding-left:8px;border-left:3px solid var(--hair)}
 .lv.add>span.hit{border-left-color:var(--blue)}
-.lv.add small{font-size:11px;color:var(--muted);line-height:1}
+.lv.add small{font-size:11px;color:var(--muted);line-height:1;white-space:nowrap}
 .lv.add b{font-weight:500;font-size:14px;line-height:1.2}
 .lv.add em{grid-column:1/-1;font-style:normal;font-size:12px;color:var(--muted);margin-top:6px}
 
@@ -387,10 +387,81 @@ details.news li small{display:block;color:var(--muted);font-size:11px;margin-top
 .mn{padding:8px 0;border-top:1px solid var(--hair)}
 .mnh{display:flex;align-items:center;gap:8px;margin-bottom:2px}
 .mnh b{font-size:13px}
-.hx .hnw{grid-column:1/-1;display:flex;align-items:baseline;gap:8px;font-size:12.5px;color:var(--muted);line-height:1.45}
-.hx .hnw i{width:9px;height:9px;flex:none;background:var(--hair);align-self:center}
-.hx .hnw.alert i{background:var(--red)} .hx .hnw.go i{background:var(--blue)}
-.hx .hnw b{flex:none;font-weight:700;color:var(--ink)}
+.hx .hnw{grid-column:1/-1;display:grid;grid-template-columns:auto minmax(0,1fr);column-gap:8px;align-items:center;margin-top:2px}
+.hx .hnw b{display:block;font-size:12px;font-weight:700;line-height:1;padding:calc((22px - .733em) / 2 + .022em) 7px calc((22px - .733em) / 2 - .022em);text-box:trim-both cap alphabetic;color:#fff;background:var(--muted);white-space:nowrap}
+.hx .hnw.alert b{background:var(--red)} .hx .hnw.go b{background:var(--blue)}
+.hx .hnw span{font-size:12.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:22px}
+
+.mx{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-top:1px solid var(--hair)}
+.mx>div{padding:8px 8px 8px 0;border-bottom:1px solid var(--hair);min-width:0}
+.mx small{display:block;font-size:11px;color:var(--muted);line-height:1.3}
+.mx b{display:block;font-size:16px;font-weight:600;line-height:1.3;white-space:nowrap}
+.mx em{display:block;font-style:normal;font-size:11px;color:var(--muted);line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mx+.mx{margin-top:10px}
+.mh{display:grid;grid-template-columns:64px 1fr;column-gap:8px;padding:8px 0;border-bottom:1px solid var(--hair);align-items:baseline}
+.mh b{font-size:12.5px}
+.mh span{display:flex;flex-wrap:wrap;gap:4px 10px}
+.mh i{font-style:normal;font-size:12.5px;white-space:nowrap}
+.mh u{text-decoration:none;font-family:var(--f-num);font-size:12px;margin-left:4px;color:var(--muted)}
+.mh u.up{color:var(--up)} .mh u.dn{color:var(--down)}
+
+/* 綜合判斷明細 */
+.jd{margin-bottom:16px}
+.jv{display:flex;justify-content:space-between;align-items:stretch;background:var(--muted);color:#fff}
+.jv.alert{background:var(--red)} .jv.go{background:var(--blue)} .jv.okc{background:var(--ink)}
+.jv>div{padding:12px 14px}
+.jv small{display:block;font-size:11px;opacity:.85;line-height:1.2;margin-bottom:6px}
+.jv b{display:block;font-size:24px;font-weight:900;line-height:1;letter-spacing:.02em}
+.jv .jp{text-align:right;border-left:1.5px solid rgba(255,255,255,.45)}
+.jv .jp b{font-size:20px;font-weight:600}
+.jb{margin:10px 0 12px;font-size:14px;font-weight:700;line-height:1.5}
+.jg{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));border-top:1.5px solid var(--ink);border-left:1.5px solid var(--ink)}
+.jg>div{position:relative;padding:9px 10px 9px 24px;border-right:1.5px solid var(--ink);border-bottom:1.5px solid var(--ink);min-width:0}
+.jg>div::before{content:"";position:absolute;left:10px;top:13px;width:8px;height:8px;background:var(--hair)}
+.jg>div.ok::before{background:var(--blue)} .jg>div.bad::before{background:var(--red)}
+.jg small{display:block;font-size:11px;color:var(--muted);line-height:1.2}
+.jg>div:last-child:nth-child(odd){grid-column:1/-1}
+.jg b{display:block;font-size:14px;font-weight:700;line-height:1.35;margin-top:3px;overflow-wrap:anywhere}
+.ladder{margin:16px 0 4px}
+.ladder .lt{font-size:11px;color:var(--muted);margin-bottom:6px}
+.ladder .lbar{position:relative;height:30px;border-bottom:1.5px solid var(--ink)}
+.ladder .lt span{color:var(--ink)}
+.ladder i{position:absolute;bottom:0}
+.ladder .zone{height:12px;background:var(--blue)}
+.ladder .stop{width:3px;height:18px;margin-left:-1.5px;background:var(--red)}
+.ladder .tgt{width:3px;height:18px;margin-left:-1.5px;background:var(--yellow)}
+.ladder .now{width:0;height:0;margin-left:-6px;top:0;bottom:auto;border-left:6px solid transparent;border-right:6px solid transparent;border-top:10px solid var(--ink)}
+.jl{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 12px;margin-top:14px}
+.jl>div{display:grid;grid-template-columns:12px 1fr;column-gap:6px;align-items:center;padding:7px 0;border-top:1px solid var(--hair)}
+.jl .sq{width:9px;height:9px}
+.jl .sq.b{background:var(--blue)} .jl .sq.r{background:var(--red)} .jl .sq.y{background:var(--yellow)}
+.jl small{font-size:11px;color:var(--muted);line-height:1.2}
+.jl b{grid-column:2;font-size:16px;font-weight:600;line-height:1.3;white-space:nowrap}
+.jn{margin:10px 0 0;line-height:1.55}
+details.jw{margin-top:10px;border-top:1.5px solid var(--ink)}
+details.jw summary{font-size:13px;color:var(--ink);padding:10px 0 6px}
+details.jw ul{list-style:none;margin:0;padding:0}
+details.jw li{padding:7px 0 7px 12px;border-left:3px solid var(--hair);margin-bottom:6px;font-size:12.5px;line-height:1.5}
+details.jw li.ok{border-left-color:var(--blue)} details.jw li.bad{border-left-color:var(--red)}
+details.jw li b{display:block;font-size:12.5px}
+details.jw li span{color:var(--muted)}
+
+/* 大盤新聞收合、需要注意 */
+details.mnews{margin-top:10px;border-top:1px solid var(--hair)}
+details.mnews>summary{display:flex;align-items:center;gap:8px;flex-wrap:wrap;color:var(--ink);font-size:13px;padding:10px 0 4px;list-style:none;cursor:pointer}
+details.mnews>summary::-webkit-details-marker{display:none}
+details.mnews>summary::after{content:"＋";margin-left:auto;color:var(--muted);font-size:12px}
+details.mnews[open]>summary::after{content:"－"}
+details.mnews .mt{font-size:12px;line-height:1;padding:calc((22px - .733em) / 2 + .022em) 7px calc((22px - .733em) / 2 - .022em);text-box:trim-both cap alphabetic;color:#fff;background:var(--muted);white-space:nowrap}
+details.mnews .mt.alert{background:var(--red)} details.mnews .mt.go{background:var(--blue)}
+.card.attn{border-color:var(--red)}
+.card.attn h2{color:var(--red)}
+.al{display:grid;grid-template-columns:12px minmax(0,1fr);column-gap:10px;align-items:start;width:100%;text-align:left;background:none;border:0;border-top:1px solid var(--hair);padding:10px 0;color:var(--ink)}
+.al:first-child{border-top:0}
+.al i{width:10px;height:10px;margin-top:5px;background:var(--red)}
+.al.warn i{background:var(--yellow)}
+.al b{display:block;font-size:14px;line-height:1.45}
+.al em{display:block;font-style:normal;font-size:12.5px;color:var(--muted);line-height:1.5;margin-top:2px}
 </style>
 </head>
 <body>
@@ -434,6 +505,7 @@ const fmt = (n, d = 0) => isNum(n) ? n.toLocaleString("zh-TW", { minimumFraction
 const fmtP = (n) => !isNum(n) ? "－" : (Math.abs(n) >= 1000 ? fmt(n, 0) : Math.abs(n) >= 1 ? fmt(n, 2) : fmt(n, 4));
 const fmtQ = (n) => !isNum(n) ? "－" : Number.isInteger(n) ? fmt(n, 0) : (Math.abs(n) >= 1 ? fmt(n, 4).replace(/0+$/, "").replace(/\.$/, "") : String(+n.toFixed(8)));
 const pct = (n, d = 1) => isNum(n) ? (n > 0 ? "+" : "") + (n * 100).toFixed(d) + "%" : "－";
+const pctAbs = (n, d = 1) => isNum(n) ? (Math.abs(n) * 100).toFixed(d) + "%" : "－";   // 「跌 3.2%」這種已經講方向的地方用
 const signCls = (n) => !isNum(n) || Math.abs(n) < 1e-9 ? "" : n > 0 ? "up" : "down"; // 台股慣例：紅漲綠跌
 const toNum = (v) => { const n = parseFloat(String(v ?? "").replace(/[,\s]/g, "")); return isFinite(n) ? n : NaN; };
 const sum = (arr, f) => arr.reduce((a, x) => a + (typeof f === "function" ? f(x) : x[f]) , 0);
@@ -696,22 +768,45 @@ function judge(r) {
   const lv = recLv(r.m, r.sym), nw = newsOf(r.m, r.sym);
   const picks = r.m === "CR" ? null : radarPicks(r.m), pass = picks ? picks.some((x) => String(x.c).toUpperCase() === r.sym) : null;
   const tm = R.macro && R.macro.tactical && R.macro.tactical.markets, tac = r.m !== "CR" && tm && tm[r.m === "TW" ? "tw" : "us"] && tm[r.m === "TW" ? "tw" : "us"].on;
-  const why = [];
-  why.push([pass ? "ok" : pass === false ? "bad" : "", "四道濾網", pass ? "今天仍通過（熱門族群＋資金流入＋財報轉強＋買點觸發）" : pass === false ? "今天沒通過，族群退燒、資金流轉弱、財報轉弱或買點條件消失其中之一" : "沒有資料"]);
-  if (lv) why.push([lv.cls === "go" ? "ok" : lv.cls === "alert" ? "bad" : "", "點位", lv.st]);
-  why.push([nw ? (nw.score > 0 ? "ok" : nw.score < 0 ? "bad" : "") : "", "新聞", nw ? `${NEWS_LAB[nw.score] || "中性"}${nw.big ? "（重大事件）" : ""}：${nw.sum || ""}` : "還沒有新聞資料"]);
-  why.push([tac ? "bad" : "ok", "大盤", tac ? "戰術層觸發，衛星層先不加碼" : "戰術層未觸發"]);
-  let v, cls;
+  const it = r.m === "CR" ? null : radarItem(r.m, r.sym), dm = r.m === "TW" ? R.tw : r.m === "US" ? R.us : null;
+  const why = [];   // k：ok＝有利、bad＝不利、空白＝中性；t：項目；s：一句話狀態；d：理由
+  const add = (k, t, s, d) => why.push({ k, t, s, d });
+  add(pass ? "ok" : pass === false ? "bad" : "", "四道濾網", pass ? "通過" : pass === false ? "沒通過" : "沒資料",
+    pass ? "熱門族群、資金流入、財報轉強、買點觸發，今天四項都符合" : pass === false ? "族群退燒、資金流轉弱、財報轉弱或買點條件消失，至少一項不符合" : "這檔不在每日掃描的清單裡");
+  if (lv) add(lv.cls === "go" ? "ok" : lv.cls === "alert" ? "bad" : "", "點位", lv.tag, lv.st);
+  if (it && r.m === "TW" && (isNum(it.fs) || isNum(it.ts) || isNum(it.i5))) {
+    const st = (n, who) => !isNum(n) || n === 0 ? "" : n > 0 ? `${who}連買 ${n} 天` : `${who}連賣 ${-n} 天`;
+    const big = [[it.fs, "外資"], [it.ts, "投信"]].filter(([n]) => isNum(n) && n !== 0).sort((x, y) => Math.abs(y[0]) - Math.abs(x[0]))[0];
+    const i5 = isNum(it.i5) ? `近 5 日${it.i5 >= 0 ? "買超" : "賣超"} ${fmt(Math.abs(it.i5) / 1e8, 1)} 億` : "";
+    add((it.i5 || 0) > 0 || (it.fs || 0) >= 3 || (it.ts || 0) >= 3 ? "ok" : (it.i5 || 0) < 0 ? "bad" : "", "法人",
+      big ? st(big[0], big[1]) : i5 ? (it.i5 >= 0 ? "買超" : "賣超") : "沒動作", [st(it.fs, "外資"), st(it.ts, "投信"), i5 ? "三大法人" + i5 : ""].filter(Boolean).join("，") || "沒有明顯動向");
+  }
+  if (it && it.fl && it.fl.e) add(it.fl.e[1] > 0 ? "ok" : it.fl.e[1] < 0 ? "bad" : "", "資金流", it.fl.e[1] >= 0 ? "買方強" : "賣方強",
+    `資金分 ${isNum(it.f) ? Math.round(it.f) : "－"}（量能${r.m === "TW" ? "、法人" : "、相對大盤"}、族群資金）；近 5 日用收盤在當天高低區間的位置估算主動買賣${it.fl.spk ? `；${it.fl.spk} 出現異常大量` : ""}`);
+  if (it && it.l) {
+    const bt = dm && dm.backtest && dm.backtest.stock, b = bt && bt[it.l], all = bt && bt.all;
+    add(it.l === "cheap" ? "ok" : it.l === "trap" || it.l === "exp" ? "bad" : "", "長線燈號", LIGHT[it.l] || it.l,
+      `長線分 ${isNum(it.lt) ? Math.round(it.lt) : "－"}${isNum(it.q) ? `、品質 ${Math.round(it.q)}` : ""}${isNum(it.val) ? `、估值 ${Math.round(it.val)}` : ""}${b && isNum(b.f12) ? `。歷史上亮這個燈號的股票 1 年後平均 ${pct(b.f12, 1)}${all && isNum(all.f12) ? `，所有股票平均 ${pct(all.f12, 1)}` : ""}` : ""}`);
+  }
+  if (it && isNum(it.ryoy)) add(it.ryoy > 0.05 ? "ok" : it.ryoy < -0.05 ? "bad" : "", "營收", `年增 ${pct(it.ryoy, 0)}`,
+    `${it.rym ? it.rym.slice(0, 4) + " 年 " + (+it.rym.slice(4)) + " 月" : "最新"}營收比去年同月${it.ryoy >= 0 ? "成長" : "衰退"} ${(Math.abs(it.ryoy) * 100).toFixed(0)}%${it.fin === "up" ? "，季報轉強" : it.fin === "down" ? "，季報轉弱" : ""}`);
+  else if (it && it.fin) add(it.fin === "up" ? "ok" : it.fin === "down" ? "bad" : "", "財報", it.fin === "up" ? "轉強" : it.fin === "down" ? "轉弱" : "持平", "營收、毛利率、EPS 跟去年同期比");
+  add(nw ? (nw.score > 0 ? "ok" : nw.score < 0 ? "bad" : "") : "", "新聞", nw ? (NEWS_LAB[nw.score] || "中性") + (nw.big && Math.abs(nw.score) < 2 ? "・重大" : "") : "沒資料", nw ? nw.sum || "沒有重要新聞" : "還沒有新聞資料");
+  add(tac ? "bad" : "ok", "大盤", tac ? "轉弱" : "正常", tac ? "總經、財報、資金流三個訊號都轉弱（戰術層觸發），衛星層先不加碼" : "戰術層未觸發");
+  let v, cls, because;
   const held = r.status === "bought";
-  if (!lv) { v = "資料不足"; cls = ""; }
-  else if (held && lv.cls === "alert") { v = "照規則出場"; cls = "alert"; }
-  else if (tac) { v = held ? "續抱不加碼" : "先觀望"; cls = "alert"; }
-  else if (lv.cls === "alert") { v = "不買"; cls = "alert"; }
-  else if (nw && nw.score <= -1 && nw.big) { v = held ? "留意重大利空" : "先觀望"; cls = "alert"; }
-  else if (held) { v = "續抱"; cls = "okc"; }
-  else if (lv.tag === "在買進區") { v = pass && (!nw || nw.score >= 0) ? "可以分批買" : "小量試單"; cls = "go"; }
-  else { v = lv.tag; cls = ""; }
-  return { v, cls, why, lv, nw };
+  if (!lv) { v = "資料不足"; cls = ""; because = "還沒有這檔的點位資料"; }
+  else if (held && lv.cls === "alert") { v = "照規則出場"; cls = "alert"; because = "已經跌破出場線，不要往下攤平"; }
+  else if (tac) { v = held ? "續抱不加碼" : "先觀望"; cls = "alert"; because = "大盤轉弱，衛星層先不加碼"; }
+  else if (lv.cls === "alert") { v = "不買"; cls = "alert"; because = lv.st; }
+  else if (nw && nw.score <= -1 && nw.big) { v = held ? "留意重大利空" : "先觀望"; cls = "alert"; because = "有重大利空新聞，等消息明朗再說"; }
+  else if (held) { v = "續抱"; cls = "okc"; because = "還在出場線上方，照計畫抱著"; }
+  else if (lv.tag === "在買進區") {
+    const ok = pass && (!nw || nw.score >= 0); v = ok ? "可以分批買" : "小量試單"; cls = "go";
+    because = ok ? "在買進區，四道濾網也通過" : pass ? "在買進區，但新聞偏空" : "在買進區，但今天沒通過四道濾網";
+  }
+  else { v = lv.tag; cls = ""; because = lv.st; }
+  return { v, cls, because, why, lv, nw };
 }
 function recLv(m, sym) {
   const it = radarItem(m, sym); if (!it || !Array.isArray(it.lv) || !isNum(it.lv[0])) return null;
@@ -798,6 +893,15 @@ function holdings() {
     h.valT = isNum(h.mvT) ? h.mvT : h.costT; // 沒現價時以成本估
     return h;
   });
+}
+/* 投資頁的「需要注意」：持股有重大事件或偏利空新聞（之後再加出場線、集中度、虧損警示） */
+function attention(act, mv) {
+  const out = [];
+  for (const h of act) {
+    const n = newsOf(h.m, h.sym);
+    if (n && (n.big || n.score <= -1) && n.score <= 0) out.push({ k: h.k, cls: "alert", lv: 2 + (n.big ? 1 : 0) + (n.score <= -2 ? 1 : 0), t: `${h.sym} ${NEWS_LAB[n.score]}${n.big && n.score > -2 ? "・重大事件" : ""}`, d: n.sum || "" });
+  }
+  return out.sort((a, b) => b.lv - a.lv);
 }
 function monthBuysTWD(mo) {
   return sum(S.trades.filter((t) => t.side === "buy" && !t.open && (t.date || "").startsWith(mo)), (t) => toTWD(t.m, t.q * t.p + (t.fee || 0), t.fx || S.settings.fx));
@@ -935,7 +1039,9 @@ function renderInvest() {
   if (st.plans.some((p) => p.m === "CR" && p.sym === "BTC")) loadBtcMayer();
   const planDone = (p) => sum(S.trades.filter((t) => t.side === "buy" && !t.open && t.m === p.m && t.sym === p.sym && (t.date || "").startsWith(mo)), (t) => toTWD(t.m, t.q * t.p + (t.fee || 0), t.fx));
   const trades = [...S.trades].sort((a, b) => (b.date || "").localeCompare(a.date || "") || (b.ua || 0) - (a.ua || 0));
+  const alerts = attention(act, mv);
   view.innerHTML = `
+  ${alerts.length ? `<div class="card attn"><h2>需要注意<span class="r">${alerts.length} 件</span></h2><div class="list">${alerts.map((a) => `<button class="al ${a.cls}" type="button" data-hold="${esc(a.k)}"><i></i><span><b>${esc(a.t)}</b><em>${esc(a.d)}</em></span></button>`).join("")}</div></div>` : ""}
   <div class="tiles">
     <div class="tile"><div class="k">總市值（台幣）</div><div class="v num">${fmt(mv)}</div></div>
     <div class="tile"><div class="k">投入成本（台幣）</div><div class="v num">${fmt(cost)}</div></div>
@@ -971,7 +1077,7 @@ function renderInvest() {
       <span class="hv num">${fmt(h.valT)}<i class="cur">台幣</i></span>
       <span class="hm"><i class="mk ${h.m.toLowerCase()}"></i>${MK[h.m]}${h.bks.length ? `<em>${esc(h.bks.join("、"))}</em>` : ""}</span>
       <span class="hp num ${signCls(h.unT)}">${isNum(h.unT) ? `${h.unT > 0 ? "+" : h.unT < 0 ? "−" : ""}${fmt(Math.abs(h.unT))}<i class="cur">台幣</i><small>${h.unT > 0 ? "+" : h.unT < 0 ? "−" : ""}${isNum(h.unP) ? (Math.abs(h.unP) * 100).toFixed(1) + "%" : ""}</small>` : `<u>點這裡填現價</u>`}</span>
-${(() => { const n = newsOf(h.m, h.sym); return n && (n.score || n.big) ? `<span class="hnw ${newsCls(n)}"><i></i><b>新聞${n.big && Math.abs(n.score) < 2 ? "・重大" : ""} ${NEWS_LAB[n.score]}</b>${esc(n.sum || "")}</span>` : ""; })()}
+${(() => { const n = newsOf(h.m, h.sym); return n && (n.score || n.big) ? `<span class="hnw ${newsCls(n)}"><b>${NEWS_LAB[n.score] || "中性"}</b><span>${esc(n.sum || "")}</span></span>` : ""; })()}
       <span class="hs"><span><small>${h.m === "CR" ? "顆數" : "股數"}</small><b class="num">${fmtQ(h.sh)}</b></span><span><small>均價</small><b class="num">${fmtP(h.avg)}</b>${cur(h.m)}</span><span><small>現價</small><b class="num">${isNum(h.px) ? fmtP(h.px) : "－"}</b>${cur(h.m)}</span></span></button>`).join("") : `<div class="empty">還沒有持股，按右下角 ＋ 記第一筆買進</div>`}</div>
     ${H.some((h) => h.sh === 0) ? `<details><summary>已出清的標的（${H.filter((h) => h.sh === 0).length}）</summary>${H.filter((h) => h.sh === 0).map((h) => `<div class="item" style="cursor:default"><span class="a">${esc(h.sym)} <span class="muted">${esc(h.name)}</span></span><span class="amt num ${signCls(h.realT + h.divT)}">${fmt(h.realT + h.divT)}</span></div>`).join("")}</details>` : ""}
   </div>
@@ -1010,9 +1116,21 @@ function renderRecs() {
   <div class="card"><h2>今日判讀<span class="r">${sm ? esc((sm.generated || "").slice(5, 16)) : ""}</span></h2>
     ${R.err ? `<div class="empty">${esc(R.err)}</div>` : sm ? `<p style="margin:0 0 8px;font-weight:700">${esc(sm.headline || "")}</p>${(sm.watch || []).length ? `<ul style="margin:0;padding-left:18px">${sm.watch.map((w) => `<li class="tiny" style="color:var(--ink)">${esc(w)}</li>`).join("")}</ul>` : ""}` : `<div class="empty">${R.loading ? "讀取中…" : "沒有資料"}</div>`}
     ${R.macro ? `<div class="btns" style="margin-top:8px">${R.macro.stage && R.macro.stage.name ? `<span class="chip">債務週期 ${esc(R.macro.stage.name)}</span>` : ""}<span class="chip">資金風向 ${esc(R.macro.risk.label)}</span><span class="chip ${R.macro.tactical.on ? "alert" : "okc"}">戰術層${R.macro.tactical.on ? "觸發" : "未觸發"}</span>${(R.macro.idx || []).map((i) => `<span class="chip ${i.below ? "alert" : ""}">${esc(i.n)} ${i.below ? "跌破" : "站上"}週MA52</span>`).join("")}</div>` : ""}
-    ${RM.news && RM.news.market ? `<div class="mnews">${["tw", "us"].filter((k) => RM.news.market[k]).map((k) => { const n = RM.news.market[k]; return `<div class="mn"><div class="mnh"><b>${k === "tw" ? "台股新聞" : "美股新聞"}</b>${newsChip(n)}</div>${newsList(n)}</div>`; }).join("")}<div class="tiny">新聞 ${esc(RM.news.generated || "")} 抓取，AI 只看標題判斷，點標題看原文</div></div>` : ghCfg() ? `<div class="tiny" style="margin-top:8px">新聞每天 07:40、21:00 自動抓；第一次可以到資料 repo 的 Actions 手動跑「每日新聞」</div>` : ""}
+    ${RM.news && RM.news.market ? `<details class="mnews"><summary><b>大盤新聞</b>${["tw", "us"].filter((k) => RM.news.market[k]).map((k) => { const n = RM.news.market[k]; return `<span class="mt ${newsCls(n)}">${k === "tw" ? "台股" : "美股"} ${NEWS_LAB[n.score] || "中性"}</span>`; }).join("")}</summary>${["tw", "us"].filter((k) => RM.news.market[k]).map((k) => `<div class="mn"><div class="mnh"><b>${k === "tw" ? "台股" : "美股"}</b></div>${newsList(RM.news.market[k])}</div>`).join("")}<div class="tiny" style="margin-top:6px">${esc(RM.news.generated || "")} 抓取。大盤新聞只是讓你知道市場在關心什麼，價格早就反應了，不要拿來買賣。</div></details>` : ""}
     <div class="btns" style="margin-top:8px;align-items:center"><button class="btn sm" type="button" id="reloadRadar">重新讀取</button><span class="tiny">台股 ${esc(R.tw ? R.tw.updated || "" : "－")}・美股 ${esc(R.us ? R.us.updated || "" : "－")}</span></div>
   </div>
+  ${(() => { const tw = R.tw, us = R.us; if (!(tw && tw.overview) && !(us && us.overview)) return "";
+    const o = tw && tw.overview, ins = o && o.insti, v = tw && tw.valuation, uo = us && us.overview, uv = us && us.valuation;
+    const st = (x) => !x || !isNum(x.streak) || x.streak === 0 ? "－" : x.streak > 0 ? `連買 ${x.streak} 天` : `連賣 ${-x.streak} 天`;
+    const cell = (k, val, sub) => `<div><small>${k}</small><b class="num">${val}</b>${sub ? `<em>${sub}</em>` : ""}</div>`;
+    const hot = (d) => (d && d.sectors || []).filter((x) => isNum(x.rs4)).sort((a, b) => b.rs4 - a.rs4).slice(0, 5);
+    const sig = (tw && tw.signals || []).slice(0, 6);
+    return `<div class="card"><h2>市場資金<span class="r">${esc(tw && tw.data_date || "")}</span></h2>
+    ${o ? `<div class="mx">${cell("加權指數", o.index && isNum(o.index.px) ? fmt(o.index.px, 0) : "－", o.index ? pct(o.index.ch) : "")}${cell("成交額（台幣）", isNum(o.turnover) ? fmt(o.turnover / 1e8, 0) + " 億" : "－")}${cell("外資", st(ins && ins.foreign))}${cell("投信", st(ins && ins.trust))}${cell("自營商", st(ins && ins.dealer))}${cell("本益比中位數", v && isNum(v.pe_med) ? fmt(v.pe_med, 1) : "－", v && isNum(v.pe_0050) ? "0050 " + fmt(v.pe_0050, 1) : "")}</div>` : ""}
+    ${uo ? `<div class="mx">${cell("S&P 500", uo.spx && isNum(uo.spx.px) ? fmt(uo.spx.px, 0) : "－", uo.spx ? pct(uo.spx.ch) : "")}${cell("那斯達克", uo.ixic && isNum(uo.ixic.px) ? fmt(uo.ixic.px, 0) : "－", uo.ixic ? pct(uo.ixic.ch) : "")}${cell("VIX 恐慌指數", uo.vix && isNum(uo.vix.px) ? fmt(uo.vix.px, 1) : "－", uo.vix ? pct(uo.vix.ch) : "")}${cell("10 年期殖利率", uo.tnx && isNum(uo.tnx.px) ? fmt(uo.tnx.px, 2) + "%" : "－")}${cell("S&P 本益比", uv && isNum(uv.pe_spx) ? fmt(uv.pe_spx, 1) : "－")}${cell("股債利差", uv && isNum(uv.erp) ? pct(uv.erp, 1) : "－", "負的＝股票相對貴")}</div>` : ""}
+    ${[[tw, "台股"], [us, "美股"]].filter(([d]) => hot(d).length).map(([d, n]) => `<div class="mh"><b>${n}族群</b><span>${hot(d).map((x) => `<i>${esc(x.name)} <u class="${x.rs4 >= 0 ? "up" : "dn"}">${pct(x.rs4, 1)}</u></i>`).join("")}</span></div>`).join("")}
+    ${sig.length ? `<div class="mh"><b>法人連買</b><span>${sig.map((x) => `<i>${esc(x.c)} ${esc(x.n)}<u>${esc(x.who)} ${x.days} 天</u></i>`).join("")}</span></div>` : ""}
+    <p class="tiny" style="margin:6px 0 0">每天從證交所、櫃買中心、Yahoo、FRED 自己抓；族群後面是近 4 週相對大盤的強弱。</p></div>`; })()}
   ${benches.length ? `<div class="card"><h2>大盤與 ETF 長線燈號<span class="r">只看價格位置</span></h2><div class="scroll"><table class="tbl"><thead><tr><th>標的</th><th class="r">年線乖離</th><th class="r">5 年位置</th><th>燈號</th></tr></thead><tbody>${benches.map((x) => `<tr><td>${esc(x.n)}<div class="tiny">${esc(x.c)}</div></td><td class="r num">${pct(x.b, 0)}</td><td class="r num">${isNum(x.pos) ? Math.round(x.pos * 100) + "%" : "－"}</td><td><span class="chip ${esc(x.l)}">${LIGHT[x.l] || esc(x.l)}</span></td></tr>`).join("")}</tbody></table></div><p class="tiny" style="margin:6px 0 0">偏貴不代表要停扣，核心 ETF 照常定期定額。</p></div>` : ""}
   <div class="card"><h2>衛星層候選：台股</h2>${pickTable("TW", tw)}</div>
   <div class="card"><h2>衛星層候選：美股</h2>${pickTable("US", us)}
@@ -1495,14 +1613,17 @@ function recForm(r) {
   r = r ? clone(r) : { id: uid(), m: "TW", sym: "", name: "", src: "Claude", date: today(), px: "", reason: "", status: "watch" };
   const lv = !isNew && recLv(r.m, r.sym), u = cur(r.m), jd = !isNew && r.status !== "pass" ? judge(r) : null;
   const btm = R.bt && R.bt[r.m === "TW" ? "tw" : "us"] && R.bt[r.m === "TW" ? "tw" : "us"].all;
-  openSheet(isNew ? "新增推薦" : "推薦紀錄", `${lv ? `<div class="lvbox">
-      <div class="lvh"><span class="lvv">綜合判斷 <span class="chip ${jd ? jd.cls : lv.cls}">${jd ? jd.v : lv.tag}</span></span><span class="tiny">現價 <b class="num">${fmtP(lv.px)}</b> ${u}</span></div>
-      ${jd ? `<ul class="why">${jd.why.map(([k, t, d]) => `<li class="${k}"><b>${t}</b><span>${esc(d)}</span></li>`).join("")}</ul>` : `<p class="tiny" style="color:var(--ink);margin:8px 0">${esc(lv.st)}</p>`}
-      <div class="lvr"><i class="sq b"></i><span>買進區</span><b class="num">${fmtP(lv.bLo)}～${fmtP(lv.bHi)}</b><small>${u}</small><em>週 MA52 到上方 4%，回測不破才買；分 2～3 筆進場，補倉也只補在這一區</em></div>
-      <div class="lvr"><i class="sq r"></i><span>出場線</span><b class="num">${fmtP(lv.stop)}</b><small>${u}</small><em>週收盤跌破這裡＝買點失效，賣出停損</em></div>
-      ${lv.tg.map((t, i) => `<div class="lvr"><i class="sq y"></i><span>目標 ${i + 1}</span><b class="num">${fmtP(t)}</b><small>${u}</small><em>${t === lv.hi ? "52 週高點（前高）" : "年線 ×1.3，長線燈號轉偏貴"}，${i === 0 && lv.tg.length > 1 ? "先賣一半" : "剩下的賣掉"}</em></div>`).join("")}
-      <div class="tiny" style="margin-top:8px">${isNum(lv.rr) ? `從買進區中間買、到目標 1 的報酬是停損風險的 ${lv.rr.toFixed(1)} 倍。` : ""}${btm ? `這套點位規則回測近 12 年：${r.m === "TW" ? "台股" : "美股"} ${fmt(btm.n)} 筆，勝率 ${Math.round(btm.win * 100)}%、每筆平均 ${pct(btm.avg)}、${btm.excess_vs_index < 0 ? "平均輸大盤" : "平均贏大盤"} ${(Math.abs(btm.excess_vs_index) * 100).toFixed(1)}%，只能控制虧損、不保證賺。` : "點位規則回測：勝率約三成，主要用來控制虧損，不保證賺。"}單股不超過衛星層 10%。</div>
-      ${jd && jd.nw ? `<div class="lvn"><b>新聞</b>${newsList(jd.nw)}</div>` : ""}
+  openSheet(isNew ? "新增推薦" : "推薦紀錄", `${lv ? `<div class="jd">
+      <div class="jv ${jd ? jd.cls : lv.cls}"><div><small>綜合判斷</small><b>${jd ? jd.v : lv.tag}</b></div><div class="jp"><small>現價（${CUR[r.m]}）</small><b class="num">${fmtP(lv.px)}</b></div></div>
+      ${jd ? `<p class="jb">${esc(jd.because)}</p>
+      <div class="jg">${jd.why.map((w) => `<div class="${w.k}"><small>${w.t}</small><b>${esc(w.s)}</b></div>`).join("")}</div>` : ""}
+      ${(() => { const pts = [lv.stop, lv.bLo, lv.bHi, lv.px, ...lv.tg].filter(isNum), lo = Math.min(...pts), hi = Math.max(...pts), span = hi - lo || 1;
+        const x = (v) => (4 + (v - lo) / span * 92).toFixed(2) + "%";
+        return `<div class="ladder"><div class="lt">價格位置　<span>▼ 現價</span></div><div class="lbar"><i class="zone" style="left:${x(lv.bLo)};width:calc(${x(lv.bHi)} - ${x(lv.bLo)})"></i><i class="stop" style="left:${x(lv.stop)}"></i>${lv.tg.map((t) => `<i class="tgt" style="left:${x(t)}"></i>`).join("")}<i class="now" style="left:${x(lv.px)}"></i></div></div>`; })()}
+      <div class="jl"><div><i class="sq b"></i><small>買進區</small><b class="num">${fmtP(lv.bLo)}～${fmtP(lv.bHi)}</b></div><div><i class="sq r"></i><small>出場線</small><b class="num">${fmtP(lv.stop)}</b></div>${lv.tg.map((t, i) => `<div><i class="sq y"></i><small>目標 ${i + 1}${lv.tg.length > 1 ? (i ? "・賣剩下的" : "・先賣一半") : ""}</small><b class="num">${fmtP(t)}</b></div>`).join("")}</div>
+      <p class="tiny jn">${btm ? `這套點位回測近 12 年：勝率 ${Math.round(btm.win * 100)}%、每筆平均 ${pct(btm.avg)}、${btm.excess_vs_index < 0 ? "輸" : "贏"}大盤 ${(Math.abs(btm.excess_vs_index) * 100).toFixed(1)}%。用來控制虧損，不保證賺；單股不超過衛星層 10%。` : "點位用來控制虧損，不保證賺；單股不超過衛星層 10%。"}</p>
+      ${jd ? `<details class="jw"><summary>每一項的理由</summary><ul>${jd.why.map((w) => `<li class="${w.k}"><b>${w.t}・${esc(w.s)}</b><span>${esc(w.d)}</span></li>`).join("")}<li><b>點位怎麼算</b><span>買進區＝週 MA52 到上方 4%，回測不破才買，分 2～3 筆；出場線＝週 MA52 下方 3%，週收盤跌破就賣；目標＝52 週高點與年線 ×1.3</span></li></ul></details>` : ""}
+      ${jd && jd.nw ? `<div class="lvn"><b>新聞 ${newsChip(jd.nw)}</b>${newsList(jd.nw)}</div>` : ""}
     </div>` : ""}<form class="form" id="rcF">
     ${segHtml("m", MK, r.m)}
     <div class="two"><label class="f"><span>代號</span><input id="cSym" value="${esc(r.sym)}" autocapitalize="characters" autocomplete="off" required></label>
@@ -1613,16 +1734,16 @@ function addLv(p) {
   if (p.m === "CR") { if (p.sym !== "BTC" || !BTCM) return null; base = BTCM.ma; px = BTCM.px; ks = [["200 日線", 1], ["便宜區", 0.8], ["深跌", 0.6]]; }
   else { const it = radarItem(p.m, p.sym); if (!it || !Array.isArray(it.lv) || !isNum(it.lv[2])) return null; base = it.lv[2]; px = priceOf(p.m, p.sym)?.p ?? it.px; ks = [["回到年線", 1], ["年線 -10%", 0.9], ["年線 -20%", 0.8]]; }
   const tm = R.macro && R.macro.tactical && R.macro.tactical.markets, tac = p.m !== "CR" && tm && tm[p.m === "TW" ? "tw" : "us"] && tm[p.m === "TW" ? "tw" : "us"].on;
-  const lv = ks.map(([k, f], i) => ({ k: i ? k : k + "（" + CUR[p.m] + "）", p: base * f, hit: isNum(px) && px <= base * f }));
+  const lv = ks.map(([k, f]) => ({ k, p: base * f, hit: isNum(px) && px <= base * f }));
   const n = lv.filter((x) => x.hit).length;
-  return { lv, note: tac ? "戰術層觸發中，先不補倉。" : n ? `現價已到第 ${n} 個補倉點，這期可以多扣 ${n} 期。` : "補倉點：跌到哪一格就多扣一期，沒到就照常扣。" };
+  return { lv, note: (tac ? "戰術層觸發中，先不補倉。" : n ? `現價已到第 ${n} 個補倉點，這期可以多扣 ${n} 期。` : "補倉點：跌到哪一格就多扣一期，沒到就照常扣。") + `（${CUR[p.m]}）` };
 }
 function dcaSig(p) {
   const out = (label, cls, why) => ({ label, cls, why });
   if (p.m === "CR") {
     if (p.sym !== "BTC") return out("沒有燈號資料", "", "目前只對比特幣算 200 日均線");
     if (!BTCM) return out("讀取中", "", "");
-    const m = BTCM.m, base = `現價是 200 日均線的 ${m.toFixed(2)} 倍`, d = BTCM.ch <= -0.03 ? `，今天跌 ${pct(-BTCM.ch)}` : BTCM.ch >= 0.04 ? `，今天漲 ${pct(BTCM.ch)}` : "";
+    const m = BTCM.m, base = `現價是 200 日均線的 ${m.toFixed(2)} 倍`, d = BTCM.ch <= -0.03 ? `，今天跌 ${pctAbs(BTCM.ch)}` : BTCM.ch >= 0.04 ? `，今天漲 ${pctAbs(BTCM.ch)}` : "";
     if (m < 0.8) return out("便宜，可以多買一點", "go", base + "（低於 0.8 倍算便宜）" + d);
     if (m < 1.5) return out("照常扣", "okc", base + "（0.8～1.5 倍算合理）" + d);
     if (m < 2.4) return out("偏貴，照常扣不加碼", "", base + "（1.5～2.4 倍偏貴）" + d);
@@ -1632,7 +1753,7 @@ function dcaSig(p) {
   if (!it) return out("沒有燈號資料", "", R.tw || R.us ? "這檔不在每日掃描的清單裡" : "市場資料還沒讀到");
   const tac = R.macro && R.macro.tactical && R.macro.tactical.markets && R.macro.tactical.markets[p.m === "TW" ? "tw" : "us"];
   const why = [isNum(it.b) ? `年線乖離 ${pct(it.b, 0)}` : "", isNum(it.pos) ? `在 5 年區間的 ${Math.round(it.pos * 100)}% 位置` : ""].filter(Boolean).join("，")
-    + (isNum(it.ch) && it.ch <= -0.015 ? `，今天跌 ${pct(-it.ch)}，今天買比平常划算一點` : isNum(it.ch) && it.ch >= 0.02 ? `，今天漲 ${pct(it.ch)}，不急的話等扣款日就好` : "");
+    + (isNum(it.ch) && it.ch <= -0.015 ? `，今天跌 ${pctAbs(it.ch)}，今天買比平常划算一點` : isNum(it.ch) && it.ch >= 0.02 ? `，今天漲 ${pctAbs(it.ch)}，不急的話等扣款日就好` : "");
   if (tac && tac.on) return out("照最低額扣，先別加碼", "alert", "戰術層觸發，核心層要減碼。" + why);
   if (it.l === "cheap") return out("便宜，可以多買一點", "go", why);
   if (it.l === "exp") return out("偏貴，照常扣不加碼", "", why);
