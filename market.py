@@ -1910,7 +1910,29 @@ def run_us(limit=None):
         ov[key] = {"px": px, "ch": ch}
 
     # 大盤估值：S&P 500 本益比、盈餘殖利率、股權風險溢酬（盈餘殖利率 − 10年期美債）
+    # Yahoo 常擋 GitHub 伺服器（Invalid Crumb），SPY 本益比抓不到就依序改用 multpl.com、自己用成分股市值加權算
     spe = fund.get("SPY", {}).get("pe")
+    spe_src = "Yahoo SPY" if spe else None
+    if not spe:
+        try:
+            r = requests.get("https://www.multpl.com/s-p-500-pe-ratio", headers={"User-Agent": "market-radar/1.0"}, timeout=20)
+            mm = re.search(r"Current S(?:&|&amp;|&#38;)P 500 PE Ratio is\s*([\d.]+)", r.text) if r.status_code == 200 else None
+            v = float(mm.group(1)) if mm else None
+            if v and 5 < v < 100:
+                spe, spe_src = v, "multpl.com"
+            else:
+                log("multpl S&P 本益比：沒找到數字", r.status_code)
+        except Exception as e:  # noqa
+            log("multpl S&P 本益比失敗：", e)
+    if not spe:
+        cap = earn = 0.0
+        for u in stocks_only:
+            f_ = fund.get(u["c"], {})
+            if f_.get("pe") and f_.get("mcap") and 0 < f_["pe"] < 1000:
+                cap += f_["mcap"]; earn += f_["mcap"] / f_["pe"]
+        if earn > 0 and cap > 1e12:
+            spe, spe_src = cap / earn, "成分股市值加權（自算）"
+    log(f"S&P 本益比 {spe if spe is None else round(spe, 2)}（{spe_src or '沒有來源'}）")
     ey = (1 / spe) if spe else None
     tnx = ov["tnx"]["px"] / 100 if ov["tnx"]["px"] is not None else None
     pes = [fund.get(u["c"], {}).get("pe") for u in stocks_only]
@@ -1919,6 +1941,7 @@ def run_us(limit=None):
         "erp": rnd(ey - tnx, 4) if ey is not None and tnx is not None else None,
         "pe_med": rnd(median_ok([x for x in pes if x and 0 < x < 300]), 2),
     })
+    valn["pe_src"] = spe_src
 
     out = {
         "market": "us", "updated": now.strftime("%Y-%m-%d %H:%M"),
