@@ -153,7 +153,7 @@ def _num(x):
 
 def tw_monthly(start_year):
     """台股月營收年增率：{代號: {"YYYY-MM": 年增率}}，快取在 cache/bt_tw_rev.json"""
-    path = os.path.join(CACHE, "bt_tw_rev.json")
+    path = os.path.join(CACHE, "bt_tw_rev2.json")  # 舊檔表頭沒對到、整份是空的
     cache = M.load_json(path, {})
     now = datetime.now(M.TPE)
     got = 0
@@ -162,13 +162,14 @@ def tw_monthly(start_year):
             key = f"{y}-{m:02d}"
             if (y, m) >= (now.year, now.month) or (key in cache.get("_done", []) and (y, m) < (now.year, now.month - 2)):
                 continue
+            got0 = got
             for typ in ("sii", "otc"):
                 html = _mops_get(f"{MOPS}/nas/t21/{typ}/t21sc03_{y - 1911}_{m}_0.html")
                 if not html:
                     continue
                 try:
                     for tb in pd.read_html(io.StringIO(html)):
-                        tb.columns = ["".join(str(c) for c in (col if isinstance(col, tuple) else (col,))) for col in tb.columns]
+                        tb.columns = [re.sub(r"\s+", "", "".join(str(c) for c in (col if isinstance(col, tuple) else (col,)))) for col in tb.columns]  # 表頭有 <br>，pandas 會變成「公司 代號」
                         cc = next((c for c in tb.columns if "公司代號" in c), None)
                         cy = next((c for c in tb.columns if "去年同月增減" in c), None)
                         if not cc or not cy:
@@ -182,7 +183,10 @@ def tw_monthly(start_year):
                 except Exception as e:  # noqa
                     log("  月營收解析失敗", key, typ, e)
                 time.sleep(2.5)
-            cache.setdefault("_done", []).append(key)
+            if got > got0:  # 有抓到才算完成，下次才不會跳過
+                cache.setdefault("_done", []).append(key)
+            else:
+                log("  月營收沒抓到", key)
         log(f"  月營收 {y} 年完成")
         M.save_json(path, cache)
     log(f"台股月營收：這次新增 {got} 筆")
@@ -191,7 +195,7 @@ def tw_monthly(start_year):
 
 def tw_quarterly(start_year):
     """台股季報：{代號: [[季別 YYYY-Qn, 營收, 毛利, EPS], ...]}（單季，已從累計數換算），快取在 cache/bt_tw_q.json"""
-    path = os.path.join(CACHE, "bt_tw_q.json")
+    path = os.path.join(CACHE, "bt_tw_q2.json")
     cache = M.load_json(path, {})
     cum = cache.get("_cum", {})
     now = datetime.now(M.TPE)
@@ -210,7 +214,8 @@ def tw_quarterly(start_year):
                     continue
                 try:
                     for tb in pd.read_html(io.StringIO(html)):
-                        cols = [str(c) for c in tb.columns]
+                        tb.columns = [re.sub(r"\s+", "", str(c)) for c in tb.columns]  # 「公司<br>代號」→「公司代號」
+                        cols = list(tb.columns)
                         cc = next((c for c in cols if "公司代號" in c), None)
                         cr = next((c for c in cols if c.startswith("營業收入")), None) or next((c for c in cols if "收益" in c and "合計" in c), None)
                         cg = next((c for c in cols if "營業毛利" in c), None)
@@ -224,8 +229,10 @@ def tw_quarterly(start_year):
                 except Exception as e:  # noqa
                     log("  季報解析失敗", key, typ, e)
                 time.sleep(4)
-            cache.setdefault("_done", []).append(key)
-            log(f"  季報 {key} 完成")
+            n = sum(1 for d in cum.values() if key in d)
+            if n:
+                cache.setdefault("_done", []).append(key)
+            log(f"  季報 {key} {'完成 ' + str(n) + ' 家' if n else '沒抓到'}")
             cache["_cum"] = cum
             M.save_json(path, cache)
     # 累計數（年初到該季）換成單季
