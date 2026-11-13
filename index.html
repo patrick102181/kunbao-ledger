@@ -208,7 +208,7 @@ const MKC = { TW: "TWD", US: "USD", CR: "USDT" };
 const LIGHT = { cheap: "便宜", fair: "合理", exp: "偏貴", trap: "基本面弱" };
 const SIDE = { buy: "買進", sell: "賣出", div: "股利" };
 const STATUS = { watch: "觀察中", bought: "已買", pass: "略過" };
-const SOURCES = ["市場雷達", "Claude", "朋友", "Telegram 頻道", "自己研究", "其他"];
+const SOURCES = ["四道濾網", "Claude", "朋友", "Telegram 頻道", "自己研究", "其他"];
 
 /* ───────── 預設設定（坤寶的數字） ───────── */
 const DEFAULT_SETTINGS = {
@@ -224,7 +224,7 @@ const DEFAULT_SETTINGS = {
   emergencyNow: 0,
   targets: { US: 50, TW: 40, CR: 10 },
   fx: 32.85,
-  radarBase: "https://kevunchiang24-cpu.github.io/market-radar",
+  radarBase: "./data",
   recurring: [
     { id: "r-salary", name: "薪水", type: "inc", cat: "薪水", amt: 45000, acct: "銀行" },
     { id: "r-rent", name: "房租", type: "exp", cat: "房租", amt: 12000, acct: "銀行" }
@@ -240,6 +240,7 @@ function normalize(st) {
   const s = Object.assign(clone(DEFAULT_SETTINGS), st.settings || {});
   s.budgets = Object.assign({}, s.budgets || {});
   s.targets = Object.assign({ US: 0, TW: 0, CR: 0 }, s.targets || {});
+  if (!s.radarBase || /kevunchiang24|market-radar/.test(s.radarBase)) s.radarBase = "./data"; // 只用自己抓的資料
   return { v: 1, settings: s, tx: st.tx || [], trades: st.trades || [], recs: st.recs || [], prices: st.prices || {}, del: st.del || {} };
 }
 
@@ -380,22 +381,23 @@ async function sync() {
   if (syncAgain) { syncAgain = false; sync(); }
 }
 
-/* ───────── 市場雷達與幣價 ───────── */
-let R = { tw: null, us: null, core: null, sum: null, err: "", loading: false };
+/* ───────── 市場資料（自己的 data 資料夾）與幣價 ───────── */
+let R = { tw: null, us: null, core: null, sum: null, macro: null, err: "", loading: false };
 let CR = {};
 async function loadRadar() {
   const b = (S.settings.radarBase || "").replace(/\/+$/, "");
   if (!b) return;
   R.loading = true; R.err = "";
-  const get = (n) => fetch(`${b}/data/${n}.json?t=${Date.now()}`, { cache: "no-store" }).then((r) => { if (!r.ok) throw new Error(n + ".json " + r.status); return r.json(); });
-  const res = await Promise.allSettled(["tw", "us", "core", "summary"].map(get));
-  const [tw, us, core, sm] = res;
+  const get = (n) => fetch(`${b}/${n}.json?t=${Date.now()}`, { cache: "no-store" }).then((r) => { if (!r.ok) throw new Error(n + ".json " + r.status); return r.json(); });
+  const res = await Promise.allSettled(["tw", "us", "core", "summary", "macro"].map(get));
+  const [tw, us, core, sm, mc] = res;
+  R.macro = mc.status === "fulfilled" ? mc.value : R.macro;
   R.tw = tw.status === "fulfilled" ? tw.value : R.tw;
   R.us = us.status === "fulfilled" ? us.value : R.us;
   R.core = core.status === "fulfilled" ? core.value : R.core;
   R.sum = sm.status === "fulfilled" ? sm.value : R.sum;
   const bad = res.filter((x) => x.status === "rejected");
-  R.err = bad.length === res.length ? "讀不到市場雷達資料（" + (bad[0].reason?.message || "網路錯誤") + "）" : "";
+  R.err = bad.length === res.length ? "還讀不到市場資料（" + (bad[0].reason?.message || "網路錯誤") + "）。第一次架好後，到 App repo 的 Actions 跑一次「每日更新市場資料」" : "";
   R.loading = false; render();
 }
 const CG = { BTC: "bitcoin", ETH: "ethereum", SOL: "solana", BNB: "binancecoin", XRP: "ripple", DOGE: "dogecoin", ADA: "cardano", ARB: "arbitrum", TON: "the-open-network", LINK: "chainlink", AVAX: "avalanche-2", DOT: "polkadot", TRX: "tron", SUI: "sui", PEPE: "pepe" };
@@ -423,7 +425,7 @@ function priceOf(m, sym) {
   if (rp && isNum(rp.p)) return { p: rp.p, src: (rp.src || "自動") + " " + (rp.d || "") };
   if (m === "CR") return null;
   const it = radarItem(m, sym);
-  if (it) return { p: it.px, src: "市場雷達 " + ((m === "TW" ? R.tw : R.us).data_date || ""), item: it };
+  if (it) return { p: it.px, src: "每日市場資料 " + ((m === "TW" ? R.tw : R.us).updated || ""), item: it };
   return null;
 }
 const fxNow = () => (R.core && R.core.latest && isNum(R.core.latest.fx)) ? R.core.latest.fx : (RM.prices && isNum(RM.prices.fx)) ? RM.prices.fx : S.settings.fx;
@@ -435,7 +437,8 @@ function normSym(m, s) {
   return s;
 }
 
-/* 衛星層四道濾網：照市場雷達原規則（熱點＋資金流＋財報＋長線買點觸發，排除流動性不足、ETF，依長線分排序） */
+/* 衛星層四道濾網（策略參考 market-radar）：熱點族群＋資金分≥55＋財報轉強＋長線買點觸發，排除流動性不足與 ETF，依長線分排序。
+   資料由這個 App repo 的 GitHub Actions（market.py）每天自己從證交所、櫃買、Yahoo、FRED 抓 */
 function hotTop(d) {
   const s = (d.sectors || []).filter((x) => isNum(x.rs4));
   const sorted = s.slice().sort((a, b) => b.rs4 - a.rs4);
@@ -443,6 +446,7 @@ function hotTop(d) {
 }
 function radarPicks(m) {
   const d = m === "TW" ? R.tw : R.us; if (!d) return null;
+  if (Array.isArray(d.picks)) { const by = new Map((d.stocks || []).map((x) => [String(x.c), x])); return d.picks.map((c) => by.get(String(c))).filter(Boolean); }
   const hot = hotTop(d);
   return (d.stocks || []).filter((x) => !x.etf && x.liq && hot.has(x.sec) && (x.f || 0) >= 55 && x.fin === "up" && (x.trig || []).length > 0)
     .sort((a, b) => (isNum(b.lt) ? b.lt : -1) - (isNum(a.lt) ? a.lt : -1));
@@ -658,14 +662,15 @@ function renderRecs() {
   const pickTable = (m, rows) => !rows ? `<div class="empty">${R.loading ? "讀取中…" : "沒有資料"}</div>` : !rows.length ? `<div class="empty">今天沒有股票同時通過四道濾網</div>` :
     `<div class="scroll"><table class="tbl"><thead><tr><th>股票</th><th>觸發</th><th class="r">長線分</th><th>燈號</th><th></th></tr></thead><tbody>${rows.slice(0, 10).map((x) => `<tr><td><b>${esc(x.c)}</b><div class="tiny">${esc(x.n)}</div></td><td class="tiny">${(x.trig || []).map(esc).join("<br>")}</td><td class="r num">${isNum(x.lt) ? Math.round(x.lt) : "－"}</td><td><span class="chip ${esc(x.l)}">${LIGHT[x.l] || esc(x.l)}</span></td><td>${has(m, x.c) ? `<span class="tiny">已加入</span>` : `<button class="btn sm" type="button" data-addpick="${m}|${esc(x.c)}">觀察</button>`}</td></tr>`).join("")}</tbody></table></div>${rows.length > 10 ? `<div class="tiny">共 ${rows.length} 檔，列長線分前 10</div>` : ""}`;
   view.innerHTML = `
-  <div class="card"><h2>市場雷達今日判讀<span class="r">${sm ? esc((sm.generated || "").slice(5, 16)) : ""}</span></h2>
+  <div class="card"><h2>今日判讀<span class="r">${sm ? esc((sm.generated || "").slice(5, 16)) : ""}</span></h2>
     ${R.err ? `<div class="empty">${esc(R.err)}</div>` : sm ? `<p style="margin:0 0 8px;font-weight:700">${esc(sm.headline || "")}</p>${(sm.watch || []).length ? `<ul style="margin:0;padding-left:18px">${sm.watch.map((w) => `<li class="tiny" style="color:var(--ink)">${esc(w)}</li>`).join("")}</ul>` : ""}` : `<div class="empty">${R.loading ? "讀取中…" : "沒有資料"}</div>`}
-    <div class="btns" style="margin-top:8px"><button class="btn sm" type="button" id="reloadRadar">重新讀取</button><a class="btn sm" href="${esc(S.settings.radarBase)}" target="_blank" rel="noopener" style="text-decoration:none">打開市場雷達</a></div>
+    ${R.macro ? `<div class="btns" style="margin-top:8px">${R.macro.stage && R.macro.stage.name ? `<span class="chip">債務週期 ${esc(R.macro.stage.name)}</span>` : ""}<span class="chip">資金風向 ${esc(R.macro.risk.label)}</span><span class="chip ${R.macro.tactical.on ? "alert" : "okc"}">戰術層${R.macro.tactical.on ? "觸發" : "未觸發"}</span>${(R.macro.idx || []).map((i) => `<span class="chip ${i.below ? "alert" : ""}">${esc(i.n)} ${i.below ? "跌破" : "站上"}週MA52</span>`).join("")}</div>` : ""}
+    <div class="btns" style="margin-top:8px;align-items:center"><button class="btn sm" type="button" id="reloadRadar">重新讀取</button><span class="tiny">台股 ${esc(R.tw ? R.tw.updated || "" : "－")}・美股 ${esc(R.us ? R.us.updated || "" : "－")}</span></div>
   </div>
   ${benches.length ? `<div class="card"><h2>大盤與 ETF 長線燈號<span class="r">只看價格位置</span></h2><div class="scroll"><table class="tbl"><thead><tr><th>標的</th><th class="r">年線乖離</th><th class="r">5 年位置</th><th>燈號</th></tr></thead><tbody>${benches.map((x) => `<tr><td>${esc(x.n)}<div class="tiny">${esc(x.c)}</div></td><td class="r num">${pct(x.b, 0)}</td><td class="r num">${isNum(x.pos) ? Math.round(x.pos * 100) + "%" : "－"}</td><td><span class="chip ${esc(x.l)}">${LIGHT[x.l] || esc(x.l)}</span></td></tr>`).join("")}</tbody></table></div><p class="tiny" style="margin:6px 0 0">偏貴不代表要停扣，核心 ETF 照常定期定額。</p></div>` : ""}
   <div class="card"><h2>衛星層候選：台股</h2>${pickTable("TW", tw)}</div>
   <div class="card"><h2>衛星層候選：美股</h2>${pickTable("US", us)}
-    <p class="tiny" style="margin:8px 0 0">依市場雷達的四道濾網篩出（熱點＋資金流＋財報＋長線買點觸發），這套濾網還沒回測驗證，名單不是買進建議。單股不超過衛星層 10%。</p></div>
+    <p class="tiny" style="margin:8px 0 0">用四道濾網篩出（熱門族群＋資金流＋財報轉強＋長線買點觸發，策略參考市場雷達），資料是自己每天從證交所、Yahoo 抓的。這套濾網沒有回測驗證，名單不是買進建議；單股不超過衛星層 10%。</p></div>
   <div class="card"><h2>我的推薦紀錄<span class="r">${S.recs.length} 筆</span></h2>
     <div class="seg" role="tablist">${["watch", "bought", "pass", "all"].map((k) => `<button type="button" class="${recFilter === k ? "on" : ""}" data-rf="${k}">${k === "all" ? "全部" : STATUS[k]}（${k === "all" ? S.recs.length : S.recs.filter((r) => r.status === k).length}）</button>`).join("")}</div>
     <div class="list" style="margin-top:6px">${recs.map((r) => { const pr = priceOf(r.m, r.sym); const ch = pr && isNum(r.px) && r.px > 0 ? pr.p / r.px - 1 : NaN; return `<button class="hold" type="button" data-rec="${esc(r.id)}">
@@ -682,7 +687,7 @@ function renderRecs() {
   $$("[data-rf]").forEach((b) => b.onclick = () => { recFilter = b.dataset.rf; render(); });
   $$("[data-addpick]").forEach((b) => b.onclick = () => {
     const [m, c] = b.dataset.addpick.split("|"); const x = radarPicks(m).find((s) => String(s.c) === c); if (!x) return;
-    upsert("recs", { id: uid(), m, sym: String(x.c), name: x.n, src: "市場雷達", date: today(), px: x.px, status: "watch", reason: `${(x.trig || []).join("、")}・長線分 ${isNum(x.lt) ? Math.round(x.lt) : "－"}・${LIGHT[x.l] || x.l}` });
+    upsert("recs", { id: uid(), m, sym: String(x.c), name: x.n, src: "四道濾網", date: today(), px: x.px, status: "watch", reason: `${(x.trig || []).join("、")}・長線分 ${isNum(x.lt) ? Math.round(x.lt) : "－"}・${LIGHT[x.l] || x.l}` });
     toast(`${x.n} 加入觀察`);
   });
   $$("[data-rec]").forEach((b) => b.onclick = () => recForm(S.recs.find((r) => r.id === b.dataset.rec)));
@@ -735,12 +740,13 @@ function renderSettings() {
   </div>
 
   <div class="card"><h2>市場資料</h2><div class="form">
-    <label class="f"><span>市場雷達網址（fork 之後改成你自己的）</span><input id="radarBase" value="${esc(st.radarBase)}" autocapitalize="off"></label>
-    <label class="f"><span>備用美元匯率（讀不到市場雷達時使用）</span><input class="num" inputmode="decimal" data-num="fx" value="${st.fx}"></label>
+    <label class="f"><span>市場資料位置（預設 ./data，就是這個 App 每天自己抓的資料）</span><input id="radarBase" value="${esc(st.radarBase)}" autocapitalize="off"></label>
+    <label class="f"><span>備用美元匯率（讀不到市場資料時使用）</span><input class="num" inputmode="decimal" data-num="fx" value="${st.fx}"></label>
   </div></div>
 
   <div class="card"><h2>自動抓價與 AI<span class="r">資料 repo 的 GitHub Actions</span></h2>
     <div class="list">
+      <div class="item" style="cursor:default"><span class="a">市場資料</span><span class="amt tiny">${R.tw ? "台股 " + esc(R.tw.updated || "") : "還沒有"}</span><span class="b">App repo 的「每日更新市場資料」：台股 22:10、美股 06:30 自己從證交所、櫃買、Yahoo、FRED 抓，算燈號、四道濾網、戰術層</span></div>
       <div class="item" style="cursor:default"><span class="a">持股現價</span><span class="amt tiny">${RM.prices ? "上次 " + esc(RM.prices.updated || "") : "還沒抓過"}</span><span class="b">每個交易日 22:15 抓台股、隔天 06:35 抓美股與加密貨幣；台股用證交所與櫃買中心收盤價，其他用 Yahoo Finance</span></div>
       <div class="item" style="cursor:default"><span class="a">AI 助手</span><span class="amt tiny">${RM.ai && RM.ai.review ? "上次 " + esc(RM.ai.review.generated || "") : "還沒用過"}</span><span class="b">Claude 金鑰放在資料 repo 的 Settings → Secrets → Actions，名稱 ANTHROPIC_API_KEY，不經過這台裝置</span></div>
     </div>
@@ -1195,6 +1201,7 @@ $("#fab").onclick = () => { const t = L.tab; if (t === "book") txForm(); else if
 $("#syncChip").onclick = () => { if (ghCfg()) sync(); else { L.tab = "settings"; saveL(); render(); } };
 document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && ghCfg()) sync().then(loadRemote); });
 if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js").catch(() => {});
+if (location.protocol === "https:") { const here = location.origin + location.pathname.replace(/[^/]*$/, ""); if (S.settings.appUrl !== here) { S.settings.appUrl = here; S.settings.ua = now(); LS.set("kb-state", S); } }
 render();
 lastGame = game();
 loadRadar().then(loadCrypto);
