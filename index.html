@@ -1222,7 +1222,14 @@ function renderRecs() {
     <div class="btns"><button class="btn pri sm" type="button" id="aiCheck"${aiBusy ? " disabled" : ""}>幫我健檢記帳與持股</button><button class="btn sm" type="button" id="aiPaste">貼上別人的推薦，讓 AI 整理</button></div>
     ${(() => { const rv = RM.ai && RM.ai.review; const txt = aiOut || (rv && rv.text ? rv.text : ""); return txt ? `<div class="aiout" style="margin-top:10px">${esc(txt)}</div>${!aiOut && rv ? `<div class="tiny" style="margin-top:4px">上次健檢：${esc(rv.generated || "")}</div>` : ""}` : ""; })()}
   </div>`;
-  $("#reloadRadar").onclick = () => { loadRadar(); loadCrypto(); toast("重新讀取中"); };
+  $("#reloadRadar").onclick = async () => {
+    toast("重新讀取中");
+    const before = [R.tw && R.tw.updated, R.us && R.us.updated].join();
+    await Promise.all([loadRadar(), loadCrypto()]);
+    const hm = (d) => !d || !d.updated ? "－" : d.updated.startsWith(today()) ? d.updated.slice(11) : d.updated.slice(5); // 今天的只顯示時間，免得手機上折行
+    const tw = hm(R.tw), us = hm(R.us);
+    toast(R.err ? R.err.slice(0, 40) : `${[R.tw && R.tw.updated, R.us && R.us.updated].join() === before ? "已是最新" : "已更新"}：台股 ${tw}・美股 ${us}`);
+  };
   $$("[data-rf]").forEach((b) => b.onclick = () => { recFilter = b.dataset.rf; render(); });
   $$("[data-addpick]").forEach((b) => b.onclick = () => {
     const [m, c] = b.dataset.addpick.split("|"); const x = radarPicks(m).find((s) => String(s.c) === c); if (!x) return;
