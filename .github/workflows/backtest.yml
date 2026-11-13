@@ -15,7 +15,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: market-update
+  group: backtest
   cancel-in-progress: false
 
 jobs:
