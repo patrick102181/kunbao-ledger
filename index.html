@@ -160,9 +160,11 @@ main,.card{min-width:0}
 .erow{display:grid;grid-template-columns:1fr 92px 40px;gap:6px;align-items:center;margin-bottom:6px}
 .erow input,.erow select{border:1.5px solid var(--ink);background:var(--card);border-radius:0;padding:7px 8px;font-size:15px;width:100%;min-width:0}
 .erow.rec,.erow.r5{grid-template-columns:72px minmax(0,1fr) 92px 36px;padding-bottom:8px;border-bottom:1px solid var(--hair)}
+.erow.r5{grid-template-columns:68px minmax(0,1fr) 76px 36px} .erow.r5 input,.erow.r5 select{padding-left:6px;padding-right:6px}
 .erow.rec [data-rk=name]{grid-column:1/3;grid-row:1} .erow.rec [data-rk=type]{grid-column:1;grid-row:2} .erow.rec [data-rk=cat]{grid-column:2;grid-row:2}
 .erow.rec [data-rk=amt]{grid-column:3;grid-row:1} .erow.rec .vary{grid-column:3/5;grid-row:2;display:flex;align-items:center;gap:5px;font-size:12px;white-space:nowrap} .erow.rec .vary input{width:16px;height:16px;accent-color:var(--red)} .erow.rec .ib,.erow.r5 .ib{grid-column:4;grid-row:1}
-.erow.r5 [data-pk=m]{grid-column:1;grid-row:1} .erow.r5 [data-pk=sym]{grid-column:2;grid-row:1} .erow.r5 [data-pk=amt]{grid-column:3;grid-row:1} .erow.r5 [data-pk=name]{grid-column:1/4;grid-row:2}
+@media (max-width:360px){.erow.rec [data-rk=cat]{grid-column:2/5} .erow.rec .vary{grid-column:1/5;grid-row:3}}
+.erow.r5 [data-pk=m]{grid-column:1;grid-row:1} .erow.r5 [data-pk=sym]{grid-column:2;grid-row:1} .erow.r5 [data-pk=amt]{grid-column:3;grid-row:1} .erow.r5 [data-pk=name]{grid-column:1/3;grid-row:2} .erow.r5 [data-pk=day]{grid-column:3;grid-row:2}
 .chart svg{display:block;width:100%;height:auto}
 .alloc{display:grid;gap:12px}
 .alloc .t{display:flex;justify-content:space-between;align-items:baseline;font-size:14px}
@@ -462,6 +464,18 @@ details.mnews .mt.alert{background:var(--red)} details.mnews .mt.go{background:v
 .al.warn i{background:var(--yellow)}
 .al b{display:block;font-size:14px;line-height:1.45}
 .al em{display:block;font-style:normal;font-size:12.5px;color:var(--muted);line-height:1.5;margin-top:2px}
+
+.al.info i{background:var(--blue)}
+.al em+em{margin-top:4px}
+.nm{margin-top:10px;border:1.5px solid var(--ink)}
+.nmh{padding:8px 10px;font-size:13px;font-weight:700;border-bottom:1.5px solid var(--ink)}
+.nmh small{display:block;margin-top:3px;font-size:11px;font-weight:400;color:var(--muted)}
+.nmr{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:10px;padding:7px 10px;border-top:1px solid var(--hair);align-items:baseline}
+.nmr:nth-child(2){border-top:0}
+.nmr span{font-size:13.5px;font-weight:600;min-width:0}
+.nmr em{font-style:normal;font-weight:400;color:var(--muted);font-size:12px}
+.nmr b{font-size:16px;font-weight:600;text-align:right}
+.nmr small{grid-column:1/-1;font-size:11.5px;color:var(--muted)}
 </style>
 </head>
 <body>
@@ -519,10 +533,12 @@ const STATUS = { watch: "觀察中", bought: "已買", pass: "略過" };
 const SOURCES = ["四道濾網", "Claude", "朋友", "Telegram 頻道", "自己研究", "其他"];
 
 /* ───────── 預設設定（坤寶的數字） ───────── */
+// Claude 訂閱：Max 100 美元（約 100×32×1.015 海外手續費），信用卡海外刷卡，台幣金額每月跟著匯率變，所以設成「記實付」
+const CLAUDE_SUB = { id: "r-claude", name: "Claude", type: "exp", cat: "訂閱", amt: 3250, acct: "信用卡", vary: true };
 const DEFAULT_SETTINGS = {
   ua: 0,
   income: 45000,
-  expCats: ["房租", "餐飲", "交通", "日用", "電話網路", "娛樂", "醫療", "其他"],
+  expCats: ["房租", "餐飲", "交通", "日用", "電話網路", "訂閱", "娛樂", "醫療", "其他"],
   incCats: ["薪水", "接案", "獎金", "股利", "其他"],
   accounts: ["銀行", "現金", "信用卡", "電子支付"],
   budgets: { "房租": 12000, "餐飲": 8000, "交通": 2000, "日用": 2000, "電話網路": 800, "娛樂": 3000, "醫療": 1000, "其他": 1200 },
@@ -535,7 +551,8 @@ const DEFAULT_SETTINGS = {
   radarBase: "./data",
   recurring: [
     { id: "r-salary", name: "薪水", type: "inc", cat: "薪水", amt: 45000, acct: "銀行", vary: true },
-    { id: "r-rent", name: "房租", type: "exp", cat: "房租", amt: 12000, acct: "銀行" }
+    { id: "r-rent", name: "房租", type: "exp", cat: "房租", amt: 12000, acct: "銀行" },
+    CLAUDE_SUB
   ],
   plans: [
     { id: "p-tw", m: "TW", sym: "0050", name: "元大台灣50", amt: 4500, bk: "永豐大戶投", role: "核心" },
@@ -549,6 +566,13 @@ function normalize(st) {
   s.budgets = Object.assign({}, s.budgets || {});
   s.targets = Object.assign({ US: 0, TW: 0, CR: 0 }, s.targets || {});
   s.recurring = (s.recurring || []).map((r) => r.id === "r-salary" && r.vary === undefined ? Object.assign({}, r, { vary: true }) : r); // 薪水會因請假變動
+  // 後來加的預設項目只補一次；刪掉之後不會再冒出來
+  s.seeds = Array.isArray(s.seeds) ? s.seeds.slice() : [];
+  if (!s.seeds.includes("claude")) {
+    if (!s.recurring.some((r) => r.id === CLAUDE_SUB.id)) s.recurring = [...s.recurring, clone(CLAUDE_SUB)];
+    if (!(s.expCats || []).includes("訂閱")) { const c = (s.expCats || []).slice(), i = c.indexOf("娛樂"); c.splice(i < 0 ? c.length : i, 0, "訂閱"); s.expCats = c; }
+    s.seeds.push("claude");
+  }
   // 舊版預設的範例計畫（VTI 5000／006208 4000／BTC 1000）換成實際在買的
   if ((s.plans || []).length === 3 && s.plans.map((p) => p.sym + p.amt).join() === "VTI5000,0062084000,BTC1000") s.plans = clone(DEFAULT_SETTINGS.plans);
   if (!s.radarBase || /kevunchiang24|market-radar/.test(s.radarBase)) s.radarBase = "./data"; // 只用自己抓的資料
@@ -894,14 +918,53 @@ function holdings() {
     return h;
   });
 }
-/* 投資頁的「需要注意」：持股有重大事件或偏利空新聞（之後再加出場線、集中度、虧損警示） */
+/* 投資頁的「需要注意」：持股重大事件／利空新聞、跌破出場線、單一個股太重、虧損太深、定期定額該記帳了 */
 function attention(act, mv) {
-  const out = [];
+  const st = S.settings, out = [];
+  const coreSyms = new Set(st.plans.filter((p) => p.role === "核心").map((p) => p.m + ":" + p.sym));
   for (const h of act) {
+    const why = [];
+    let lvl = 0, cls = "warn";
     const n = newsOf(h.m, h.sym);
-    if (n && (n.big || n.score <= -1) && n.score <= 0) out.push({ k: h.k, cls: "alert", lv: 2 + (n.big ? 1 : 0) + (n.score <= -2 ? 1 : 0), t: `${h.sym} ${NEWS_LAB[n.score]}${n.big && n.score > -2 ? "・重大事件" : ""}`, d: n.sum || "" });
+    if (n && (n.big || n.score <= -1) && n.score <= 0) { why.push(`新聞${NEWS_LAB[n.score]}${n.big && n.score > -2 ? "・重大事件" : ""}：${n.sum || ""}`); lvl += 2 + (n.big ? 1 : 0); cls = "alert"; }
+    const it = h.m === "CR" ? null : radarItem(h.m, h.sym);
+    const isEtf = (it && it.etf) || /^00\d/.test(h.sym);
+    if (it && !isEtf && Array.isArray(it.lv) && isNum(it.lv[0]) && isNum(h.px) && h.px < it.lv[0] * 0.97) { why.push(`跌破出場線 ${fmtP(it.lv[0] * 0.97)} ${CUR[h.m]}（週 MA52 下方 3%），照規則該出場，不要往下攤平`); lvl += 3; cls = "alert"; }
+    const w = mv > 0 ? h.valT / mv : 0;
+    if (!coreSyms.has(h.k) && !isEtf && h.m !== "CR" && w > 0.04) { why.push(`占總資產 ${pctAbs(w, 0)}，超過單一個股上限 4%`); lvl += 1; }
+    if (isNum(h.unP) && h.unP <= -0.3) { why.push(`虧損 ${pctAbs(h.unP, 0)}，當初買進的理由還成立嗎？`); lvl += 1; }
+    if (why.length) out.push({ attr: `data-hold="${esc(h.k)}"`, cls, lv: lvl, t: `${h.sym} ${h.name || ""}`.trim(), d: why });
+  }
+  // 定期定額：扣款日到了、這個月還沒記
+  const mo = today().slice(0, 7), day = +today().slice(8, 10);
+  for (const p of st.plans) {
+    if (!p.day || day < p.day) continue;
+    const done = S.trades.some((t) => t.side === "buy" && t.m === p.m && t.sym === p.sym && (t.date || "").startsWith(mo));
+    if (!done) out.push({ attr: `data-dcapend="${esc(p.id)}"`, cls: "info", lv: 0, t: `${p.sym} 定期定額 ${+mo.slice(5)}/${p.day} 扣款`, d: [`${p.auto ? "平台會自動扣款，" : ""}這個月還沒記，點這裡用今天的價格先帶入，再改成實際成交價`] });
   }
   return out.sort((a, b) => b.lv - a.lv);
+}
+/* 下個月的錢怎麼分：先補足低於目標的市場，平台自動扣的固定金額照扣 */
+function nextMonthSplit(allocRows, tot) {
+  const st = S.settings, M = st.investMonthly || 0;
+  if (!(M > 0) || !(tot > 0)) return null;
+  const fixed = st.plans.filter((p) => p.auto), free = st.plans.filter((p) => !p.auto);
+  let rest = M - sum(fixed, "amt");
+  if (rest <= 0 || !free.length) return null;
+  const after = tot + M, gap = {};
+  allocRows.forEach((r) => { gap[r.m] = Math.max(0, r.tgt * after - r.cur * tot - sum(fixed.filter((p) => p.m === r.m), "amt")); });
+  const mk = [...new Set(free.map((p) => p.m))], gsum = mk.reduce((a, m) => a + gap[m], 0);
+  const byM = {};
+  if (gsum > 0) mk.forEach((m) => byM[m] = Math.min(gap[m], rest * gap[m] / gsum));
+  else mk.forEach((m) => byM[m] = 0);
+  let left = rest - Object.values(byM).reduce((a, b) => a + b, 0);
+  if (left > 1) { const base = sum(free, "amt") || 1; mk.forEach((m) => byM[m] += left * sum(free.filter((p) => p.m === m), "amt") / base); }
+  const rows = st.plans.map((p) => {
+    if (p.auto) return { p, amt: p.amt, fixed: true };
+    const same = free.filter((x) => x.m === p.m), base = sum(same, "amt") || same.length;
+    return { p, amt: Math.round((byM[p.m] || 0) * (sum(same, "amt") ? p.amt / base : 1 / same.length) / 100) * 100 };
+  });
+  return { M, rows };
 }
 function monthBuysTWD(mo) {
   return sum(S.trades.filter((t) => t.side === "buy" && !t.open && (t.date || "").startsWith(mo)), (t) => toTWD(t.m, t.q * t.p + (t.fee || 0), t.fx || S.settings.fx));
@@ -949,9 +1012,9 @@ function renderBook() {
     </div>
   </section>
   ${miniTerra()}
-  ${pending.length ? `<div class="card"><h2>本月固定收支還沒記<span class="r">${pending.map((r) => esc(r.name)).join("、")}</span></h2>
-    <div class="btns">${pendFix.length ? `<button class="btn pri sm" type="button" id="applyRec">一鍵記上 ${pendFix.map((r) => esc(r.name)).join("、")}</button>` : ""}${pendVary.map((r) => `<button class="btn sm" type="button" data-recv="${esc(r.id)}">記實領${esc(r.name)}</button>`).join("")}</div>
-    ${pendVary.length ? `<div class="tiny" style="margin-top:6px">${pendVary.map((r) => esc(r.name)).join("、")}每個月金額不一定（例如請假扣薪），會先帶上次的金額，改成實拿的再記</div>` : ""}</div>` : ""}
+  ${pending.length ? `<div class="card"><h2>本月固定收支還沒記<span class="r">${pending.length} 項</span></h2>
+    <div class="btns">${pendFix.length ? `<button class="btn pri sm" type="button" id="applyRec">一鍵記上 ${pendFix.map((r) => esc(r.name)).join("、")}</button>` : ""}${pendVary.map((r) => `<button class="btn sm" type="button" data-recv="${esc(r.id)}">${r.type === "inc" ? "記實領" : "記實付"}${/^[A-Za-z0-9]/.test(r.name) ? " " : ""}${esc(r.name)}</button>`).join("")}</div>
+    ${pendVary.length ? `<div class="tiny" style="margin-top:6px">${pendVary.map((r) => r.type === "inc" ? `${esc(r.name)}會因請假扣薪而變` : r.acct === "信用卡" ? `${esc(r.name)}刷卡金額跟著匯率變` : `${esc(r.name)}金額會變`).join("，").replace(/([A-Za-z0-9])([\u4e00-\u9fff])/g, "$1 $2")}。按下去會先帶上次的金額，改成實際的再記。</div>` : ""}</div>` : ""}
   <div class="card"><h2>本月預算<span class="r num">${fmt(exp)} / ${fmt(totalBudget)}</span></h2>
     ${bar(exp, totalBudget)}
     <div style="margin-top:8px">${cats.map((c) => { const u = byCat[c] || 0, b = st.budgets[c] || 0; return `<div class="brow"><div class="t"><span>${esc(c)}</span><span class="num ${b && u > b ? "neg" : ""}">${fmt(u)}${b ? ` <span class="tiny">/ ${fmt(b)}</span>` : ""}</span></div>${b ? bar(u, b) : ""}</div>`; }).join("") || `<div class="empty">還沒有支出</div>`}</div>
@@ -1041,7 +1104,7 @@ function renderInvest() {
   const trades = [...S.trades].sort((a, b) => (b.date || "").localeCompare(a.date || "") || (b.ua || 0) - (a.ua || 0));
   const alerts = attention(act, mv);
   view.innerHTML = `
-  ${alerts.length ? `<div class="card attn"><h2>需要注意<span class="r">${alerts.length} 件</span></h2><div class="list">${alerts.map((a) => `<button class="al ${a.cls}" type="button" data-hold="${esc(a.k)}"><i></i><span><b>${esc(a.t)}</b><em>${esc(a.d)}</em></span></button>`).join("")}</div></div>` : ""}
+  ${alerts.length ? `<div class="card attn"><h2>需要注意<span class="r">${alerts.length} 件</span></h2><div class="list">${alerts.map((a) => `<button class="al ${a.cls}" type="button" ${a.attr}><i></i><span><b>${esc(a.t)}</b>${a.d.map((x) => `<em>${esc(x)}</em>`).join("")}</span></button>`).join("")}</div></div>` : ""}
   <div class="tiles">
     <div class="tile"><div class="k">總市值（台幣）</div><div class="v num">${fmt(mv)}</div></div>
     <div class="tile"><div class="k">投入成本（台幣）</div><div class="v num">${fmt(cost)}</div></div>
@@ -1052,7 +1115,7 @@ function renderInvest() {
     ${tot > 0 ? `<div style="margin:-4px 0 10px">${needReb ? `<span class="chip alert">偏離超過 5 個百分點，該再平衡</span>` : `<span class="chip okc">在目標範圍內</span>`}</div>` : ""}
     ${tot > 0 ? `<div class="alloc">${allocRows.map((r) => `<div><div class="t"><span>${MK[r.m]}</span><span class="num">${(r.cur * 100).toFixed(1)}% <span class="tiny">目標 ${(r.tgt * 100).toFixed(0)}%・${r.dev >= 0 ? "+" : ""}${(r.dev * 100).toFixed(1)}</span></span></div>
       <div class="stack"><i style="width:${(r.cur * 100).toFixed(1)}%;${Math.abs(r.dev) > 0.05 ? "background:var(--seal)" : ""}"></i><u style="left:calc(${(r.tgt * 100).toFixed(1)}% - 1px)"></u></div></div>`).join("")}</div>
-      ${needReb ? `<p class="tiny" style="margin:8px 0 0">${rebalanceHint(allocRows, tot)}</p>` : ""}` : `<div class="empty">記下第一筆買進後，這裡會顯示台股、美股、加密貨幣的比例</div>`}
+      ${needReb ? (() => { const sp = nextMonthSplit(allocRows, tot); return `<p class="tiny" style="margin:8px 0 0">${rebalanceHint(allocRows, tot)}</p>${sp ? `<div class="nm"><div class="nmh">下個月 ${fmt(sp.M)} 台幣這樣分<small>不用賣，用新錢慢慢補回目標</small></div>${sp.rows.map((r) => `<div class="nmr"><span>${esc(r.p.sym)} <em>${esc(r.p.name)}</em></span><b class="num">${fmt(r.amt)}</b><small>${r.fixed ? "平台自動扣，照常" : r.amt === 0 ? `這個月先停（平常 ${fmt(r.p.amt)}）` : r.amt === r.p.amt ? "照平常" : (r.amt > r.p.amt ? "比平常多 " : "比平常少 ") + fmt(Math.abs(r.amt - r.p.amt))}</small></div>`).join("")}</div>` : ""}`; })() : ""}` : `<div class="empty">記下第一筆買進後，這裡會顯示台股、美股、加密貨幣的比例</div>`}
   </div>
   ${(() => { const tm = R.macro && R.macro.tactical && R.macro.tactical.markets; const row = (t, chip, b) => `<div class="item" style="cursor:default"><span class="a">${t}</span><span class="amt">${chip}</span><span class="b" style="grid-column:1/-1">${b}</span></div>`;
     const tac = tm ? ["tw", "us"].filter((k) => tm[k]).map((k) => tm[k].on ? `<span class="chip alert">${esc(tm[k].name)}減 ${tm[k].step} 個百分點</span>` : "").join("") || `<span class="chip okc">未觸發</span>` : `<span class="chip">讀取中</span>`;
@@ -1089,6 +1152,12 @@ ${(() => { const n = newsOf(h.m, h.sym); return n && (n.score || n.big) ? `<span
   $("#dcaAi").onclick = dcaAsk;
   $$("[data-plan]").forEach((b) => b.onclick = () => { const p = st.plans.find((x) => x.id === b.dataset.plan); const pr = priceOf(p.m, p.sym); const px = pr ? pr.p : NaN; tradeForm(null, { m: p.m, sym: p.sym, name: p.name, bk: p.bk || "", note: p.auto ? "定投自動扣款" : "定期定額", p: isNum(px) ? px : "", q: isNum(px) ? +(p.amt / toTWD(p.m, px, fxNow())).toFixed(p.m === "CR" ? 6 : p.m === "US" ? 4 : 0) : "" }); });
   $$("[data-hold]").forEach((b) => b.onclick = () => holdSheet(H.find((h) => h.k === b.dataset.hold)));
+  $$("[data-dcapend]").forEach((b) => b.onclick = () => {
+    const p = st.plans.find((x) => x.id === b.dataset.dcapend); if (!p) return;
+    const pr = priceOf(p.m, p.sym), px = pr ? pr.p : NaN, mu = /([\d.]+)\s*USDT/.exec(p.auto || "");
+    const q = mu && isNum(px) ? +(+mu[1] / px).toFixed(8) : isNum(px) ? +(p.amt / toTWD(p.m, px, fxNow())).toFixed(p.m === "CR" ? 6 : p.m === "US" ? 4 : 0) : "";
+    tradeForm(null, { m: p.m, sym: p.sym, name: p.name, bk: p.bk || "", note: p.auto ? "定投自動扣款" : "定期定額", p: isNum(px) ? px : "", q, date: today().slice(0, 8) + String(p.day).padStart(2, "0") });
+  });
   if ($("#pxRefresh")) $("#pxRefresh").onclick = refreshPrices;
   $$("[data-trade]").forEach((r) => r.onclick = () => tradeForm(S.trades.find((x) => x.id === r.dataset.trade)));
 }
@@ -1206,7 +1275,7 @@ function renderSettings() {
   </div>
 
   <div class="card"><h2>定期定額計畫<span class="r num">合計 ${fmt(sum(st.plans, "amt"))}</span></h2>
-    <div id="planList">${st.plans.map((p, i) => `<div class="erow r5" data-pi="${i}"><select data-pk="m" aria-label="市場">${["US", "TW", "CR"].map((m) => `<option value="${m}"${p.m === m ? " selected" : ""}>${m === "CR" ? "加密" : MK[m]}</option>`).join("")}</select><input value="${esc(p.sym)}" data-pk="sym" aria-label="代號" autocapitalize="characters"><input value="${esc(p.name)}" data-pk="name" aria-label="名稱" placeholder="名稱"><input class="num" inputmode="decimal" value="${p.amt}" data-pk="amt" aria-label="每月金額"><button class="ib" type="button" data-pdel="${i}" aria-label="刪除"><svg viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button></div>`).join("")}</div>
+    <div id="planList">${st.plans.map((p, i) => `<div class="erow r5" data-pi="${i}"><select data-pk="m" aria-label="市場">${["US", "TW", "CR"].map((m) => `<option value="${m}"${p.m === m ? " selected" : ""}>${m === "CR" ? "加密" : MK[m]}</option>`).join("")}</select><input value="${esc(p.sym)}" data-pk="sym" aria-label="代號" autocapitalize="characters"><input value="${esc(p.name)}" data-pk="name" aria-label="名稱" placeholder="名稱"><input class="num" inputmode="decimal" value="${p.amt}" data-pk="amt" aria-label="每月金額"><input class="num" inputmode="numeric" value="${p.day || ""}" data-pk="day" aria-label="每月扣款日" placeholder="扣款日"><button class="ib" type="button" data-pdel="${i}" aria-label="刪除"><svg viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button></div>`).join("")}</div>
     <button class="btn sm" type="button" id="planAdd">新增計畫</button>
   </div>
 
@@ -1253,7 +1322,7 @@ function renderSettings() {
   $("#recAdd").onclick = () => { st.recurring.push({ id: "r-" + uid(), name: "新項目", type: "exp", cat: st.expCats[0], amt: 0, acct: st.accounts[0] }); saveSettings(); };
   $$("[data-pi]").forEach((row) => $$("[data-pk]", row).forEach((el) => el.onchange = () => {
     const p = st.plans[+row.dataset.pi], k = el.dataset.pk;
-    if (k === "amt") { const v = toNum(el.value); if (!isNum(v)) return; p.amt = v; } else if (k === "sym") p.sym = normSym(p.m, el.value); else p[k] = el.value;
+    if (k === "amt") { const v = toNum(el.value); if (!isNum(v)) return; p.amt = v; } else if (k === "day") { const v = Math.round(toNum(el.value)); if (isNum(v) && v >= 1 && v <= 28) p.day = v; else delete p.day; } else if (k === "sym") p.sym = normSym(p.m, el.value); else p[k] = el.value;
     saveSettings();
   }));
   $$("[data-pdel]").forEach((b) => b.onclick = () => { st.plans.splice(+b.dataset.pdel, 1); saveSettings(); });
