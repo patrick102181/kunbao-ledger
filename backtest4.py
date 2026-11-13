@@ -38,7 +38,8 @@ import market as M
 from backtest import COST, sim_stock, stats
 
 UA = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36"}
-SEC_UA = {"User-Agent": "kunbao-ledger backtest research (github.com/patrick102181)", "Accept-Encoding": "gzip, deflate"}
+# SEC 規定 User-Agent 要有「名稱＋email」，只寫網址會被擋（回 HTML 不是 JSON）；用 GitHub 的公開代信地址，不用私人信箱
+SEC_UA = {"User-Agent": "kunbao-ledger research patrick102181@users.noreply.github.com", "Accept-Encoding": "gzip, deflate"}
 MOPS = "https://mopsov.twse.com.tw"
 CACHE = os.path.join(M.DATA, "cache")
 log = M.log
@@ -77,8 +78,10 @@ def sec_fund(tickers):
     path = os.path.join(CACHE, "bt_sec.json")
     cache = M.load_json(path, {})
     try:
-        cik = {v["ticker"].upper().replace(".", "-"): v["cik_str"] for v in
-               requests.get("https://www.sec.gov/files/company_tickers.json", headers=SEC_UA, timeout=40).json().values()}
+        rr = requests.get("https://www.sec.gov/files/company_tickers.json", headers=SEC_UA, timeout=40)
+        if rr.status_code != 200:
+            raise RuntimeError(f"HTTP {rr.status_code} {rr.text[:120]}")
+        cik = {v["ticker"].upper().replace(".", "-"): v["cik_str"] for v in rr.json().values()}
     except Exception as e:  # noqa
         log("SEC 代號表失敗：", e)
         return {t: cache[t] for t in tickers if t in cache}
