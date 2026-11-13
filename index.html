@@ -89,6 +89,8 @@ main{display:grid;gap:14px;padding-top:14px}
 .item{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px;padding:10px 0;border-top:1px solid var(--hair);text-align:left;background:none;border-left:0;border-right:0;border-bottom:0;width:100%}
 .item:first-child{border-top:0}
 .item .a{font-weight:500} .item .b{font-size:12px;color:var(--muted)} .item .amt{text-align:right;font-size:17px}
+/* 定期定額：金額跟「記這筆」都靠右對齊，第一列垂直置中，第二列從上緣對齊 */
+.item.pl{align-items:center;row-gap:6px} .item.pl .amt{white-space:nowrap} .item.pl .b,.item.pl .pact{align-self:start} .item.pl .pact{justify-self:end}
 .dayh{font-size:12px;font-weight:700;color:var(--ink);padding:12px 0 4px;display:flex;justify-content:space-between;align-items:baseline;border-bottom:1.5px solid var(--ink)}
 .dayh .num{font-size:13px}
 .chip{display:inline-flex;align-items:center;gap:5px;font-size:12px;border:1px solid var(--ink);border-radius:0;background:var(--card);color:var(--ink);white-space:nowrap;line-height:1.5}
@@ -240,6 +242,9 @@ details summary{cursor:pointer;color:var(--blue);font-size:14px;font-weight:700;
 .f.big input{height:64px;font-size:38px;line-height:1}
 .f input[type=date]{width:100%;text-align:left;padding-top:0;padding-bottom:0}
 .f input[type=date]::-webkit-date-and-time-value{text-align:left;margin:0}
+/* iPhone Safari 的日期欄：裡面的字不吃 padding 置中，會黏在上緣；改用 flex＋整欄行高把字放到正中 */
+.f input[type=date]{display:flex;align-items:center;line-height:43px}
+.f input[type=date]::-webkit-date-and-time-value{line-height:43px;min-height:43px;padding:0}
 .f input[type=date]::-webkit-calendar-picker-indicator{opacity:.8}
 .f select,.erow select{background:var(--card) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%23111' stroke-width='1.6'/%3E%3C/svg%3E") no-repeat right 12px center/12px 8px;padding-right:32px}
 .erow input,.erow select{height:38px}
@@ -1127,7 +1132,7 @@ function renderInvest() {
     <p class="tiny" style="margin:6px 0 0">以上是策略規則算出的提醒，不是投資建議，我也不是持牌投資顧問；要不要賣由你決定。</p></div>`; })()}
   <div class="card"><h2>本月定期定額（台幣）<span class="r num">${fmt(monthBuysTWD(mo))} / ${fmt(st.investMonthly)}</span></h2>
     ${monthFull ? `<div class="tiny" style="margin:-4px 0 4px">這個月已投入 ${fmt(monthBuysTWD(mo))}，額度用完了，下面的燈號給下個月參考</div>` : ""}
-    <div class="list">${st.plans.map((p) => { const d = planDone(p), g = dcaSig(p); return `<div class="item" style="cursor:default"><span class="a">${esc(p.sym)} <span class="muted">${esc(p.name)}</span>${p.role ? ` <span class="chip">${esc(p.role)}</span>` : ""}${d >= p.amt * 0.9 ? ` <span class="chip okc">已扣</span>` : ""}</span><span class="amt num">${fmt(d)} <span class="tiny">/ ${fmt(p.amt)}</span></span><span class="b">${MK[p.m]}${p.day ? `，每月 ${p.day} 號` : ""}${p.bk ? `，${esc(p.bk)}` : ""}${p.auto ? `<br>${esc(p.auto)}` : ""}</span><span><button class="btn sm" type="button" data-plan="${esc(p.id)}">記這筆</button></span>
+    <div class="list">${st.plans.map((p) => { const d = planDone(p), g = dcaSig(p); return `<div class="item pl" style="cursor:default"><span class="a">${esc(p.sym)} <span class="muted">${esc(p.name)}</span>${p.role ? ` <span class="chip">${esc(p.role)}</span>` : ""}${d >= p.amt * 0.9 ? ` <span class="chip okc">已扣</span>` : ""}</span><span class="amt num">${fmt(d)} <span class="tiny">/ ${fmt(p.amt)}</span></span><span class="b">${MK[p.m]}${p.day ? `，每月 ${p.day} 號` : ""}${p.bk ? `，${esc(p.bk)}` : ""}${p.auto ? `<br>${esc(p.auto)}` : ""}</span><span class="pact"><button class="btn sm" type="button" data-plan="${esc(p.id)}">記這筆</button></span>
       <span class="dca" style="grid-column:1/3"><span class="chip ${g.cls}">今天：${esc(g.label)}</span>${g.why ? `<span class="why">${esc(g.why)}</span>` : ""}</span>${(() => { const a = addLv(p); return a ? `
       <span class="lv add" style="grid-column:1/3">${a.lv.map((x) => `<span class="${x.hit ? "hit" : ""}"><small>${x.k}</small><b class="num">${fmtP(x.p)}</b></span>`).join("")}<em>${a.note}</em></span>` : ""; })()}</div>`; }).join("") || `<div class="empty">到設定加入定期定額計畫</div>`}</div>
     <div class="btns" style="margin-top:10px"><button class="btn sm" type="button" id="dcaAi"${dcaBusy ? " disabled" : ""}>問 AI 今天怎麼買</button>${ghCfg() ? "" : `<span class="tiny" style="align-self:center">要先到設定連上 GitHub</span>`}</div>
@@ -1150,7 +1155,7 @@ ${(() => { const n = newsOf(h.m, h.sym); return n && (n.score || n.big) ? `<span
     </tbody></table></div>${trades.length > 60 ? `<div class="tiny">只列最近 60 筆，完整紀錄可在設定匯出 CSV</div>` : ""}
   </div>`;
   $("#dcaAi").onclick = dcaAsk;
-  $$("[data-plan]").forEach((b) => b.onclick = () => { const p = st.plans.find((x) => x.id === b.dataset.plan); const pr = priceOf(p.m, p.sym); const px = pr ? pr.p : NaN; tradeForm(null, { m: p.m, sym: p.sym, name: p.name, bk: p.bk || "", note: p.auto ? "定投自動扣款" : "定期定額", p: isNum(px) ? px : "", q: isNum(px) ? +(p.amt / toTWD(p.m, px, fxNow())).toFixed(p.m === "CR" ? 6 : p.m === "US" ? 4 : 0) : "" }); });
+  $$("[data-plan]").forEach((b) => b.onclick = () => { const p = st.plans.find((x) => x.id === b.dataset.plan); const pr = priceOf(p.m, p.sym); const px = pr ? pr.p : NaN; const mu = /([\d.]+)\s*USDT/.exec(p.auto || ""); tradeForm(null, { m: p.m, sym: p.sym, name: p.name, bk: p.bk || "", note: p.auto ? "定投自動扣款" : "定期定額", p: isNum(px) ? px : "", q: mu && isNum(px) ? +(+mu[1] / px).toFixed(8) : isNum(px) ? +(p.amt / toTWD(p.m, px, fxNow())).toFixed(p.m === "CR" ? 6 : p.m === "US" ? 4 : 0) : "" }); });
   $$("[data-hold]").forEach((b) => b.onclick = () => holdSheet(H.find((h) => h.k === b.dataset.hold)));
   $$("[data-dcapend]").forEach((b) => b.onclick = () => {
     const p = st.plans.find((x) => x.id === b.dataset.dcapend); if (!p) return;
