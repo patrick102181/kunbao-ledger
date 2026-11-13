@@ -142,7 +142,7 @@ def stats(tr, cost):
     }
 
 
-def run_market(mk, limit=None):
+def run_market(mk, limit=None, period="12y"):
     uni = M.tw_universe() if mk == "tw" else M.us_universe()
     uni = [u for u in uni if not u.get("etf")]
     if limit:
@@ -152,8 +152,8 @@ def run_market(mk, limit=None):
     else:
         tick = {u["c"]: u["c"] for u in uni}
     tks = list(tick.values()) + [INDEX[mk]]
-    M.log(f"{mk} 回測：下載 {len(tks)} 檔 12 年日線")
-    d = M.yf_download(tks, "12y", "1d")
+    M.log(f"{mk} 回測：下載 {len(tks)} 檔日線（{period}）")
+    d = M.yf_download(tks, period, "1d")
     idx = M.col(d, "Close", INDEX[mk])
     trades = []
     for u in uni:
@@ -176,7 +176,11 @@ def run_market(mk, limit=None):
     for t in closed:
         t["ret"] = (1 + t["gross"]) * (1 - sell) / (1 + buy) - 1
         t["idx"] = t.get("idx_gross")
+    def era(a, b):
+        return stats([t for t in closed if pd.Timestamp(a) <= t["in"] < pd.Timestamp(b)], COST[mk])
     res = {"universe": len(uni), "all": stats(closed, COST[mk]),
+           "eras": {"2000-2003 網路泡沫": era("2000-01-01", "2003-04-01"), "2007-2009 金融海嘯": era("2007-07-01", "2009-04-01"),
+                    "2020 疫情崩跌": era("2020-01-01", "2020-04-01"), "2022 升息熊市": era("2022-01-01", "2022-11-01")},
            "rr2": stats([t for t in closed if t["rr"] is not None and t["rr"] >= 2], COST[mk]),
            "open_now": len([t for t in trades if t["open"]])}
     recent = sorted(closed, key=lambda t: t["out"])[-15:]
@@ -255,18 +259,20 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--limit", type=int, default=None)
     ap.add_argument("--market", default="all", choices=["all", "tw", "us", "core"])
+    ap.add_argument("--period", default="12y", help="12y 或 max（能抓多久就抓多久，美股約到 1990 年代、台股約到 2000 年）")
     a = ap.parse_args()
     path = os.path.join(M.DATA, "backtest.json")
     out = M.load_json(path, {}) or {}
     out["generated"] = datetime.now(M.TPE).strftime("%Y-%m-%d %H:%M")
     out["rules"] = __doc__.strip()
     for mk in (["tw", "us"] if a.market == "all" else [a.market] if a.market in ("tw", "us") else []):
+        key = mk if a.period == "12y" else f"{mk}_{a.period}"
         try:
-            out[mk] = run_market(mk, a.limit)
+            out[key] = run_market(mk, a.limit, a.period)
         except Exception as e:  # noqa
             M.log(mk, "回測失敗", repr(e))
-            out[mk] = {"error": repr(e)}
-    if a.market in ("all", "core"):
+            out[key] = {"error": repr(e)}
+    if a.market in ("all", "core") and a.period == "12y":
         try:
             out["core"] = run_core()
         except Exception as e:  # noqa
