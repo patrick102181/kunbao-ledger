@@ -362,6 +362,35 @@ nav.tabs .lb{display:block}
 .lv.add small{font-size:11px;color:var(--muted);line-height:1}
 .lv.add b{font-weight:500;font-size:14px;line-height:1.2}
 .lv.add em{grid-column:1/-1;font-style:normal;font-size:12px;color:var(--muted);margin-top:6px}
+
+/* 新聞與綜合判斷 */
+.hold .lv .cg{display:flex;gap:6px;flex-wrap:wrap;min-width:0}
+.lvv{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700}
+.why{list-style:none;margin:10px 0 4px;padding:0}
+.why li{display:grid;grid-template-columns:12px 56px 1fr;column-gap:8px;align-items:baseline;padding:6px 0;border-top:1px solid var(--hair);font-size:12.5px;line-height:1.5}
+.why li::before{content:"";width:9px;height:9px;background:var(--hair);align-self:center}
+.why li.ok::before{background:var(--blue)} .why li.bad::before{background:var(--red)}
+.why li b{font-weight:700;font-size:12.5px}
+.why li span{color:var(--muted)}
+.lvn{margin-top:10px;padding-top:8px;border-top:1px solid var(--hair)}
+.lvn>b{display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:4px}
+details.news summary{cursor:pointer;font-size:13px;line-height:1.5;list-style:none;padding:2px 0;color:var(--ink);font-weight:500}
+details.news summary::-webkit-details-marker{display:none}
+details.news summary::after{content:"＋";float:right;color:var(--muted);font-size:12px}
+details.news[open] summary::after{content:"－"}
+details.news ul{list-style:none;margin:6px 0 0;padding:0}
+details.news li{padding:6px 0 6px 10px;border-left:3px solid var(--hair);margin-bottom:4px;font-size:12.5px;line-height:1.45}
+details.news li.use{border-left-color:var(--yellow)}
+details.news li a{color:var(--ink);text-decoration:none;display:block}
+details.news li small{display:block;color:var(--muted);font-size:11px;margin-top:2px}
+.mnews{margin-top:10px}
+.mn{padding:8px 0;border-top:1px solid var(--hair)}
+.mnh{display:flex;align-items:center;gap:8px;margin-bottom:2px}
+.mnh b{font-size:13px}
+.hx .hnw{grid-column:1/-1;display:flex;align-items:baseline;gap:8px;font-size:12.5px;color:var(--muted);line-height:1.45}
+.hx .hnw i{width:9px;height:9px;flex:none;background:var(--hair);align-self:center}
+.hx .hnw.alert i{background:var(--red)} .hx .hnw.go i{background:var(--blue)}
+.hx .hnw b{flex:none;font-weight:700;color:var(--ink)}
 </style>
 </head>
 <body>
@@ -524,12 +553,12 @@ async function ghDispatch(g, wf, inputs) {
   if (r.status === 422) throw new Error("觸發參數錯誤，或分支不是 main（422）");
   throw new Error("觸發失敗 " + r.status);
 }
-let RM = { prices: null, ai: null, err: "" };
+let RM = { prices: null, ai: null, news: null, err: "" };
 async function loadRemote() {
   const g = ghCfg(); if (!g) return;
   try {
-    const [p, a] = await Promise.all([ghGetFile(g, "prices.json"), ghGetFile(g, "ai.json")]);
-    RM.prices = p.text ? JSON.parse(p.text) : null; RM.ai = a.text ? JSON.parse(a.text) : null; RM.err = "";
+    const [p, a, n] = await Promise.all([ghGetFile(g, "prices.json"), ghGetFile(g, "ai.json"), ghGetFile(g, "news.json").catch(() => ({}))]);
+    RM.prices = p.text ? JSON.parse(p.text) : null; RM.ai = a.text ? JSON.parse(a.text) : null; RM.news = n && n.text ? JSON.parse(n.text) : RM.news; RM.err = "";
   } catch (e) { RM.err = e.message; }
   render();
 }
@@ -623,6 +652,7 @@ async function loadRadar() {
   const get = (n) => fetch(`${b}/${n}.json?t=${Date.now()}`, { cache: "no-store" }).then((r) => { if (!r.ok) throw new Error(n + ".json " + r.status); return r.json(); });
   const res = await Promise.allSettled(["tw", "us", "core", "summary", "macro"].map(get));
   const [tw, us, core, sm, mc] = res;
+  get("backtest").then((x) => { R.bt = x; render(); }).catch(() => {});
   R.macro = mc.status === "fulfilled" ? mc.value : R.macro;
   R.tw = tw.status === "fulfilled" ? tw.value : R.tw;
   R.us = us.status === "fulfilled" ? us.value : R.us;
@@ -652,6 +682,37 @@ function radarItem(m, sym) {
 /* 觀察股點位：照四道濾網自己的買點規則算（回測週 MA52 不破），不是喊盤。
    買進區＝週 MA52 到上方 4%；出場線＝週 MA52 下方 3%（週收盤跌破就代表買點失效）；
    目標 1＝52 週高點（前高，先賣一半）；目標 2＝年線 ×1.3（長線燈號轉「偏貴」的位置，剩下的賣掉） */
+/* ───────── 新聞面（資料 repo 的 news.json，每天 07:40、21:00 由 GitHub 抓新聞＋AI 評分） ───────── */
+const NEWS_LAB = { "-2": "重大利空", "-1": "偏利空", "0": "中性", "1": "偏利多", "2": "重大利多" };
+const newsOf = (m, sym) => RM.news && RM.news.syms ? RM.news.syms[m + ":" + sym] || null : null;
+const newsCls = (n) => !n ? "" : n.score < 0 ? "alert" : n.score > 0 ? "go" : "";
+const newsChip = (n) => n ? `<span class="chip ${newsCls(n)}">新聞${n.big && Math.abs(n.score) < 2 ? "・重大" : ""} ${NEWS_LAB[n.score] || "中性"}</span>` : "";
+function newsList(n, open) {
+  if (!n || !(n.items || []).length) return `<div class="tiny">${n ? esc(n.sum || "沒有重要新聞") : "還沒有新聞資料"}</div>`;
+  return `<details class="news"${open ? " open" : ""}><summary>${esc(n.sum || "")}<span class="tiny">　${n.items.length} 則</span></summary><ul>${n.items.map((x) => `<li${x.use ? ' class="use"' : ""}><a href="${esc(x.link)}" target="_blank" rel="noopener noreferrer">${esc(x.t)}</a><small>${esc(x.src || "")}${x.ts ? "・" + esc(x.ts) : ""}</small></li>`).join("")}</ul></details>`;
+}
+/* 觀察股綜合判斷：四道濾網（今天還在不在名單）＋點位＋新聞＋戰術層，規則全部攤開 */
+function judge(r) {
+  const lv = recLv(r.m, r.sym), nw = newsOf(r.m, r.sym);
+  const picks = r.m === "CR" ? null : radarPicks(r.m), pass = picks ? picks.some((x) => String(x.c).toUpperCase() === r.sym) : null;
+  const tm = R.macro && R.macro.tactical && R.macro.tactical.markets, tac = r.m !== "CR" && tm && tm[r.m === "TW" ? "tw" : "us"] && tm[r.m === "TW" ? "tw" : "us"].on;
+  const why = [];
+  why.push([pass ? "ok" : pass === false ? "bad" : "", "四道濾網", pass ? "今天仍通過（熱門族群＋資金流入＋財報轉強＋買點觸發）" : pass === false ? "今天沒通過，族群退燒、資金流轉弱、財報轉弱或買點條件消失其中之一" : "沒有資料"]);
+  if (lv) why.push([lv.cls === "go" ? "ok" : lv.cls === "alert" ? "bad" : "", "點位", lv.st]);
+  why.push([nw ? (nw.score > 0 ? "ok" : nw.score < 0 ? "bad" : "") : "", "新聞", nw ? `${NEWS_LAB[nw.score] || "中性"}${nw.big ? "（重大事件）" : ""}：${nw.sum || ""}` : "還沒有新聞資料"]);
+  why.push([tac ? "bad" : "ok", "大盤", tac ? "戰術層觸發，衛星層先不加碼" : "戰術層未觸發"]);
+  let v, cls;
+  const held = r.status === "bought";
+  if (!lv) { v = "資料不足"; cls = ""; }
+  else if (held && lv.cls === "alert") { v = "照規則出場"; cls = "alert"; }
+  else if (tac) { v = held ? "續抱不加碼" : "先觀望"; cls = "alert"; }
+  else if (lv.cls === "alert") { v = "不買"; cls = "alert"; }
+  else if (nw && nw.score <= -1 && nw.big) { v = held ? "留意重大利空" : "先觀望"; cls = "alert"; }
+  else if (held) { v = "續抱"; cls = "okc"; }
+  else if (lv.tag === "在買進區") { v = pass && (!nw || nw.score >= 0) ? "可以分批買" : "小量試單"; cls = "go"; }
+  else { v = lv.tag; cls = ""; }
+  return { v, cls, why, lv, nw };
+}
 function recLv(m, sym) {
   const it = radarItem(m, sym); if (!it || !Array.isArray(it.lv) || !isNum(it.lv[0])) return null;
   const [w, hi, y] = it.lv, pr = priceOf(m, sym), px = pr ? pr.p : it.px;
@@ -910,6 +971,7 @@ function renderInvest() {
       <span class="hv num">${fmt(h.valT)}<i class="cur">台幣</i></span>
       <span class="hm"><i class="mk ${h.m.toLowerCase()}"></i>${MK[h.m]}${h.bks.length ? `<em>${esc(h.bks.join("、"))}</em>` : ""}</span>
       <span class="hp num ${signCls(h.unT)}">${isNum(h.unT) ? `${h.unT > 0 ? "+" : h.unT < 0 ? "−" : ""}${fmt(Math.abs(h.unT))}<i class="cur">台幣</i><small>${h.unT > 0 ? "+" : h.unT < 0 ? "−" : ""}${isNum(h.unP) ? (Math.abs(h.unP) * 100).toFixed(1) + "%" : ""}</small>` : `<u>點這裡填現價</u>`}</span>
+${(() => { const n = newsOf(h.m, h.sym); return n && (n.score || n.big) ? `<span class="hnw ${newsCls(n)}"><i></i><b>新聞${n.big && Math.abs(n.score) < 2 ? "・重大" : ""} ${NEWS_LAB[n.score]}</b>${esc(n.sum || "")}</span>` : ""; })()}
       <span class="hs"><span><small>${h.m === "CR" ? "顆數" : "股數"}</small><b class="num">${fmtQ(h.sh)}</b></span><span><small>均價</small><b class="num">${fmtP(h.avg)}</b>${cur(h.m)}</span><span><small>現價</small><b class="num">${isNum(h.px) ? fmtP(h.px) : "－"}</b>${cur(h.m)}</span></span></button>`).join("") : `<div class="empty">還沒有持股，按右下角 ＋ 記第一筆買進</div>`}</div>
     ${H.some((h) => h.sh === 0) ? `<details><summary>已出清的標的（${H.filter((h) => h.sh === 0).length}）</summary>${H.filter((h) => h.sh === 0).map((h) => `<div class="item" style="cursor:default"><span class="a">${esc(h.sym)} <span class="muted">${esc(h.name)}</span></span><span class="amt num ${signCls(h.realT + h.divT)}">${fmt(h.realT + h.divT)}</span></div>`).join("")}</details>` : ""}
   </div>
@@ -948,6 +1010,7 @@ function renderRecs() {
   <div class="card"><h2>今日判讀<span class="r">${sm ? esc((sm.generated || "").slice(5, 16)) : ""}</span></h2>
     ${R.err ? `<div class="empty">${esc(R.err)}</div>` : sm ? `<p style="margin:0 0 8px;font-weight:700">${esc(sm.headline || "")}</p>${(sm.watch || []).length ? `<ul style="margin:0;padding-left:18px">${sm.watch.map((w) => `<li class="tiny" style="color:var(--ink)">${esc(w)}</li>`).join("")}</ul>` : ""}` : `<div class="empty">${R.loading ? "讀取中…" : "沒有資料"}</div>`}
     ${R.macro ? `<div class="btns" style="margin-top:8px">${R.macro.stage && R.macro.stage.name ? `<span class="chip">債務週期 ${esc(R.macro.stage.name)}</span>` : ""}<span class="chip">資金風向 ${esc(R.macro.risk.label)}</span><span class="chip ${R.macro.tactical.on ? "alert" : "okc"}">戰術層${R.macro.tactical.on ? "觸發" : "未觸發"}</span>${(R.macro.idx || []).map((i) => `<span class="chip ${i.below ? "alert" : ""}">${esc(i.n)} ${i.below ? "跌破" : "站上"}週MA52</span>`).join("")}</div>` : ""}
+    ${RM.news && RM.news.market ? `<div class="mnews">${["tw", "us"].filter((k) => RM.news.market[k]).map((k) => { const n = RM.news.market[k]; return `<div class="mn"><div class="mnh"><b>${k === "tw" ? "台股新聞" : "美股新聞"}</b>${newsChip(n)}</div>${newsList(n)}</div>`; }).join("")}<div class="tiny">新聞 ${esc(RM.news.generated || "")} 抓取，AI 只看標題判斷，點標題看原文</div></div>` : ghCfg() ? `<div class="tiny" style="margin-top:8px">新聞每天 07:40、21:00 自動抓；第一次可以到資料 repo 的 Actions 手動跑「每日新聞」</div>` : ""}
     <div class="btns" style="margin-top:8px;align-items:center"><button class="btn sm" type="button" id="reloadRadar">重新讀取</button><span class="tiny">台股 ${esc(R.tw ? R.tw.updated || "" : "－")}・美股 ${esc(R.us ? R.us.updated || "" : "－")}</span></div>
   </div>
   ${benches.length ? `<div class="card"><h2>大盤與 ETF 長線燈號<span class="r">只看價格位置</span></h2><div class="scroll"><table class="tbl"><thead><tr><th>標的</th><th class="r">年線乖離</th><th class="r">5 年位置</th><th>燈號</th></tr></thead><tbody>${benches.map((x) => `<tr><td>${esc(x.n)}<div class="tiny">${esc(x.c)}</div></td><td class="r num">${pct(x.b, 0)}</td><td class="r num">${isNum(x.pos) ? Math.round(x.pos * 100) + "%" : "－"}</td><td><span class="chip ${esc(x.l)}">${LIGHT[x.l] || esc(x.l)}</span></td></tr>`).join("")}</tbody></table></div><p class="tiny" style="margin:6px 0 0">偏貴不代表要停扣，核心 ETF 照常定期定額。</p></div>` : ""}
@@ -960,8 +1023,8 @@ function renderRecs() {
       <span class="a"><b>${esc(r.sym)}</b> <span class="muted">${esc(r.name || "")}</span> <span class="chip">${MK[r.m]}</span> <span class="chip">${esc(r.src || "")}</span></span>
       <span class="amt num ${signCls(ch)}" style="text-align:right">${isNum(ch) ? pct(ch) : "－"}</span>
       <span class="b">${esc(r.date || "")}${r.reason ? "・" + esc(r.reason) : ""}</span>
-      <span class="b num" style="text-align:right">${isNum(r.px) ? fmtP(r.px) : "－"} → ${pr ? fmtP(pr.p) : "－"}</span>${(() => { const v = r.status !== "pass" && recLv(r.m, r.sym); return v ? `
-      <span class="lv"><span class="lt"><span class="chip ${v.cls}">${v.tag}</span><small>點位（${CUR[r.m]}）</small></span><span><small>買進區</small><b class="num">${fmtP(v.bLo)}～${fmtP(v.bHi)}</b></span><span><small>出場線</small><b class="num">${fmtP(v.stop)}</b></span><span><small>目標</small><b class="num">${v.tg.length ? fmtP(v.tg[0]) : "－"}</b></span></span>` : ""; })()}</button>`; }).join("") || `<div class="empty">${recFilter === "watch" ? "按候選名單的「觀察」或右下角 ＋ 新增，之後會自動追蹤推薦後漲跌" : "沒有紀錄"}</div>`}</div>
+      <span class="b num" style="text-align:right">${isNum(r.px) ? fmtP(r.px) : "－"} → ${pr ? fmtP(pr.p) : "－"}</span>${(() => { const v = r.status !== "pass" && recLv(r.m, r.sym), j = v && judge(r); return v ? `
+      <span class="lv"><span class="lt"><span class="cg"><span class="chip ${j.cls}">${j.v}</span>${newsChip(j.nw)}</span><small>點位（${CUR[r.m]}）</small></span><span><small>買進區</small><b class="num">${fmtP(v.bLo)}～${fmtP(v.bHi)}</b></span><span><small>出場線</small><b class="num">${fmtP(v.stop)}</b></span><span><small>目標</small><b class="num">${v.tg.length ? fmtP(v.tg[0]) : "－"}</b></span></span>` : ""; })()}</button>`; }).join("") || `<div class="empty">${recFilter === "watch" ? "按候選名單的「觀察」或右下角 ＋ 新增，之後會自動追蹤推薦後漲跌" : "沒有紀錄"}</div>`}</div>
   </div>
   <div class="card"><h2>AI 助手<span class="r">${ghCfg() ? "在 GitHub Actions 上執行" : "要先到設定連上 GitHub"}</span></h2>
     <div class="btns"><button class="btn pri sm" type="button" id="aiCheck"${aiBusy ? " disabled" : ""}>幫我健檢記帳與持股</button><button class="btn sm" type="button" id="aiPaste">貼上別人的推薦，讓 AI 整理</button></div>
@@ -1410,6 +1473,7 @@ function holdSheet(h) {
       <div class="tile"><div class="k">市值（台幣）</div><div class="v num">${fmt(h.mvT)}</div></div>
       <div class="tile"><div class="k">未實現（台幣）</div><div class="v num ${signCls(h.unT)}">${isNum(h.unT) ? fmt(h.unT) : "－"}</div><div class="tiny num">${pct(h.unP)}</div></div>
     </div>
+    ${newsOf(h.m, h.sym) ? `<div class="lvn" style="border-top:0;padding-top:0"><b>今日新聞 ${newsChip(newsOf(h.m, h.sym))}</b>${newsList(newsOf(h.m, h.sym))}</div>` : ""}
     <div class="tiny">現價 ${isNum(h.px) ? fmtP(h.px) + " " + CUR[h.m] : "未知"}・來源 ${esc(h.pxSrc || "無")}${h.m !== "TW" ? `・損益已含匯率變化` : ""}${h.divT ? `・累計股利 ${fmt(h.divT)} 台幣` : ""}</div>
     <form class="two" id="pxF" style="align-items:end"><label class="f"><span>手動現價（${CUR[h.m]}，自動抓不到時用）</span><input id="pxV" class="num" inputmode="decimal" value="${ov && isNum(ov.p) ? ov.p : ""}"></label>
       <div class="btns"><button class="btn sm" type="submit">設定</button>${ov && isNum(ov.p) ? `<button class="btn sm" type="button" id="pxClr">改回自動</button>` : ""}</div></form>
@@ -1429,14 +1493,16 @@ function holdSheet(h) {
 function recForm(r) {
   const isNew = !r;
   r = r ? clone(r) : { id: uid(), m: "TW", sym: "", name: "", src: "Claude", date: today(), px: "", reason: "", status: "watch" };
-  const lv = !isNew && recLv(r.m, r.sym), u = cur(r.m);
+  const lv = !isNew && recLv(r.m, r.sym), u = cur(r.m), jd = !isNew && r.status !== "pass" ? judge(r) : null;
+  const btm = R.bt && R.bt[r.m === "TW" ? "tw" : "us"] && R.bt[r.m === "TW" ? "tw" : "us"].all;
   openSheet(isNew ? "新增推薦" : "推薦紀錄", `${lv ? `<div class="lvbox">
-      <div class="lvh"><span class="chip ${lv.cls}">${lv.tag}</span><span class="tiny">現價 <b class="num">${fmtP(lv.px)}</b> ${u}</span></div>
-      <p class="tiny" style="color:var(--ink);margin:8px 0">${esc(lv.st)}</p>
+      <div class="lvh"><span class="lvv">綜合判斷 <span class="chip ${jd ? jd.cls : lv.cls}">${jd ? jd.v : lv.tag}</span></span><span class="tiny">現價 <b class="num">${fmtP(lv.px)}</b> ${u}</span></div>
+      ${jd ? `<ul class="why">${jd.why.map(([k, t, d]) => `<li class="${k}"><b>${t}</b><span>${esc(d)}</span></li>`).join("")}</ul>` : `<p class="tiny" style="color:var(--ink);margin:8px 0">${esc(lv.st)}</p>`}
       <div class="lvr"><i class="sq b"></i><span>買進區</span><b class="num">${fmtP(lv.bLo)}～${fmtP(lv.bHi)}</b><small>${u}</small><em>週 MA52 到上方 4%，回測不破才買；分 2～3 筆進場，補倉也只補在這一區</em></div>
       <div class="lvr"><i class="sq r"></i><span>出場線</span><b class="num">${fmtP(lv.stop)}</b><small>${u}</small><em>週收盤跌破這裡＝買點失效，賣出停損</em></div>
       ${lv.tg.map((t, i) => `<div class="lvr"><i class="sq y"></i><span>目標 ${i + 1}</span><b class="num">${fmtP(t)}</b><small>${u}</small><em>${t === lv.hi ? "52 週高點（前高）" : "年線 ×1.3，長線燈號轉偏貴"}，${i === 0 && lv.tg.length > 1 ? "先賣一半" : "剩下的賣掉"}</em></div>`).join("")}
-      <div class="tiny" style="margin-top:8px">${isNum(lv.rr) ? `從買進區中間買、到目標 1 的報酬是停損風險的 ${lv.rr.toFixed(1)} 倍${lv.rr < 2 ? "，不到 2 倍，賺賠不划算，可以略過" : ""}。` : ""}點位照濾網規則每天重算，不是保證；單股不超過衛星層 10%。</div>
+      <div class="tiny" style="margin-top:8px">${isNum(lv.rr) ? `從買進區中間買、到目標 1 的報酬是停損風險的 ${lv.rr.toFixed(1)} 倍。` : ""}${btm ? `這套點位規則回測近 12 年：${r.m === "TW" ? "台股" : "美股"} ${fmt(btm.n)} 筆，勝率 ${Math.round(btm.win * 100)}%、每筆平均 ${pct(btm.avg)}、${btm.excess_vs_index < 0 ? "平均輸大盤" : "平均贏大盤"} ${(Math.abs(btm.excess_vs_index) * 100).toFixed(1)}%，只能控制虧損、不保證賺。` : "點位規則回測：勝率約三成，主要用來控制虧損，不保證賺。"}單股不超過衛星層 10%。</div>
+      ${jd && jd.nw ? `<div class="lvn"><b>新聞</b>${newsList(jd.nw)}</div>` : ""}
     </div>` : ""}<form class="form" id="rcF">
     ${segHtml("m", MK, r.m)}
     <div class="two"><label class="f"><span>代號</span><input id="cSym" value="${esc(r.sym)}" autocapitalize="characters" autocomplete="off" required></label>
