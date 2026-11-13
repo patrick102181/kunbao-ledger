@@ -1,0 +1,1204 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="坤寶存摺">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#1d2b4f">
+<title>坤寶存摺</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* 版面：手機單欄、底部分頁列；金額一律等寬數字靠右，像銀行存摺的格線帳 */
+  --paper:#eef1f6; --card:#ffffff; --ink:#1d2b4f; --muted:#67718a; --line:#d8dde8; --accent:#2b4fa8;
+  --seal:#c8372d; --up:#d0342c; --down:#1d8a4a; --warn:#b7791f; --chip:#e5eaf3; --fill:#2b4fa8;
+  --f-body:"Noto Sans TC",-apple-system,"PingFang TC","Microsoft JhengHei",sans-serif;
+  --f-num:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --paper:#0f131c; --card:#171d2a; --ink:#e6eaf3; --muted:#9aa3b8; --line:#283043; --accent:#86a2f2;
+  --seal:#f06c60; --up:#ff6b61; --down:#40c47c; --warn:#e2aa4c; --chip:#222a3b; --fill:#86a2f2; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#0f131c; --card:#171d2a; --ink:#e6eaf3; --muted:#9aa3b8; --line:#283043; --accent:#86a2f2;
+  --seal:#f06c60; --up:#ff6b61; --down:#40c47c; --warn:#e2aa4c; --chip:#222a3b; --fill:#86a2f2; color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:var(--paper);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.5;-webkit-text-size-adjust:100%}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.num{font-family:var(--f-num);font-variant-numeric:tabular-nums;white-space:nowrap}
+.app{max-width:560px;margin:0 auto;padding:0 16px calc(88px + env(safe-area-inset-bottom))}
+header.top{position:sticky;top:0;z-index:5;background:var(--paper);padding:calc(10px + env(safe-area-inset-top)) 0 8px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--line)}
+header.top h1{font-size:20px;font-weight:900;margin:0;letter-spacing:.06em}
+.seal{display:inline-grid;place-items:center;width:30px;height:30px;border:2px solid var(--seal);color:var(--seal);border-radius:6px;font-size:13px;font-weight:900;transform:rotate(-6deg)}
+.sync{margin-left:auto;font-size:12px;padding:3px 10px;border-radius:999px;background:var(--chip);color:var(--muted);border:0}
+.sync.ok{color:var(--down)} .sync.err{color:var(--seal)} .sync.busy{color:var(--warn)}
+main{display:grid;gap:14px;padding-top:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px}
+.card h2{font-size:15px;margin:0 0 10px;display:flex;align-items:center;gap:8px;text-wrap:balance}
+.card h2 .r{margin-left:auto;font-weight:400;font-size:12px;color:var(--muted)}
+.muted{color:var(--muted)} .tiny{font-size:12px;color:var(--muted)}
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tile{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.tile .k{font-size:12px;color:var(--muted)} .tile .v{font-size:19px;font-weight:600}
+.up{color:var(--up)} .down{color:var(--down)} .neg{color:var(--seal)}
+.month{display:flex;align-items:center;justify-content:center;gap:14px}
+.month b{font-size:17px;font-family:var(--f-num)}
+.ib{border:1px solid var(--line);background:var(--card);border-radius:10px;width:36px;height:36px}
+.bar{height:8px;background:var(--chip);border-radius:99px;overflow:hidden}
+.bar>i{display:block;height:100%;background:var(--fill);border-radius:99px}
+.bar.over>i{background:var(--seal)} .bar.warn>i{background:var(--warn)} .bar.good>i{background:var(--down)}
+.brow{display:grid;gap:4px;padding:6px 0}
+.brow .t{display:flex;justify-content:space-between;gap:8px;font-size:14px}
+.list{display:grid}
+.item{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px;padding:10px 2px;border-top:1px dashed var(--line);text-align:left;background:none;border-left:0;border-right:0;border-bottom:0;width:100%}
+.item:first-child{border-top:0}
+.item .a{font-weight:500} .item .b{font-size:12px;color:var(--muted)} .item .amt{text-align:right;font-weight:600}
+.dayh{font-size:12px;color:var(--muted);padding:10px 2px 2px;display:flex;justify-content:space-between;border-bottom:1px solid var(--line)}
+.chip{display:inline-flex;align-items:center;gap:4px;font-size:12px;padding:2px 8px;border-radius:999px;background:var(--chip);color:var(--muted);white-space:nowrap}
+.chip.cheap{background:color-mix(in srgb,var(--down) 16%,transparent);color:var(--down)}
+.chip.fair{background:var(--chip);color:var(--ink)}
+.chip.exp{background:color-mix(in srgb,var(--up) 14%,transparent);color:var(--up)}
+.chip.trap{background:color-mix(in srgb,var(--warn) 18%,transparent);color:var(--warn)}
+.chip.alert{background:color-mix(in srgb,var(--seal) 14%,transparent);color:var(--seal)}
+.chip.okc{background:color-mix(in srgb,var(--down) 14%,transparent);color:var(--down)}
+.btn{border:1px solid var(--line);background:var(--card);border-radius:10px;padding:8px 14px;font-weight:500}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:#fff}
+:root[data-theme="dark"] .btn.pri{color:#0f131c}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .btn.pri{color:#0f131c}}
+.btn.danger{color:var(--seal)}
+.btn.sm{padding:4px 10px;font-size:13px;border-radius:8px}
+.btns{display:flex;flex-wrap:wrap;gap:8px}
+nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:6;background:var(--card);border-top:1px solid var(--line);display:flex;justify-content:center;padding-bottom:env(safe-area-inset-bottom)}
+nav.tabs .in{display:grid;grid-template-columns:repeat(5,1fr);width:100%;max-width:560px}
+nav.tabs button{border:0;background:none;padding:10px 0 9px;font-size:13px;color:var(--muted);display:grid;justify-items:center;gap:2px}
+nav.tabs button .g{font-size:17px;font-weight:900;font-family:var(--f-body)}
+nav.tabs button[aria-current="page"]{color:var(--accent)}
+.fab{position:fixed;right:max(16px,calc(50% - 264px));bottom:calc(76px + env(safe-area-inset-bottom));z-index:7;width:56px;height:56px;border-radius:18px;border:0;background:var(--accent);color:#fff;font-size:28px;box-shadow:0 6px 18px rgba(20,30,60,.28)}
+.ov{position:fixed;inset:0;z-index:20;background:rgba(10,14,24,.45);display:flex;align-items:flex-end;justify-content:center}
+.sheet{background:var(--card);width:100%;max-width:560px;max-height:92%;overflow:auto;border-radius:18px 18px 0 0;padding:14px 16px calc(18px + env(safe-area-inset-bottom))}
+.sh-h{display:flex;align-items:center;margin-bottom:10px} .sh-h b{font-size:17px}
+.x{margin-left:auto;border:0;background:var(--chip);border-radius:10px;width:34px;height:34px}
+.form{display:grid;gap:10px}
+.f{display:grid;gap:4px} .f>span{font-size:12px;color:var(--muted)}
+.f input,.f select,.f textarea{width:100%;border:1px solid var(--line);background:var(--paper);border-radius:10px;padding:9px 11px;font-size:16px}
+.f textarea{min-height:110px;resize:vertical}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.big input{font-family:var(--f-num);font-size:26px;font-weight:600;text-align:right}
+.seg{display:flex;background:var(--chip);border-radius:10px;padding:3px;gap:3px}
+.seg button{flex:1;border:0;background:none;border-radius:8px;padding:7px 0;font-size:14px;color:var(--muted)}
+.seg button.on{background:var(--card);color:var(--ink);font-weight:700;box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.cats{display:flex;flex-wrap:wrap;gap:6px}
+.cats button{border:1px solid var(--line);background:var(--paper);border-radius:999px;padding:5px 12px;font-size:14px}
+.cats button.on{border-color:var(--accent);background:var(--accent);color:#fff}
+.hold{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px;padding:11px 2px;border-top:1px dashed var(--line);width:100%;text-align:left;background:none;border-left:0;border-right:0;border-bottom:0}
+.hold:first-child{border-top:0}
+.hold .b,.item .b{white-space:normal;overflow-wrap:anywhere}
+.hold .a,.item .a{min-width:0;overflow-wrap:anywhere}
+main,.card{min-width:0}
+.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl th,.tbl td{padding:7px 4px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+.tbl th{font-weight:500;color:var(--muted);font-size:12px}
+.tbl th{white-space:nowrap} .tbl .btn{white-space:nowrap}
+.tbl td.r,.tbl th.r{text-align:right}
+.scroll{overflow-x:auto}
+.empty{padding:14px 4px;color:var(--muted);font-size:14px}
+.aiout{white-space:pre-wrap;font-size:14px;background:var(--paper);border-radius:10px;padding:12px;border:1px solid var(--line)}
+.toast{position:fixed;left:50%;bottom:calc(150px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:30;background:var(--ink);color:var(--paper);padding:9px 16px;border-radius:999px;font-size:14px;max-width:90%}
+.erow{display:grid;grid-template-columns:1fr 92px 40px;gap:6px;align-items:center;margin-bottom:6px}
+.erow input,.erow select{border:1px solid var(--line);background:var(--paper);border-radius:8px;padding:7px 8px;font-size:15px;width:100%;min-width:0}
+.erow.rec,.erow.r5{grid-template-columns:72px minmax(0,1fr) 92px 36px;padding-bottom:8px;border-bottom:1px dashed var(--line)}
+.erow.rec [data-rk=name]{grid-column:1/3;grid-row:1} .erow.rec [data-rk=type]{grid-column:1;grid-row:2} .erow.rec [data-rk=cat]{grid-column:2;grid-row:2}
+.erow.rec [data-rk=amt]{grid-column:3;grid-row:1} .erow.rec .ib,.erow.r5 .ib{grid-column:4;grid-row:1}
+.erow.r5 [data-pk=m]{grid-column:1;grid-row:1} .erow.r5 [data-pk=sym]{grid-column:2;grid-row:1} .erow.r5 [data-pk=amt]{grid-column:3;grid-row:1} .erow.r5 [data-pk=name]{grid-column:1/4;grid-row:2}
+.chart svg{display:block;width:100%;height:auto}
+.alloc{display:grid;gap:10px}
+.alloc .t{display:flex;justify-content:space-between;font-size:14px}
+.stack{position:relative;height:10px;background:var(--chip);border-radius:99px}
+.stack>i{position:absolute;top:0;bottom:0;left:0;background:var(--fill);border-radius:99px}
+.stack>u{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--ink);text-decoration:none}
+details summary{cursor:pointer;color:var(--accent);font-size:14px;padding:6px 0}
+/* 雨林箱養成 */
+.terra{border-radius:14px;overflow:hidden;background:#0f1a17;border:1px solid var(--line)}
+.terra svg{display:block;width:100%;height:auto}
+.lvl{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.lvl b{font-size:22px}
+.badges{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px}
+.badge{border:1px solid var(--line);border-radius:12px;padding:8px;text-align:center;font-size:12px;background:var(--paper)}
+.badge .m{display:grid;place-items:center;width:34px;height:34px;margin:0 auto 4px;border-radius:50%;border:2px solid var(--muted);color:var(--muted);font-weight:900;font-size:14px}
+.badge.got{background:var(--card)} .badge.got .m{border-color:var(--seal);color:var(--seal);transform:rotate(-8deg)}
+.badge:not(.got){opacity:.55}
+.quest{display:grid;grid-template-columns:24px 1fr auto;gap:8px;align-items:center;padding:8px 0;border-top:1px dashed var(--line)}
+.quest:first-child{border-top:0}
+.quest .ck{width:20px;height:20px;border-radius:6px;border:2px solid var(--line);display:grid;place-items:center;font-size:13px;color:#fff}
+.quest.done .ck{background:var(--down);border-color:var(--down)}
+.mini{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.mini .dot{width:38px;height:38px;border-radius:10px;background:#16302a;display:grid;place-items:center;color:#9fe0b6;font-weight:900;font-size:13px;flex:none}
+.mini .t{flex:1;min-width:0;font-size:13px}
+.mini .t b{font-size:14px}
+.lvup{text-align:center;padding:10px 0 4px}
+.lvup .big{font-size:40px;font-weight:900;color:var(--seal)}
+@media (prefers-reduced-motion:no-preference){
+  .crawl{animation:crawl 9s ease-in-out infinite alternate}
+  .crawl2{animation:crawl 13s ease-in-out infinite alternate-reverse}
+  .glow{animation:glow 2.6s ease-in-out infinite alternate}
+  .sway{transform-box:fill-box;transform-origin:50% 100%;animation:sway 5s ease-in-out infinite alternate}
+  @keyframes crawl{from{transform:translateX(0)}to{transform:translateX(26px)}}
+  @keyframes glow{from{opacity:.25}to{opacity:1}}
+  @keyframes sway{from{transform:rotate(-2deg)}to{transform:rotate(2deg)}}
+}
+@media (prefers-reduced-motion:no-preference){.sheet{animation:up .18s ease-out}@keyframes up{from{transform:translateY(24px);opacity:.6}to{transform:none;opacity:1}}}
+@media (max-width:360px){.tiles{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <span class="seal" aria-hidden="true">坤</span>
+    <h1>坤寶存摺</h1>
+    <button class="sync" id="syncChip" type="button">本機</button>
+  </header>
+  <main id="view"></main>
+</div>
+<button class="fab" id="fab" type="button" aria-label="新增">＋</button>
+<nav class="tabs" aria-label="分頁"><div class="in">
+  <button type="button" data-tab="book"><span class="g">帳</span>記帳</button>
+  <button type="button" data-tab="invest"><span class="g">股</span>投資</button>
+  <button type="button" data-tab="recs"><span class="g">薦</span>推薦</button>
+  <button type="button" data-tab="game"><span class="g">林</span>雨林箱</button>
+  <button type="button" data-tab="settings"><span class="g">設</span>設定</button>
+</div></nav>
+
+<script>
+"use strict";
+/* ───────── 小工具 ───────── */
+const $ = (s, el = document) => el.querySelector(s);
+const $$ = (s, el = document) => [...el.querySelectorAll(s)];
+const LS = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+};
+const clone = (o) => JSON.parse(JSON.stringify(o));
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+const now = () => Date.now();
+const pad = (n) => String(n).padStart(2, "0");
+const ymd = (d) => d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
+const today = () => ymd(new Date());
+const isNum = (v) => typeof v === "number" && isFinite(v);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const fmt = (n, d = 0) => isNum(n) ? n.toLocaleString("zh-TW", { minimumFractionDigits: d, maximumFractionDigits: d }) : "－";
+const fmtP = (n) => !isNum(n) ? "－" : (Math.abs(n) >= 1000 ? fmt(n, 0) : Math.abs(n) >= 1 ? fmt(n, 2) : fmt(n, 4));
+const fmtQ = (n) => !isNum(n) ? "－" : Number.isInteger(n) ? fmt(n, 0) : (Math.abs(n) >= 1 ? fmt(n, 4).replace(/0+$/, "").replace(/\.$/, "") : String(+n.toFixed(8)));
+const pct = (n, d = 1) => isNum(n) ? (n > 0 ? "+" : "") + (n * 100).toFixed(d) + "%" : "－";
+const signCls = (n) => !isNum(n) || Math.abs(n) < 1e-9 ? "" : n > 0 ? "up" : "down"; // 台股慣例：紅漲綠跌
+const toNum = (v) => { const n = parseFloat(String(v ?? "").replace(/[,\s]/g, "")); return isFinite(n) ? n : NaN; };
+const sum = (arr, f) => arr.reduce((a, x) => a + (typeof f === "function" ? f(x) : x[f]) , 0);
+const MK = { TW: "台股", US: "美股", CR: "加密貨幣" };
+const MKC = { TW: "TWD", US: "USD", CR: "USDT" };
+const LIGHT = { cheap: "便宜", fair: "合理", exp: "偏貴", trap: "基本面弱" };
+const SIDE = { buy: "買進", sell: "賣出", div: "股利" };
+const STATUS = { watch: "觀察中", bought: "已買", pass: "略過" };
+const SOURCES = ["市場雷達", "Claude", "朋友", "Telegram 頻道", "自己研究", "其他"];
+
+/* ───────── 預設設定（坤寶的數字） ───────── */
+const DEFAULT_SETTINGS = {
+  ua: 0,
+  income: 45000,
+  expCats: ["房租", "餐飲", "交通", "日用", "電話網路", "娛樂", "醫療", "其他"],
+  incCats: ["薪水", "接案", "獎金", "股利", "其他"],
+  accounts: ["銀行", "現金", "信用卡", "電子支付"],
+  budgets: { "房租": 12000, "餐飲": 8000, "交通": 2000, "日用": 2000, "電話網路": 800, "娛樂": 3000, "醫療": 1000, "其他": 1200 },
+  investMonthly: 10000,
+  emergencyMonthly: 5000,
+  emergencyTarget: 180000,
+  emergencyNow: 0,
+  targets: { US: 50, TW: 40, CR: 10 },
+  fx: 32.85,
+  radarBase: "https://kevunchiang24-cpu.github.io/market-radar",
+  recurring: [
+    { id: "r-salary", name: "薪水", type: "inc", cat: "薪水", amt: 45000, acct: "銀行" },
+    { id: "r-rent", name: "房租", type: "exp", cat: "房租", amt: 12000, acct: "銀行" }
+  ],
+  plans: [
+    { id: "p-us", m: "US", sym: "VTI", name: "美國全市場", amt: 5000 },
+    { id: "p-tw", m: "TW", sym: "006208", name: "富邦台50", amt: 4000 },
+    { id: "p-cr", m: "CR", sym: "BTC", name: "比特幣", amt: 1000 }
+  ]
+};
+function normalize(st) {
+  st = st || {};
+  const s = Object.assign(clone(DEFAULT_SETTINGS), st.settings || {});
+  s.budgets = Object.assign({}, s.budgets || {});
+  s.targets = Object.assign({ US: 0, TW: 0, CR: 0 }, s.targets || {});
+  return { v: 1, settings: s, tx: st.tx || [], trades: st.trades || [], recs: st.recs || [], prices: st.prices || {}, del: st.del || {} };
+}
+
+/* ───────── 狀態 ───────── */
+let S = normalize(LS.get("kb-state", null));
+let L = Object.assign({ gh: {}, ai: {}, tab: "book", lastSync: null }, LS.get("kb-local", {}));
+const saveL = () => LS.set("kb-local", L);
+let month = today().slice(0, 7);
+let txQuery = "";
+let recFilter = "watch";
+let aiOut = "";
+
+function commit() { LS.set("kb-state", S); render(); scheduleSync(); rewardCheck(); }
+function upsert(list, item) {
+  item.ua = now();
+  const i = S[list].findIndex((x) => x.id === item.id);
+  if (i >= 0) S[list][i] = item; else S[list].push(item);
+  delete S.del[item.id];
+  commit();
+}
+function removeItem(list, id) { S[list] = S[list].filter((x) => x.id !== id); S.del[id] = now(); commit(); }
+function saveSettings() { S.settings.ua = now(); commit(); }
+
+/* ───────── 合併（兩台裝置都改過時，用每筆的最後修改時間決定） ───────── */
+function mergeState(a, b) {
+  a = normalize(a); b = normalize(b);
+  const del = Object.assign({}, a.del);
+  for (const [k, v] of Object.entries(b.del)) del[k] = Math.max(del[k] || 0, v);
+  const cutoff = now() - 400 * 864e5;
+  for (const k of Object.keys(del)) if (del[k] < cutoff) delete del[k];
+  const out = { v: 1, settings: (b.settings.ua || 0) > (a.settings.ua || 0) ? b.settings : a.settings, del, prices: {} };
+  for (const L2 of ["tx", "trades", "recs"]) {
+    const m = new Map();
+    [...a[L2], ...b[L2]].forEach((x) => { const c = m.get(x.id); if (!c || (x.ua || 0) > (c.ua || 0)) m.set(x.id, x); });
+    out[L2] = [...m.values()].filter((x) => !(del[x.id] && del[x.id] >= (x.ua || 0)));
+  }
+  for (const src of [a.prices, b.prices]) for (const [k, v] of Object.entries(src)) if (!out.prices[k] || (v.t || 0) > (out.prices[k].t || 0)) out.prices[k] = v;
+  return normalize(out);
+}
+
+/* ───────── GitHub 同步 ───────── */
+const GH = "https://api.github.com";
+const ghCfg = () => { const g = L.gh || {}; return g.owner && g.repo && g.token ? g : null; };
+function b64ToUtf8(b64) { const bin = atob(b64.replace(/\s/g, "")); const bytes = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i); return new TextDecoder().decode(bytes); }
+function utf8ToB64(str) { const bytes = new TextEncoder().encode(str); let bin = ""; for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000)); return btoa(bin); }
+function ghHeaders(g) { return { Authorization: "Bearer " + g.token, Accept: "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28" }; }
+const ghRepo = (g) => `${GH}/repos/${encodeURIComponent(g.owner)}/${encodeURIComponent(g.repo)}`;
+const ghPath = (g, p) => `${ghRepo(g)}/contents/${(p || g.path || "ledger.json").split("/").map(encodeURIComponent).join("/")}`;
+async function ghGet(g) { const f = await ghGetFile(g); return { sha: f.sha, data: f.text ? JSON.parse(f.text) : null }; }
+async function ghGetFile(g, path) {
+  const r = await fetch(ghPath(g, path), { headers: ghHeaders(g), cache: "no-store" });
+  if (r.status === 404) return { sha: null, text: null };
+  if (r.status === 401) throw new Error("金鑰無效或過期（401）");
+  if (r.status === 403) throw new Error("金鑰沒有這個 repo 的權限（403）");
+  if (!r.ok) throw new Error("讀取失敗 " + r.status);
+  const j = await r.json();
+  let text = j.content ? b64ToUtf8(j.content) : null;
+  if (!text && j.sha) { // 檔案超過 1MB 時改走 blob
+    const rb = await fetch(`${ghRepo(g)}/git/blobs/${j.sha}`, { headers: ghHeaders(g), cache: "no-store" });
+    if (!rb.ok) throw new Error("讀取大檔失敗 " + rb.status);
+    text = b64ToUtf8((await rb.json()).content);
+  }
+  return { sha: j.sha, text };
+}
+/* 觸發資料 repo 的 GitHub Actions（跟市場雷達的「立即重新總結」同一招） */
+async function ghDispatch(g, wf, inputs) {
+  const r = await fetch(`${ghRepo(g)}/actions/workflows/${wf}/dispatches`, { method: "POST", headers: Object.assign({ "Content-Type": "application/json" }, ghHeaders(g)), body: JSON.stringify({ ref: g.branch || "main", inputs: inputs || {} }) });
+  if (r.status === 204) return;
+  if (r.status === 403) throw new Error("金鑰沒有 Actions 權限：token 的 Actions 要設成 Read and write");
+  if (r.status === 404) throw new Error("資料 repo 裡找不到 .github/workflows/" + wf);
+  if (r.status === 422) throw new Error("觸發參數錯誤，或分支不是 main（422）");
+  throw new Error("觸發失敗 " + r.status);
+}
+let RM = { prices: null, ai: null, err: "" };
+async function loadRemote() {
+  const g = ghCfg(); if (!g) return;
+  try {
+    const [p, a] = await Promise.all([ghGetFile(g, "prices.json"), ghGetFile(g, "ai.json")]);
+    RM.prices = p.text ? JSON.parse(p.text) : null; RM.ai = a.text ? JSON.parse(a.text) : null; RM.err = "";
+  } catch (e) { RM.err = e.message; }
+  render();
+}
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+let priceJob = "";
+async function refreshPrices() {
+  const g = ghCfg(); if (!g) { toast("先到設定連上 GitHub"); return; }
+  if (priceJob.startsWith("已送出")) return;
+  const t0 = now(); priceJob = "已送出，GitHub 正在抓價（約 1–2 分鐘）"; render();
+  try {
+    await sync();
+    await ghDispatch(g, "prices.yml");
+    for (let i = 0; i < 30; i++) {
+      await sleep(8000);
+      const f = await ghGetFile(g, "prices.json"); const d = f.text ? JSON.parse(f.text) : null;
+      if (d && (d.updated_ts || 0) > t0) { RM.prices = d; priceJob = ""; render(); toast("現價已更新"); return; }
+    }
+    priceJob = "等超過 4 分鐘，到資料 repo 的 Actions 頁看看「更新持股現價」有沒有出錯";
+  } catch (e) { priceJob = "沒辦法更新：" + e.message; }
+  render();
+}
+async function ghPut(g, data, sha) {
+  const body = { message: "坤寶存摺同步 " + new Date().toISOString(), content: utf8ToB64(JSON.stringify(data)) };
+  if (sha) body.sha = sha;
+  const r = await fetch(ghPath(g), { method: "PUT", headers: Object.assign({ "Content-Type": "application/json" }, ghHeaders(g)), body: JSON.stringify(body) });
+  if (r.ok) return { ok: true };
+  if (r.status === 409 || r.status === 422) return { conflict: true };
+  if (r.status === 403 || r.status === 404) throw new Error("金鑰沒有寫入權限，token 的 Contents 要設成 Read and write");
+  throw new Error("寫入失敗 " + r.status);
+}
+let syncing = false, syncAgain = false, syncTimer = null, syncState = { s: "local", msg: "" };
+function setSync(s, msg = "") { syncState = { s, msg }; paintSync(); }
+function paintSync() {
+  const c = $("#syncChip"); const g = ghCfg();
+  c.className = "sync " + (syncState.s === "ok" ? "ok" : syncState.s === "err" ? "err" : syncState.s === "busy" ? "busy" : "");
+  c.textContent = !g ? "僅存本機" : syncState.s === "busy" ? "同步中…" : syncState.s === "err" ? "同步失敗" : L.lastSync ? "已同步 " + new Date(L.lastSync).toTimeString().slice(0, 5) : "待同步";
+  c.title = syncState.msg || "";
+}
+function scheduleSync() { if (!ghCfg()) { paintSync(); return; } clearTimeout(syncTimer); syncTimer = setTimeout(sync, 1500); paintSync(); }
+async function sync() {
+  const g = ghCfg(); if (!g) { setSync("local"); return; }
+  if (syncing) { syncAgain = true; return; }
+  syncing = true; setSync("busy");
+  try {
+    let done = false;
+    for (let i = 0; i < 4 && !done; i++) {
+      const rem = await ghGet(g);
+      const merged = rem.data ? mergeState(S, rem.data) : normalize(S);
+      const changedLocal = JSON.stringify(merged) !== JSON.stringify(S);
+      S = merged; LS.set("kb-state", S); if (changedLocal) { render(); lastGame = game(); }
+      if (rem.data && JSON.stringify(normalize(rem.data)) === JSON.stringify(S)) { done = true; break; }
+      const r = await ghPut(g, S, rem.sha);
+      if (r.ok) done = true;
+    }
+    if (!done) throw new Error("多台裝置同時寫入，稍後再試");
+    L.lastSync = now(); saveL(); setSync("ok");
+  } catch (e) { setSync("err", e.message || String(e)); }
+  syncing = false;
+  if (syncAgain) { syncAgain = false; sync(); }
+}
+
+/* ───────── 市場雷達與幣價 ───────── */
+let R = { tw: null, us: null, core: null, sum: null, err: "", loading: false };
+let CR = {};
+async function loadRadar() {
+  const b = (S.settings.radarBase || "").replace(/\/+$/, "");
+  if (!b) return;
+  R.loading = true; R.err = "";
+  const get = (n) => fetch(`${b}/data/${n}.json?t=${Date.now()}`, { cache: "no-store" }).then((r) => { if (!r.ok) throw new Error(n + ".json " + r.status); return r.json(); });
+  const res = await Promise.allSettled(["tw", "us", "core", "summary"].map(get));
+  const [tw, us, core, sm] = res;
+  R.tw = tw.status === "fulfilled" ? tw.value : R.tw;
+  R.us = us.status === "fulfilled" ? us.value : R.us;
+  R.core = core.status === "fulfilled" ? core.value : R.core;
+  R.sum = sm.status === "fulfilled" ? sm.value : R.sum;
+  const bad = res.filter((x) => x.status === "rejected");
+  R.err = bad.length === res.length ? "讀不到市場雷達資料（" + (bad[0].reason?.message || "網路錯誤") + "）" : "";
+  R.loading = false; render();
+}
+const CG = { BTC: "bitcoin", ETH: "ethereum", SOL: "solana", BNB: "binancecoin", XRP: "ripple", DOGE: "dogecoin", ADA: "cardano", ARB: "arbitrum", TON: "the-open-network", LINK: "chainlink", AVAX: "avalanche-2", DOT: "polkadot", TRX: "tron", SUI: "sui", PEPE: "pepe" };
+async function loadCrypto() {
+  const syms = [...new Set([...S.trades, ...S.recs, ...S.settings.plans].filter((t) => t.m === "CR").map((t) => t.sym))];
+  if (!syms.length) return;
+  await Promise.all(syms.map(async (s) => {
+    if (["USDT", "USDC", "FDUSD"].includes(s)) { CR[s] = { p: 1, src: "穩定幣" }; return; }
+    try { const r = await fetch(`https://api.binance.com/api/v3/ticker/price?symbol=${encodeURIComponent(s)}USDT`, { cache: "no-store" }); if (r.ok) { const j = await r.json(); if (isNum(+j.price)) { CR[s] = { p: +j.price, src: "Binance" }; return; } } } catch (e) {}
+    if (CG[s]) { try { const r = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${CG[s]}&vs_currencies=usd`); const j = await r.json(); const p = j[CG[s]]?.usd; if (isNum(p)) CR[s] = { p, src: "CoinGecko" }; } catch (e) {} }
+  }));
+  render();
+}
+function radarItem(m, sym) {
+  const d = m === "TW" ? R.tw : m === "US" ? R.us : null; if (!d) return null;
+  const s = String(sym).toUpperCase();
+  const hit = (arr) => (arr || []).find((x) => String(x.c).toUpperCase() === s && isNum(x.px));
+  return hit(d.stocks) || hit(d.benchmarks) || null;
+}
+function priceOf(m, sym) {
+  const ov = S.prices[m + ":" + sym];
+  if (ov && isNum(ov.p)) return { p: ov.p, src: "手動 " + (ov.d || "") };
+  if (m === "CR" && CR[sym]) return { p: CR[sym].p, src: CR[sym].src };
+  const rp = RM.prices && RM.prices.prices && RM.prices.prices[m + ":" + sym];
+  if (rp && isNum(rp.p)) return { p: rp.p, src: (rp.src || "自動") + " " + (rp.d || "") };
+  if (m === "CR") return null;
+  const it = radarItem(m, sym);
+  if (it) return { p: it.px, src: "市場雷達 " + ((m === "TW" ? R.tw : R.us).data_date || ""), item: it };
+  return null;
+}
+const fxNow = () => (R.core && R.core.latest && isNum(R.core.latest.fx)) ? R.core.latest.fx : (RM.prices && isNum(RM.prices.fx)) ? RM.prices.fx : S.settings.fx;
+const toTWD = (m, v, fx) => m === "TW" ? v : v * (fx || fxNow());
+function normSym(m, s) {
+  s = String(s || "").trim().toUpperCase();
+  if (m === "TW") s = s.replace(/\.(TW|TWO)$/, "");
+  if (m === "CR") s = s.replace(/(USDT|\/USDT)$/, "") || s;
+  return s;
+}
+
+/* 衛星層四道濾網：照市場雷達原規則（熱點＋資金流＋財報＋長線買點觸發，排除流動性不足、ETF，依長線分排序） */
+function hotTop(d) {
+  const s = (d.sectors || []).filter((x) => isNum(x.rs4));
+  const sorted = s.slice().sort((a, b) => b.rs4 - a.rs4);
+  return new Set(sorted.slice(0, Math.max(1, Math.ceil(sorted.length / 3))).filter((x) => x.rs4 > 0).map((x) => x.name));
+}
+function radarPicks(m) {
+  const d = m === "TW" ? R.tw : R.us; if (!d) return null;
+  const hot = hotTop(d);
+  return (d.stocks || []).filter((x) => !x.etf && x.liq && hot.has(x.sec) && (x.f || 0) >= 55 && x.fin === "up" && (x.trig || []).length > 0)
+    .sort((a, b) => (isNum(b.lt) ? b.lt : -1) - (isNum(a.lt) ? a.lt : -1));
+}
+
+/* ───────── 計算 ───────── */
+function holdings() {
+  const map = {};
+  const ts = [...S.trades].sort((a, b) => (a.date || "").localeCompare(b.date || "") || (a.ua || 0) - (b.ua || 0));
+  for (const t of ts) {
+    const k = t.m + ":" + t.sym;
+    const h = map[k] || (map[k] = { k, m: t.m, sym: t.sym, name: "", sh: 0, cost: 0, costT: 0, real: 0, realT: 0, div: 0, divT: 0, n: 0 });
+    if (t.name) h.name = t.name;
+    h.n++;
+    const fx = t.m === "TW" ? 1 : (t.fx || S.settings.fx);
+    if (t.side === "buy") {
+      const c = t.q * t.p + (t.fee || 0);
+      h.sh += t.q; h.cost += c; h.costT += c * fx;
+    } else if (t.side === "sell") {
+      if (h.sh <= 0) continue;
+      const q = Math.min(t.q, h.sh), ratio = q / h.sh;
+      const cN = h.cost * ratio, cT = h.costT * ratio;
+      const proceeds = q * t.p - (t.fee || 0) - (t.tax || 0);
+      h.real += proceeds - cN; h.realT += proceeds * fx - cT;
+      h.cost -= cN; h.costT -= cT; h.sh -= q;
+      if (h.sh < 1e-9) { h.sh = 0; h.cost = 0; h.costT = 0; }
+    } else if (t.side === "div") {
+      h.div += t.amt || 0; h.divT += (t.amt || 0) * fx;
+    }
+  }
+  return Object.values(map).map((h) => {
+    const pr = priceOf(h.m, h.sym);
+    h.avg = h.sh > 0 ? h.cost / h.sh : NaN;
+    h.px = pr ? pr.p : NaN; h.pxSrc = pr ? pr.src : "";
+    h.mv = h.sh * h.px; h.mvT = isNum(h.mv) ? toTWD(h.m, h.mv, fxNow()) : NaN;
+    h.unT = isNum(h.mvT) ? h.mvT - h.costT : NaN;
+    h.unP = isNum(h.unT) && h.costT > 0 ? h.unT / h.costT : NaN;
+    h.valT = isNum(h.mvT) ? h.mvT : h.costT; // 沒現價時以成本估
+    return h;
+  });
+}
+function monthBuysTWD(mo) {
+  return sum(S.trades.filter((t) => t.side === "buy" && (t.date || "").startsWith(mo)), (t) => toTWD(t.m, t.q * t.p + (t.fee || 0), t.fx || S.settings.fx));
+}
+
+/* ───────── 畫面 ───────── */
+const view = $("#view");
+function render() {
+  const t = L.tab;
+  $$("nav.tabs button").forEach((b) => b.setAttribute("aria-current", b.dataset.tab === t ? "page" : "false"));
+  $("#fab").style.display = t === "settings" || t === "game" ? "none" : "";
+  $("#fab").setAttribute("aria-label", t === "book" ? "記一筆帳" : t === "invest" ? "記一筆交易" : "新增推薦");
+  if (t === "book") renderBook(); else if (t === "invest") renderInvest(); else if (t === "recs") renderRecs(); else if (t === "game") renderGame(); else renderSettings();
+  paintSync();
+}
+function bar(used, budget, cls = "") {
+  const r = budget > 0 ? used / budget : 0;
+  const c = cls || (r > 1 ? "over" : r >= 0.85 && r < 1 ? "warn" : "");
+  return `<div class="bar ${c}"><i style="width:${Math.min(100, Math.max(0, r * 100)).toFixed(1)}%"></i></div>`;
+}
+function monthLabel(m) { const [y, mo] = m.split("-"); return `${y} 年 ${+mo} 月`; }
+function shiftMonth(m, d) { const [y, mo] = m.split("-").map(Number); const dt = new Date(y, mo - 1 + d, 1); return dt.getFullYear() + "-" + pad(dt.getMonth() + 1); }
+
+function renderBook() {
+  const st = S.settings, tx = S.tx.filter((t) => (t.date || "").startsWith(month));
+  const inc = sum(tx.filter((t) => t.type === "inc"), "amt"), exp = sum(tx.filter((t) => t.type === "exp"), "amt");
+  const inv = monthBuysTWD(month);
+  const left = inc - exp - inv;
+  const byCat = {}; tx.filter((t) => t.type === "exp").forEach((t) => byCat[t.cat] = (byCat[t.cat] || 0) + t.amt);
+  const cats = [...new Set([...st.expCats.filter((c) => (st.budgets[c] || 0) > 0), ...Object.keys(byCat)])];
+  const totalBudget = sum(st.expCats, (c) => st.budgets[c] || 0);
+  const pending = st.recurring.filter((r) => !S.tx.some((t) => t.rid === r.id && (t.date || "").startsWith(month)));
+  const isCur = month === today().slice(0, 7);
+  view.innerHTML = `
+  ${miniTerra()}
+  <div class="month"><button class="ib" type="button" id="mPrev" aria-label="上個月">‹</button><b>${monthLabel(month)}</b><button class="ib" type="button" id="mNext" aria-label="下個月">›</button></div>
+  <div class="tiles">
+    <div class="tile"><div class="k">收入</div><div class="v num">${fmt(inc)}</div></div>
+    <div class="tile"><div class="k">支出</div><div class="v num">${fmt(exp)}</div></div>
+    <div class="tile"><div class="k">投資投入</div><div class="v num">${fmt(inv)}</div></div>
+    <div class="tile"><div class="k">剩下可用</div><div class="v num ${left < 0 ? "neg" : ""}">${fmt(left)}</div></div>
+  </div>
+  ${pending.length ? `<div class="card"><h2>本月固定收支還沒記<span class="r">${pending.map((r) => esc(r.name)).join("、")}</span></h2>
+    <div class="btns"><button class="btn pri sm" type="button" id="applyRec">一鍵記上 ${pending.length} 筆</button></div></div>` : ""}
+  <div class="card"><h2>本月預算<span class="r num">${fmt(exp)} / ${fmt(totalBudget)}</span></h2>
+    ${bar(exp, totalBudget)}
+    <div style="margin-top:8px">${cats.map((c) => { const u = byCat[c] || 0, b = st.budgets[c] || 0; return `<div class="brow"><div class="t"><span>${esc(c)}</span><span class="num ${b && u > b ? "neg" : ""}">${fmt(u)}${b ? ` <span class="tiny">/ ${fmt(b)}</span>` : ""}</span></div>${b ? bar(u, b) : ""}</div>`; }).join("") || `<div class="empty">還沒有支出</div>`}</div>
+  </div>
+  <div class="card"><h2>存錢與投資進度</h2>
+    <div class="brow"><div class="t"><span>本月投資</span><span class="num">${fmt(inv)} <span class="tiny">/ ${fmt(st.investMonthly)}</span></span></div>${bar(inv, st.investMonthly, inv >= st.investMonthly ? "good" : "")}</div>
+    <div class="brow"><div class="t"><span>緊急預備金</span><span class="num">${fmt(st.emergencyNow)} <span class="tiny">/ ${fmt(st.emergencyTarget)}</span></span></div>${bar(st.emergencyNow, st.emergencyTarget, "good")}
+      <div class="tiny">${st.emergencyNow >= st.emergencyTarget ? "已存滿，之後每月 " + fmt(st.emergencyMonthly) + " 可以改投資" : "還差 " + fmt(st.emergencyTarget - st.emergencyNow) + "，每月存 " + fmt(st.emergencyMonthly) + " 約 " + Math.ceil((st.emergencyTarget - st.emergencyNow) / Math.max(1, st.emergencyMonthly)) + " 個月存滿"}</div>
+      <div class="btns" style="margin-top:6px"><button class="btn sm" type="button" id="efAdd">存入預備金</button></div></div>
+  </div>
+  <div class="card chart"><h2>每日支出<span class="r">${isCur ? "今天標深色" : ""}</span></h2>${dailyChart(tx)}</div>
+  <div class="card"><h2>明細<span class="r">${tx.length} 筆</span></h2>
+    <div class="f"><input id="txQ" type="search" placeholder="搜尋備註、分類、金額" value="${esc(txQuery)}" aria-label="搜尋明細"></div>
+    <div id="txList" class="list"></div></div>`;
+  renderTxList(tx);
+  $("#mPrev").onclick = () => { month = shiftMonth(month, -1); render(); };
+  $("#miniT").onclick = () => { L.tab = "game"; saveL(); window.scrollTo(0, 0); render(); };
+  $("#mNext").onclick = () => { month = shiftMonth(month, 1); render(); };
+  $("#txQ").oninput = (e) => { txQuery = e.target.value; renderTxList(tx); };
+  if ($("#applyRec")) $("#applyRec").onclick = () => {
+    const d = isCur ? today() : month + "-01";
+    pending.forEach((r) => S.tx.push({ id: uid(), ua: now(), type: r.type, amt: r.amt, cat: r.cat, acct: r.acct || "銀行", date: d, note: r.name + "（固定）", rid: r.id }));
+    commit(); toast("已記上固定收支");
+  };
+  $("#efAdd").onclick = efForm;
+}
+function renderTxList(tx) {
+  const q = txQuery.trim().toLowerCase();
+  const rows = tx.filter((t) => !q || [t.note, t.cat, t.acct, String(t.amt)].join(" ").toLowerCase().includes(q))
+    .sort((a, b) => (b.date || "").localeCompare(a.date || "") || (b.ua || 0) - (a.ua || 0));
+  if (!rows.length) { $("#txList").innerHTML = `<div class="empty">${q ? "找不到符合的紀錄" : "這個月還沒記帳，按右下角 ＋ 記第一筆"}</div>`; return; }
+  let html = "", cur = "";
+  for (const t of rows) {
+    if (t.date !== cur) {
+      cur = t.date; const day = rows.filter((x) => x.date === cur);
+      const de = sum(day.filter((x) => x.type === "exp"), "amt");
+      const w = "日一二三四五六"[new Date(cur + "T00:00").getDay()];
+      html += `<div class="dayh"><span>${cur.slice(5).replace("-", "/")}（${w}）</span><span class="num">支出 ${fmt(de)}</span></div>`;
+    }
+    html += `<button class="item" type="button" data-tx="${esc(t.id)}"><span class="a">${esc(t.cat)}${t.note ? ` <span class="muted">· ${esc(t.note)}</span>` : ""}</span><span class="amt num ${t.type === "inc" ? "down" : ""}">${t.type === "inc" ? "+" : "−"}${fmt(t.amt)}</span><span class="b">${esc(t.acct || "")}</span></button>`;
+  }
+  $("#txList").innerHTML = html;
+  $$("[data-tx]", $("#txList")).forEach((b) => b.onclick = () => txForm(S.tx.find((x) => x.id === b.dataset.tx)));
+}
+function dailyChart(tx) {
+  const [y, mo] = month.split("-").map(Number);
+  const days = new Date(y, mo, 0).getDate();
+  const vals = Array.from({ length: days }, (_, i) => sum(tx.filter((t) => t.type === "exp" && t.cat !== "房租" && +t.date.slice(8) === i + 1), "amt"));
+  const max = Math.max(...vals, 1);
+  const W = 520, H = 120, pb = 18, pt = 14, bw = W / days;
+  const td = month === today().slice(0, 7) ? +today().slice(8) : -1;
+  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="每日支出長條圖，不含房租">`;
+  s += `<line x1="0" x2="${W}" y1="${H - pb}" y2="${H - pb}" stroke="var(--line)"/>`;
+  s += `<line x1="0" x2="${W}" y1="${pt}" y2="${pt}" stroke="var(--line)" stroke-dasharray="3 4"/>`;
+  s += `<text x="${W}" y="${pt - 3}" text-anchor="end" font-size="10" fill="var(--muted)" font-family="IBM Plex Mono,monospace">${fmt(max)}</text>`;
+  vals.forEach((v, i) => {
+    const h = v / max * (H - pb - pt); const x = i * bw + bw * 0.18;
+    if (v > 0) s += `<rect x="${x.toFixed(1)}" y="${(H - pb - h).toFixed(1)}" width="${(bw * 0.64).toFixed(1)}" height="${h.toFixed(1)}" rx="2" fill="var(--fill)" opacity="${i + 1 === td ? 1 : 0.55}"/>`;
+    if ([1, 10, 20, days].includes(i + 1)) s += `<text x="${(i * bw + bw / 2).toFixed(1)}" y="${H - 4}" text-anchor="middle" font-size="10" fill="var(--muted)" font-family="IBM Plex Mono,monospace">${i + 1}</text>`;
+  });
+  return s + `</svg><div class="tiny">不含房租</div>`;
+}
+
+function renderInvest() {
+  const st = S.settings, H = holdings(), act = H.filter((h) => h.sh > 0);
+  const mv = sum(act, "valT"), cost = sum(act, "costT");
+  const priced = act.filter((h) => isNum(h.unT));
+  const un = sum(priced, "unT"), unBase = sum(priced, "costT");
+  const real = sum(H, "realT") + sum(H, "divT");
+  const byM = { US: 0, TW: 0, CR: 0 }; act.forEach((h) => byM[h.m] = (byM[h.m] || 0) + h.valT);
+  const tot = byM.US + byM.TW + byM.CR;
+  const tsum = (st.targets.US || 0) + (st.targets.TW || 0) + (st.targets.CR || 0) || 1;
+  const allocRows = ["US", "TW", "CR"].map((m) => {
+    const cur = tot > 0 ? byM[m] / tot : 0, tgt = (st.targets[m] || 0) / tsum, dev = cur - tgt;
+    return { m, cur, tgt, dev };
+  });
+  const needReb = tot > 0 && allocRows.some((r) => Math.abs(r.dev) > 0.05);
+  const mo = today().slice(0, 7);
+  const planDone = (p) => sum(S.trades.filter((t) => t.side === "buy" && t.m === p.m && t.sym === p.sym && (t.date || "").startsWith(mo)), (t) => toTWD(t.m, t.q * t.p + (t.fee || 0), t.fx));
+  const trades = [...S.trades].sort((a, b) => (b.date || "").localeCompare(a.date || "") || (b.ua || 0) - (a.ua || 0));
+  view.innerHTML = `
+  <div class="tiles">
+    <div class="tile"><div class="k">總市值（台幣）</div><div class="v num">${fmt(mv)}</div></div>
+    <div class="tile"><div class="k">投入成本</div><div class="v num">${fmt(cost)}</div></div>
+    <div class="tile"><div class="k">未實現損益</div><div class="v num ${signCls(un)}">${priced.length ? fmt(un) : "－"}</div><div class="tiny num">${priced.length ? pct(unBase ? un / unBase : NaN) : "還沒有現價"}</div></div>
+    <div class="tile"><div class="k">已實現＋股利</div><div class="v num ${signCls(real)}">${fmt(real)}</div></div>
+  </div>
+  <div class="card"><h2>資產配置 vs 目標<span class="r">黑線＝目標</span></h2>
+    ${tot > 0 ? `<div style="margin:-4px 0 10px">${needReb ? `<span class="chip alert">偏離超過 5 個百分點，該再平衡</span>` : `<span class="chip okc">在目標範圍內</span>`}</div>` : ""}
+    ${tot > 0 ? `<div class="alloc">${allocRows.map((r) => `<div><div class="t"><span>${MK[r.m]}</span><span class="num">${(r.cur * 100).toFixed(1)}% <span class="tiny">目標 ${(r.tgt * 100).toFixed(0)}%・${r.dev >= 0 ? "+" : ""}${(r.dev * 100).toFixed(1)}</span></span></div>
+      <div class="stack"><i style="width:${(r.cur * 100).toFixed(1)}%;${Math.abs(r.dev) > 0.05 ? "background:var(--seal)" : ""}"></i><u style="left:calc(${(r.tgt * 100).toFixed(1)}% - 1px)"></u></div></div>`).join("")}</div>
+      ${needReb ? `<p class="tiny" style="margin:8px 0 0">${rebalanceHint(allocRows, tot)}</p>` : ""}` : `<div class="empty">記下第一筆買進後，這裡會顯示台股、美股、加密貨幣的比例</div>`}
+  </div>
+  <div class="card"><h2>本月定期定額<span class="r num">${fmt(monthBuysTWD(mo))} / ${fmt(st.investMonthly)}</span></h2>
+    <div class="list">${st.plans.map((p) => { const d = planDone(p); return `<div class="item" style="cursor:default"><span class="a">${esc(p.sym)} <span class="muted">${esc(p.name)}</span> ${d >= p.amt * 0.9 ? `<span class="chip okc">已扣</span>` : ""}</span><span class="amt num">${fmt(d)} <span class="tiny">/ ${fmt(p.amt)}</span></span><span class="b">${MK[p.m]}</span><span><button class="btn sm" type="button" data-plan="${esc(p.id)}">記這筆</button></span></div>`; }).join("") || `<div class="empty">到設定加入定期定額計畫</div>`}</div>
+  </div>
+  <div class="card"><h2>持股<span class="r">${R.loading ? "讀取市場資料中…" : `匯率 ${fmt(fxNow(), 2)}`}</span></h2>
+    ${ghCfg() ? `<div class="btns" style="margin:-4px 0 4px;align-items:center"><button class="btn sm" type="button" id="pxRefresh">更新現價</button><span class="tiny">${esc(priceJob || (RM.prices ? "自動抓價：" + (RM.prices.updated || "") : "還沒抓過價，按一下更新"))}</span></div>` : ""}
+    <div class="list">${act.length ? act.sort((a, b) => b.valT - a.valT).map((h) => `<button class="hold" type="button" data-hold="${esc(h.k)}">
+      <span class="a"><b>${esc(h.sym)}</b> <span class="muted">${esc(h.name)}</span> <span class="chip">${MK[h.m]}</span></span>
+      <span class="amt num" style="text-align:right">${fmt(h.valT)}</span>
+      <span class="b num">${fmtQ(h.sh)} ${h.m === "CR" ? "顆" : "股"}・均價 ${fmtP(h.avg)}・現價 ${isNum(h.px) ? fmtP(h.px) : "未知"}</span>
+      <span class="b num ${signCls(h.unT)}" style="text-align:right">${isNum(h.unT) ? fmt(h.unT) + "（" + pct(h.unP) + "）" : "點這裡填現價"}</span></button>`).join("") : `<div class="empty">還沒有持股，按右下角 ＋ 記第一筆買進</div>`}</div>
+    ${H.some((h) => h.sh === 0) ? `<details><summary>已出清的標的（${H.filter((h) => h.sh === 0).length}）</summary>${H.filter((h) => h.sh === 0).map((h) => `<div class="item" style="cursor:default"><span class="a">${esc(h.sym)} <span class="muted">${esc(h.name)}</span></span><span class="amt num ${signCls(h.realT + h.divT)}">${fmt(h.realT + h.divT)}</span></div>`).join("")}</details>` : ""}
+  </div>
+  <div class="card"><h2>交易紀錄<span class="r">${trades.length} 筆</span></h2>
+    <div class="scroll"><table class="tbl"><thead><tr><th>日期</th><th>標的</th><th>動作</th><th class="r">數量</th><th class="r">價格/金額</th></tr></thead><tbody>
+    ${trades.slice(0, 60).map((t) => `<tr data-trade="${esc(t.id)}" style="cursor:pointer"><td class="num">${esc((t.date || "").slice(2))}</td><td>${esc(t.sym)}<div class="tiny">${MK[t.m]}</div></td><td class="${t.side === "buy" ? "up" : t.side === "sell" ? "down" : ""}">${SIDE[t.side]}</td><td class="r num">${t.side === "div" ? "－" : fmtQ(t.q)}</td><td class="r num">${t.side === "div" ? fmt(t.amt, 0) : fmtP(t.p)}</td></tr>`).join("") || `<tr><td colspan="5" class="empty">還沒有交易</td></tr>`}
+    </tbody></table></div>${trades.length > 60 ? `<div class="tiny">只列最近 60 筆，完整紀錄可在設定匯出 CSV</div>` : ""}
+  </div>`;
+  $$("[data-plan]").forEach((b) => b.onclick = () => { const p = st.plans.find((x) => x.id === b.dataset.plan); const pr = priceOf(p.m, p.sym); const px = pr ? pr.p : NaN; tradeForm(null, { m: p.m, sym: p.sym, name: p.name, p: isNum(px) ? px : "", q: isNum(px) ? +(p.amt / toTWD(p.m, px, fxNow())).toFixed(p.m === "CR" ? 6 : p.m === "US" ? 4 : 0) : "" }); });
+  $$("[data-hold]").forEach((b) => b.onclick = () => holdSheet(H.find((h) => h.k === b.dataset.hold)));
+  if ($("#pxRefresh")) $("#pxRefresh").onclick = refreshPrices;
+  $$("[data-trade]").forEach((r) => r.onclick = () => tradeForm(S.trades.find((x) => x.id === r.dataset.trade)));
+}
+function rebalanceHint(rows, tot) {
+  const over = rows.filter((r) => r.dev > 0.05), under = rows.filter((r) => r.dev < -0.05);
+  const parts = [];
+  over.forEach((r) => parts.push(`${MK[r.m]}多了約 ${fmt(r.dev * tot)}`));
+  under.forEach((r) => parts.push(`${MK[r.m]}少了約 ${fmt(-r.dev * tot)}`));
+  return parts.join("、") + "。最省事的做法是接下來幾個月把定期定額先多投到偏少的那邊，不一定要賣。";
+}
+
+function renderRecs() {
+  const sm = R.sum, tw = radarPicks("TW"), us = radarPicks("US");
+  const recs = S.recs.filter((r) => recFilter === "all" || r.status === recFilter).sort((a, b) => (b.date || "").localeCompare(a.date || "") || (b.ua || 0) - (a.ua || 0));
+  const has = (m, c) => S.recs.some((r) => r.m === m && r.sym === String(c));
+  const benches = [...(R.tw?.benchmarks || []).map((x) => ({ ...x, mk: "TW" })), ...(R.us?.benchmarks || []).map((x) => ({ ...x, mk: "US" }))].filter((x) => x.l);
+  const pickTable = (m, rows) => !rows ? `<div class="empty">${R.loading ? "讀取中…" : "沒有資料"}</div>` : !rows.length ? `<div class="empty">今天沒有股票同時通過四道濾網</div>` :
+    `<div class="scroll"><table class="tbl"><thead><tr><th>股票</th><th>觸發</th><th class="r">長線分</th><th>燈號</th><th></th></tr></thead><tbody>${rows.slice(0, 10).map((x) => `<tr><td><b>${esc(x.c)}</b><div class="tiny">${esc(x.n)}</div></td><td class="tiny">${(x.trig || []).map(esc).join("<br>")}</td><td class="r num">${isNum(x.lt) ? Math.round(x.lt) : "－"}</td><td><span class="chip ${esc(x.l)}">${LIGHT[x.l] || esc(x.l)}</span></td><td>${has(m, x.c) ? `<span class="tiny">已加入</span>` : `<button class="btn sm" type="button" data-addpick="${m}|${esc(x.c)}">觀察</button>`}</td></tr>`).join("")}</tbody></table></div>${rows.length > 10 ? `<div class="tiny">共 ${rows.length} 檔，列長線分前 10</div>` : ""}`;
+  view.innerHTML = `
+  <div class="card"><h2>市場雷達今日判讀<span class="r">${sm ? esc((sm.generated || "").slice(5, 16)) : ""}</span></h2>
+    ${R.err ? `<div class="empty">${esc(R.err)}</div>` : sm ? `<p style="margin:0 0 8px;font-weight:700">${esc(sm.headline || "")}</p>${(sm.watch || []).length ? `<ul style="margin:0;padding-left:18px">${sm.watch.map((w) => `<li class="tiny" style="color:var(--ink)">${esc(w)}</li>`).join("")}</ul>` : ""}` : `<div class="empty">${R.loading ? "讀取中…" : "沒有資料"}</div>`}
+    <div class="btns" style="margin-top:8px"><button class="btn sm" type="button" id="reloadRadar">重新讀取</button><a class="btn sm" href="${esc(S.settings.radarBase)}" target="_blank" rel="noopener" style="text-decoration:none">打開市場雷達</a></div>
+  </div>
+  ${benches.length ? `<div class="card"><h2>大盤與 ETF 長線燈號<span class="r">只看價格位置</span></h2><div class="scroll"><table class="tbl"><thead><tr><th>標的</th><th class="r">年線乖離</th><th class="r">5 年位置</th><th>燈號</th></tr></thead><tbody>${benches.map((x) => `<tr><td>${esc(x.n)}<div class="tiny">${esc(x.c)}</div></td><td class="r num">${pct(x.b, 0)}</td><td class="r num">${isNum(x.pos) ? Math.round(x.pos * 100) + "%" : "－"}</td><td><span class="chip ${esc(x.l)}">${LIGHT[x.l] || esc(x.l)}</span></td></tr>`).join("")}</tbody></table></div><p class="tiny" style="margin:6px 0 0">偏貴不代表要停扣，核心 ETF 照常定期定額。</p></div>` : ""}
+  <div class="card"><h2>衛星層候選：台股</h2>${pickTable("TW", tw)}</div>
+  <div class="card"><h2>衛星層候選：美股</h2>${pickTable("US", us)}
+    <p class="tiny" style="margin:8px 0 0">依市場雷達的四道濾網篩出（熱點＋資金流＋財報＋長線買點觸發），這套濾網還沒回測驗證，名單不是買進建議。單股不超過衛星層 10%。</p></div>
+  <div class="card"><h2>我的推薦紀錄<span class="r">${S.recs.length} 筆</span></h2>
+    <div class="seg" role="tablist">${["watch", "bought", "pass", "all"].map((k) => `<button type="button" class="${recFilter === k ? "on" : ""}" data-rf="${k}">${k === "all" ? "全部" : STATUS[k]}（${k === "all" ? S.recs.length : S.recs.filter((r) => r.status === k).length}）</button>`).join("")}</div>
+    <div class="list" style="margin-top:6px">${recs.map((r) => { const pr = priceOf(r.m, r.sym); const ch = pr && isNum(r.px) && r.px > 0 ? pr.p / r.px - 1 : NaN; return `<button class="hold" type="button" data-rec="${esc(r.id)}">
+      <span class="a"><b>${esc(r.sym)}</b> <span class="muted">${esc(r.name || "")}</span> <span class="chip">${MK[r.m]}</span> <span class="chip">${esc(r.src || "")}</span></span>
+      <span class="amt num ${signCls(ch)}" style="text-align:right">${isNum(ch) ? pct(ch) : "－"}</span>
+      <span class="b">${esc(r.date || "")}${r.reason ? "・" + esc(r.reason) : ""}</span>
+      <span class="b num" style="text-align:right">${isNum(r.px) ? fmtP(r.px) : "－"} → ${pr ? fmtP(pr.p) : "－"}</span></button>`; }).join("") || `<div class="empty">${recFilter === "watch" ? "按候選名單的「觀察」或右下角 ＋ 新增，之後會自動追蹤推薦後漲跌" : "沒有紀錄"}</div>`}</div>
+  </div>
+  <div class="card"><h2>AI 助手<span class="r">${ghCfg() ? "在 GitHub Actions 上執行" : "要先到設定連上 GitHub"}</span></h2>
+    <div class="btns"><button class="btn pri sm" type="button" id="aiCheck"${aiBusy ? " disabled" : ""}>幫我健檢記帳與持股</button><button class="btn sm" type="button" id="aiPaste">貼上別人的推薦，讓 AI 整理</button></div>
+    ${(() => { const rv = RM.ai && RM.ai.review; const txt = aiOut || (rv && rv.text ? rv.text : ""); return txt ? `<div class="aiout" style="margin-top:10px">${esc(txt)}</div>${!aiOut && rv ? `<div class="tiny" style="margin-top:4px">上次健檢：${esc(rv.generated || "")}</div>` : ""}` : ""; })()}
+  </div>`;
+  $("#reloadRadar").onclick = () => { loadRadar(); loadCrypto(); toast("重新讀取中"); };
+  $$("[data-rf]").forEach((b) => b.onclick = () => { recFilter = b.dataset.rf; render(); });
+  $$("[data-addpick]").forEach((b) => b.onclick = () => {
+    const [m, c] = b.dataset.addpick.split("|"); const x = radarPicks(m).find((s) => String(s.c) === c); if (!x) return;
+    upsert("recs", { id: uid(), m, sym: String(x.c), name: x.n, src: "市場雷達", date: today(), px: x.px, status: "watch", reason: `${(x.trig || []).join("、")}・長線分 ${isNum(x.lt) ? Math.round(x.lt) : "－"}・${LIGHT[x.l] || x.l}` });
+    toast(`${x.n} 加入觀察`);
+  });
+  $$("[data-rec]").forEach((b) => b.onclick = () => recForm(S.recs.find((r) => r.id === b.dataset.rec)));
+  $("#aiCheck").onclick = aiCheck;
+  $("#aiPaste").onclick = aiPasteSheet;
+}
+
+function renderSettings() {
+  const st = S.settings, g = L.gh || {};
+  const tsum = (st.targets.US || 0) + (st.targets.TW || 0) + (st.targets.CR || 0);
+  view.innerHTML = `
+  <div class="card"><h2>雲端同步（GitHub 私人 repo）<span class="r">${ghCfg() ? (L.lastSync ? "上次 " + new Date(L.lastSync).toLocaleString("zh-TW", { hour12: false }) : "尚未同步") : "未設定"}</span></h2>
+    <form class="form" id="ghForm">
+      <div class="two"><label class="f"><span>GitHub 帳號</span><input id="ghOwner" autocomplete="off" autocapitalize="off" value="${esc(g.owner || "")}" placeholder="例：kunbao"></label>
+      <label class="f"><span>資料 repo 名稱</span><input id="ghRepo" autocomplete="off" autocapitalize="off" value="${esc(g.repo || "kunbao-ledger-data")}"></label></div>
+      <label class="f"><span>存取金鑰（fine-grained token，Contents 和 Actions 都要 Read and write，只存在這台裝置）</span><input id="ghToken" type="password" autocomplete="off" value="${esc(g.token || "")}" placeholder="github_pat_…"></label>
+      <div class="btns"><button class="btn pri" type="submit">儲存並同步</button>${ghCfg() ? `<button class="btn" type="button" id="ghNow">立即同步</button><button class="btn danger" type="button" id="ghOff">這台裝置停用同步</button>` : ""}</div>
+      ${syncState.s === "err" ? `<div class="tiny" style="color:var(--seal)">${esc(syncState.msg)}</div>` : ""}
+      <div class="tiny">每台裝置第一次用都要填一次。資料存在 repo 的 ledger.json，金鑰不會上傳。</div>
+    </form></div>
+
+  <div class="card"><h2>每月收入與投資</h2><div class="form">
+    <div class="two"><label class="f"><span>月收入</span><input class="num" inputmode="decimal" data-num="income" value="${st.income}"></label>
+    <label class="f"><span>每月投資目標</span><input class="num" inputmode="decimal" data-num="investMonthly" value="${st.investMonthly}"></label></div>
+    <div class="two"><label class="f"><span>每月存預備金</span><input class="num" inputmode="decimal" data-num="emergencyMonthly" value="${st.emergencyMonthly}"></label>
+    <label class="f"><span>預備金目標</span><input class="num" inputmode="decimal" data-num="emergencyTarget" value="${st.emergencyTarget}"></label></div>
+    <label class="f"><span>預備金目前存了</span><input class="num" inputmode="decimal" data-num="emergencyNow" value="${st.emergencyNow}"></label>
+  </div></div>
+
+  <div class="card"><h2>分類預算<span class="r num">合計 ${fmt(sum(st.expCats, (c) => st.budgets[c] || 0))}</span></h2>
+    ${st.expCats.map((c) => `<div class="erow"><span>${esc(c)}</span><input class="num" inputmode="decimal" data-bud="${esc(c)}" value="${st.budgets[c] || 0}" aria-label="${esc(c)} 預算"><span></span></div>`).join("")}
+    <label class="f"><span>支出分類（用逗號分開）</span><input id="expCats" value="${esc(st.expCats.join("，"))}"></label>
+    <label class="f" style="margin-top:8px"><span>收入分類</span><input id="incCats" value="${esc(st.incCats.join("，"))}"></label>
+    <label class="f" style="margin-top:8px"><span>帳戶</span><input id="accts" value="${esc(st.accounts.join("，"))}"></label>
+  </div>
+
+  <div class="card"><h2>目標配置<span class="r ${tsum !== 100 ? "neg" : ""}">合計 ${tsum}%</span></h2>
+    <div class="two" style="grid-template-columns:1fr 1fr 1fr">${["US", "TW", "CR"].map((m) => `<label class="f"><span>${MK[m]} %</span><input class="num" inputmode="decimal" data-tgt="${m}" value="${st.targets[m] || 0}"></label>`).join("")}</div>
+    <div class="tiny" style="margin-top:6px">偏離目標超過 5 個百分點，投資頁會提醒再平衡。</div>
+  </div>
+
+  <div class="card"><h2>每月固定收支</h2>
+    <div id="recList">${st.recurring.map((r, i) => `<div class="erow rec" data-ri="${i}"><input value="${esc(r.name)}" data-rk="name" aria-label="名稱"><select data-rk="type" aria-label="收或支"><option value="exp"${r.type === "exp" ? " selected" : ""}>支出</option><option value="inc"${r.type === "inc" ? " selected" : ""}>收入</option></select><input class="num" inputmode="decimal" value="${r.amt}" data-rk="amt" aria-label="金額"><select data-rk="cat" aria-label="分類">${(r.type === "inc" ? st.incCats : st.expCats).map((c) => `<option${c === r.cat ? " selected" : ""}>${esc(c)}</option>`).join("")}</select><button class="ib" type="button" data-rdel="${i}" aria-label="刪除">✕</button></div>`).join("")}</div>
+    <button class="btn sm" type="button" id="recAdd">新增固定項目</button>
+  </div>
+
+  <div class="card"><h2>定期定額計畫<span class="r num">合計 ${fmt(sum(st.plans, "amt"))}</span></h2>
+    <div id="planList">${st.plans.map((p, i) => `<div class="erow r5" data-pi="${i}"><select data-pk="m" aria-label="市場">${["US", "TW", "CR"].map((m) => `<option value="${m}"${p.m === m ? " selected" : ""}>${m === "CR" ? "加密" : MK[m]}</option>`).join("")}</select><input value="${esc(p.sym)}" data-pk="sym" aria-label="代號" autocapitalize="characters"><input value="${esc(p.name)}" data-pk="name" aria-label="名稱" placeholder="名稱"><input class="num" inputmode="decimal" value="${p.amt}" data-pk="amt" aria-label="每月金額"><button class="ib" type="button" data-pdel="${i}" aria-label="刪除">✕</button></div>`).join("")}</div>
+    <button class="btn sm" type="button" id="planAdd">新增計畫</button>
+  </div>
+
+  <div class="card"><h2>市場資料</h2><div class="form">
+    <label class="f"><span>市場雷達網址（fork 之後改成你自己的）</span><input id="radarBase" value="${esc(st.radarBase)}" autocapitalize="off"></label>
+    <label class="f"><span>備用美元匯率（讀不到市場雷達時使用）</span><input class="num" inputmode="decimal" data-num="fx" value="${st.fx}"></label>
+  </div></div>
+
+  <div class="card"><h2>自動抓價與 AI<span class="r">資料 repo 的 GitHub Actions</span></h2>
+    <div class="list">
+      <div class="item" style="cursor:default"><span class="a">持股現價</span><span class="amt tiny">${RM.prices ? "上次 " + esc(RM.prices.updated || "") : "還沒抓過"}</span><span class="b">每個交易日 22:15 抓台股、隔天 06:35 抓美股與加密貨幣；台股用證交所與櫃買中心收盤價，其他用 Yahoo Finance</span></div>
+      <div class="item" style="cursor:default"><span class="a">AI 助手</span><span class="amt tiny">${RM.ai && RM.ai.review ? "上次 " + esc(RM.ai.review.generated || "") : "還沒用過"}</span><span class="b">Claude 金鑰放在資料 repo 的 Settings → Secrets → Actions，名稱 ANTHROPIC_API_KEY，不經過這台裝置</span></div>
+    </div>
+    ${RM.err ? `<div class="tiny" style="color:var(--seal)">${esc(RM.err)}</div>` : ""}
+    ${priceJob ? `<div class="tiny">${esc(priceJob)}</div>` : ""}
+    <div class="btns" style="margin-top:8px">${ghCfg() ? `<button class="btn sm" type="button" id="pxNow">立即更新現價</button><a class="btn sm" style="text-decoration:none" target="_blank" rel="noopener" href="https://github.com/${encodeURIComponent(g.owner)}/${encodeURIComponent(g.repo)}/actions">打開 Actions</a><a class="btn sm" style="text-decoration:none" target="_blank" rel="noopener" href="https://github.com/${encodeURIComponent(g.owner)}/${encodeURIComponent(g.repo)}/settings/secrets/actions">設定 Claude 金鑰</a>` : `<span class="tiny">先在上面連上 GitHub</span>`}</div>
+  </div>
+
+  <div class="card"><h2>備份</h2>
+    <div class="btns"><button class="btn sm" type="button" id="expJson">下載完整備份 JSON</button><button class="btn sm" type="button" id="expTx">下載記帳 CSV</button><button class="btn sm" type="button" id="expTr">下載交易 CSV</button><button class="btn sm" type="button" id="impJson">匯入備份</button></div>
+    <div class="tiny" style="margin-top:6px">${S.tx.length} 筆記帳・${S.trades.length} 筆交易・${S.recs.length} 筆推薦</div>
+  </div>`;
+
+  $("#ghForm").onsubmit = (e) => { e.preventDefault(); L.gh = { owner: $("#ghOwner").value.trim(), repo: $("#ghRepo").value.trim(), token: $("#ghToken").value.trim(), path: "ledger.json" }; saveL(); if (ghCfg()) { sync().then(loadRemote); toast("開始同步"); } else { toast("三欄都要填"); render(); } };
+  if ($("#ghNow")) $("#ghNow").onclick = () => sync().then(render);
+  if ($("#ghOff")) $("#ghOff").onclick = (e) => twoStep(e.target, "確定停用？", () => { L.gh = { owner: g.owner, repo: g.repo }; L.lastSync = null; saveL(); setSync("local"); render(); });
+  $$("[data-num]").forEach((i) => i.onchange = () => { const v = toNum(i.value); if (isNum(v)) { st[i.dataset.num] = v; saveSettings(); } });
+  $$("[data-bud]").forEach((i) => i.onchange = () => { const v = toNum(i.value); st.budgets[i.dataset.bud] = isNum(v) ? v : 0; saveSettings(); });
+  $$("[data-tgt]").forEach((i) => i.onchange = () => { const v = toNum(i.value); st.targets[i.dataset.tgt] = isNum(v) ? v : 0; saveSettings(); });
+  const listIn = (v) => [...new Set(v.split(/[，,、\n]/).map((s) => s.trim()).filter(Boolean))];
+  $("#expCats").onchange = (e) => { const v = listIn(e.target.value); if (v.length) { st.expCats = v; saveSettings(); } };
+  $("#incCats").onchange = (e) => { const v = listIn(e.target.value); if (v.length) { st.incCats = v; saveSettings(); } };
+  $("#accts").onchange = (e) => { const v = listIn(e.target.value); if (v.length) { st.accounts = v; saveSettings(); } };
+  $$("[data-ri]").forEach((row) => $$("[data-rk]", row).forEach((el) => el.onchange = () => {
+    const r = st.recurring[+row.dataset.ri], k = el.dataset.rk;
+    if (k === "amt") { const v = toNum(el.value); if (!isNum(v)) return; r.amt = v; } else r[k] = el.value;
+    if (k === "type") r.cat = (r.type === "inc" ? st.incCats : st.expCats)[0];
+    saveSettings();
+  }));
+  $$("[data-rdel]").forEach((b) => b.onclick = () => { st.recurring.splice(+b.dataset.rdel, 1); saveSettings(); });
+  $("#recAdd").onclick = () => { st.recurring.push({ id: "r-" + uid(), name: "新項目", type: "exp", cat: st.expCats[0], amt: 0, acct: st.accounts[0] }); saveSettings(); };
+  $$("[data-pi]").forEach((row) => $$("[data-pk]", row).forEach((el) => el.onchange = () => {
+    const p = st.plans[+row.dataset.pi], k = el.dataset.pk;
+    if (k === "amt") { const v = toNum(el.value); if (!isNum(v)) return; p.amt = v; } else if (k === "sym") p.sym = normSym(p.m, el.value); else p[k] = el.value;
+    saveSettings();
+  }));
+  $$("[data-pdel]").forEach((b) => b.onclick = () => { st.plans.splice(+b.dataset.pdel, 1); saveSettings(); });
+  $("#planAdd").onclick = () => { st.plans.push({ id: "p-" + uid(), m: "TW", sym: "", name: "", amt: 1000 }); saveSettings(); };
+  $("#radarBase").onchange = (e) => { st.radarBase = e.target.value.trim(); saveSettings(); loadRadar(); };
+  if ($("#pxNow")) $("#pxNow").onclick = refreshPrices;
+  $("#expJson").onclick = () => download(`坤寶存摺備份-${today()}.json`, JSON.stringify(S, null, 1), "application/json");
+  $("#expTx").onclick = () => download(`記帳-${today()}.csv`, csv([["日期", "收支", "分類", "金額", "帳戶", "備註"], ...[...S.tx].sort((a, b) => a.date.localeCompare(b.date)).map((t) => [t.date, t.type === "inc" ? "收入" : "支出", t.cat, t.amt, t.acct, t.note])]), "text/csv");
+  $("#expTr").onclick = () => download(`交易-${today()}.csv`, csv([["日期", "市場", "代號", "名稱", "動作", "數量", "價格", "股利金額", "手續費", "交易稅", "匯率", "備註"], ...[...S.trades].sort((a, b) => a.date.localeCompare(b.date)).map((t) => [t.date, MK[t.m], t.sym, t.name, SIDE[t.side], t.q, t.p, t.amt, t.fee, t.tax, t.fx, t.note])]), "text/csv");
+  $("#impJson").onclick = importSheet;
+}
+
+
+/* ───────── 雨林箱養成：記帳＝噴水，露水解鎖箱子裡的東西 ─────────
+   規則都從記帳與交易紀錄算出來，不另外存，換裝置也一樣。
+   只獎勵「有記錄」與「照計畫走」，不看賺賠；交易每天最多算 3 筆，不鼓勵多交易。 */
+const LV = [0, 100, 250, 450, 700, 1000, 1400, 1900, 2500, 3200, 4000, 5000, 6200, 7600, 9200, 11000];
+const thr = (l) => l <= LV.length ? LV[l - 1] : LV[LV.length - 1] + (l - LV.length) * 2000;
+const levelOf = (xp) => { let l = 1; while (xp >= thr(l + 1)) l++; return l; };
+const UNLOCKS = [
+  { lv: 1, k: "soil", name: "底土與落葉" }, { lv: 2, k: "moss", name: "苔蘚地毯" }, { lv: 3, k: "isopod", name: "鼠婦家族" },
+  { lv: 4, k: "fern", name: "蕨類" }, { lv: 5, k: "wood", name: "沉木" }, { lv: 6, k: "millipede", name: "馬陸" },
+  { lv: 7, k: "bromeliad", name: "鳳梨科" }, { lv: 8, k: "mushroom", name: "小蘑菇" }, { lv: 9, k: "spider", name: "古巴青銅蜘蛛" },
+  { lv: 10, k: "orchid", name: "迷你蘭花" }, { lv: 12, k: "mist", name: "自動噴霧" }, { lv: 14, k: "fireflies", name: "螢火" }
+];
+const TITLES = ["空箱新手", "鋪土學徒", "苔蘚園丁", "鼠婦飼主", "蕨類造景師", "沉木玩家", "馬陸飼主", "鳳梨科收藏家", "菇類觀察員", "蜘蛛飼主", "蘭花達人", "雨林造景師", "噴霧大師", "生態箱職人", "雨林守護者"];
+const dayDiff = (a, b) => Math.round((new Date(b + "T00:00") - new Date(a + "T00:00")) / 864e5);
+function game() {
+  const st = S.settings, td = today(), mo = td.slice(0, 7), gains = []; let xp = 0;
+  const add = (n, why, date) => { xp += n; gains.push({ n, why, date }); };
+  const byDay = {};
+  S.tx.forEach((t) => { if (t.rid || !t.date || t.date > td) return; (byDay[t.date] = byDay[t.date] || []).push(t); });
+  const days = Object.keys(byDay).sort();
+  let streak = 0, best = 0, prev = null;
+  for (const d of days) {
+    streak = prev && dayDiff(prev, d) === 1 ? streak + 1 : 1; best = Math.max(best, streak); prev = d;
+    const n = byDay[d].length; add(10 + Math.min(n, 5) * 4, `記帳 ${n} 筆`, d);
+    if (streak > 1) add(Math.min(streak, 10) * 2, `連續記帳第 ${streak} 天`, d);
+  }
+  const last = days[days.length - 1], gap = last ? dayDiff(last, td) : 99;
+  const curStreak = gap <= 1 ? streak : 0;
+  const tByDay = {};
+  S.trades.forEach((t) => { if (t.date && t.date <= td) (tByDay[t.date] = tByDay[t.date] || []).push(t); });
+  for (const [d, arr] of Object.entries(tByDay)) arr.slice(0, 3).forEach((t) => {
+    add(20, `記下${SIDE[t.side]} ${t.sym}`, d);
+    if ((t.note || "").trim().length >= 4) add(10, `寫下${SIDE[t.side]}理由`, d);
+  });
+  let planMonths = 0;
+  const buyMonths = [...new Set(S.trades.filter((t) => t.side === "buy" && t.date).map((t) => t.date.slice(0, 7)))].sort();
+  for (const m of buyMonths) {
+    if (st.investMonthly > 0 && monthBuysTWD(m) >= st.investMonthly * 0.9) { planMonths++; add(80, `${+m.slice(5)} 月投資達標`, m + "-28"); }
+  }
+  const totalBudget = sum(st.expCats, (c) => st.budgets[c] || 0);
+  let budgetMonths = 0;
+  [...new Set(S.tx.map((t) => (t.date || "").slice(0, 7)))].filter((m) => m && m < mo).sort().forEach((m) => {
+    const tx = S.tx.filter((t) => t.date.startsWith(m)); if (tx.length < 10) return;
+    if (totalBudget > 0 && sum(tx.filter((t) => t.type === "exp" && t.cat !== "預備金"), "amt") <= totalBudget) { budgetMonths++; add(150, `${+m.slice(5)} 月守住預算`, m + "-28"); }
+  });
+  const efp = st.emergencyTarget > 0 ? Math.min(1, st.emergencyNow / st.emergencyTarget) : 0;
+  const tenths = Math.floor(efp * 10); if (tenths) add(tenths * 30, `預備金存到 ${tenths * 10}%`, null);
+  const recN = Math.min(10, S.recs.filter((r) => (r.reason || "").trim()).length); if (recN) add(recN * 5, `寫了理由的推薦 ${recN} 筆`, null);
+  const level = levelOf(xp);
+  const hum = gap === 0 ? 100 : gap === 1 ? 85 : gap === 2 ? 65 : gap === 3 ? 45 : gap <= 5 ? 25 : days.length ? 8 : 60;
+  const week = days.filter((d) => dayDiff(d, td) < 7).length;
+  const exp = sum(S.tx.filter((t) => t.type === "exp" && (t.date || "").startsWith(mo) && t.cat !== "預備金"), "amt");
+  const inv = monthBuysTWD(mo);
+  const quests = [
+    { name: "今天記一筆帳", done: !!byDay[td], prog: byDay[td] ? "完成" : "還沒", reward: "+14 起" },
+    { name: "這週記帳 5 天", done: week >= 5, prog: `${week}/5 天`, reward: "連續加成" },
+    { name: "本月投資達標", done: inv >= st.investMonthly, prog: `${fmt(inv)} / ${fmt(st.investMonthly)}`, reward: "+80" },
+    { name: "本月支出守在預算內", done: totalBudget > 0 && exp <= totalBudget, prog: `${fmt(exp)} / ${fmt(totalBudget)}`, reward: "月底 +150" }
+  ];
+  const badges = [
+    ["第一筆帳", days.length >= 1], ["連續 3 天", best >= 3], ["連續 7 天", best >= 7], ["連續 30 天", best >= 30], ["記帳 100 筆", S.tx.length >= 100],
+    ["第一筆台股", S.trades.some((t) => t.m === "TW")], ["第一筆美股", S.trades.some((t) => t.m === "US")], ["第一筆加密現貨", S.trades.some((t) => t.m === "CR")],
+    ["領到股利", S.trades.some((t) => t.side === "div")], ["投資達標 3 個月", planMonths >= 3], ["守住預算一個月", budgetMonths >= 1],
+    ["預備金過半", efp >= 0.5], ["預備金存滿", efp >= 1], ["追蹤 10 筆推薦", S.recs.length >= 10]
+  ].map(([name, got]) => ({ name, got }));
+  return { xp, level, cur: thr(level), nxt: thr(level + 1), streak: curStreak, best, hum, gap, gains, quests, badges, todayDone: !!byDay[td] };
+}
+let lastGame = null;
+function rewardCheck() {
+  const g = game();
+  if (lastGame && g.xp > lastGame.xp) {
+    if (g.level > lastGame.level) {
+      const un = UNLOCKS.filter((u) => u.lv > lastGame.level && u.lv <= g.level);
+      openSheet("雨林箱升級", `<div class="lvup"><div class="big">Lv.${g.level}</div><div>${esc(TITLES[Math.min(g.level, TITLES.length) - 1])}</div>
+        ${un.length ? `<p>解鎖：<b>${un.map((u) => esc(u.name)).join("、")}</b></p>` : ""}</div>
+        <div class="terra">${terraSVG(g)}</div><div class="btns" style="margin-top:10px"><button class="btn pri" type="button" data-close style="flex:1">好</button></div>`);
+    } else { const gain = g.xp - lastGame.xp; setTimeout(() => toast(`雨林箱 +${gain} 露水`), 900); }
+  }
+  lastGame = g;
+}
+function miniTerra() {
+  const g = game();
+  return `<button class="mini" type="button" id="miniT"><span class="dot">Lv${g.level}</span><span class="t"><b>雨林箱 濕度 ${g.hum}%</b>${g.streak ? `・連續記帳 ${g.streak} 天` : ""}<br><span class="muted">${g.todayDone ? "今天噴過水了，牠們很開心" : g.gap >= 3 && g.gap < 99 ? "箱子有點乾，記一筆帳幫它噴水" : "今天還沒記帳，記一筆就能噴水"}</span></span><span class="tiny num">${g.xp} 露水</span></button>`;
+}
+function terraSVG(g) {
+  const has = (k) => UNLOCKS.some((u) => u.k === k && u.lv <= g.level);
+  const dry = g.hum < 40, hide = g.hum < 40;
+  const W = 320, H = 210, gx = 14, gy = 12, gw = 292, gh = 186, soilY = 150;
+  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="雨林箱，等級 ${g.level}，濕度 ${g.hum}%">`;
+  s += `<defs><linearGradient id="tg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${dry ? "#2a2a22" : "#163a30"}"/><stop offset="1" stop-color="${dry ? "#1b1a15" : "#0d211b"}"/></linearGradient>
+    <radialGradient id="ff"><stop offset="0" stop-color="#fff7a8"/><stop offset="1" stop-color="#fff7a8" stop-opacity="0"/></radialGradient></defs>`;
+  s += `<clipPath id="tc"><rect x="${gx}" y="${gy}" width="${gw}" height="${gh}" rx="10"/></clipPath><g clip-path="url(#tc)">`;
+  s += `<rect x="${gx}" y="${gy}" width="${gw}" height="${gh}" rx="10" fill="url(#tg)"/>`;
+  if (has("mist") && !dry) s += `<g opacity=".35"><ellipse cx="90" cy="34" rx="70" ry="12" fill="#cfe9e1"/><ellipse cx="210" cy="30" rx="80" ry="10" fill="#cfe9e1"/></g>`;
+  // 底土
+  s += `<rect x="${gx}" y="${soilY + 26}" width="${gw}" height="${gh - (soilY + 26 - gy)}" fill="#3b4a55"/>`;
+  s += `<path d="M${gx} ${soilY} Q 90 ${soilY - 8} 160 ${soilY - 2} T ${gx + gw} ${soilY - 4} V ${soilY + 28} H ${gx} Z" fill="${dry ? "#7a6248" : "#4a3427"}"/>`;
+  for (let i = 0; i < 14; i++) s += `<ellipse cx="${24 + i * 21}" cy="${soilY - 1 + (i % 3)}" rx="6" ry="2.4" fill="${["#8a5a2b", "#a0692f", "#6e4422"][i % 3]}" transform="rotate(${(i * 37) % 50 - 25} ${24 + i * 21} ${soilY})"/>`;
+  if (has("wood")) s += `<path d="M40 ${soilY + 2} C 90 120, 150 110, 230 ${soilY - 46}" stroke="#5b3a24" stroke-width="12" fill="none" stroke-linecap="round"/><path d="M150 112 L 176 92" stroke="#5b3a24" stroke-width="6" stroke-linecap="round"/>`;
+  if (has("moss")) for (let i = 0; i < 18; i++) s += `<circle cx="${20 + i * 16.5}" cy="${soilY - 3 - (i % 2) * 2}" r="${6 + (i % 3)}" fill="${dry ? "#7d8a4a" : ["#3f8f3a", "#4fa847", "#2f7a35"][i % 3]}"/>`;
+  if (has("fern")) [[262, soilY], [52, soilY]].forEach(([x, y], j) => {
+    s += `<g class="sway" opacity="${dry ? 0.6 : 1}">`;
+    for (let k = -2; k <= 2; k++) s += `<path d="M${x} ${y} Q ${x + k * 14} ${y - 40} ${x + k * 26} ${y - 62 + Math.abs(k) * 10}" stroke="${dry ? "#8b8f4a" : "#5cbf5a"}" stroke-width="3" fill="none"/>`;
+    s += `</g>`;
+  });
+  if (has("bromeliad")) { s += `<g transform="translate(200 ${soilY - 50})">`; for (let k = 0; k < 7; k++) s += `<path d="M0 0 Q ${-18 + k * 6} -16 ${-24 + k * 8} -30" stroke="${k % 2 ? "#c8372d" : "#3d8f4a"}" stroke-width="5" fill="none" stroke-linecap="round"/>`; s += `</g>`; }
+  if (has("orchid")) { s += `<path d="M120 ${soilY - 4} Q 116 90 124 64" stroke="#3d7a3f" stroke-width="2" fill="none"/>`; [[124, 64], [118, 76], [128, 84]].forEach(([x, y]) => s += `<g transform="translate(${x} ${y})"><circle r="4" cx="-3" fill="#f2a8d0"/><circle r="4" cx="3" fill="#f2a8d0"/><circle r="4" cy="-3" fill="#f7c2df"/><circle r="2" fill="#c8372d"/></g>`); }
+  if (has("mushroom")) [[90, soilY - 4], [100, soilY - 2], [236, soilY - 4]].forEach(([x, y], i) => s += `<rect x="${x - 1.5}" y="${y - 9}" width="3" height="9" fill="#eadfc8"/><path d="M${x - 7} ${y - 9} Q ${x} ${y - 20 - i} ${x + 7} ${y - 9} Z" fill="#d98b3a"/>`);
+  // 動物
+  if (!hide) {
+    if (has("isopod")) [[70, soilY - 6, "crawl"], [150, soilY - 4, "crawl2"], [180, soilY - 7, "crawl"]].forEach(([x, y, c]) => {
+      s += `<g class="${c}"><ellipse cx="${x}" cy="${y}" rx="7" ry="4" fill="#8c939e"/>${[-4, -1.5, 1, 3.5].map((dx) => `<line x1="${x + dx}" y1="${y - 4}" x2="${x + dx}" y2="${y + 3}" stroke="#5f6670" stroke-width=".8"/>`).join("")}<circle cx="${x + 7}" cy="${y}" r="1.6" fill="#5f6670"/></g>`;
+    });
+    if (has("millipede")) { s += `<g class="crawl2">`; for (let i = 0; i < 14; i++) { const x = 40 + i * 5.2, y = soilY + 14 - Math.sin(i / 2.2) * 4; s += `<circle cx="${x}" cy="${y}" r="3.4" fill="${i === 13 ? "#3a1d14" : "#6b2a1c"}"/><line x1="${x}" y1="${y + 2}" x2="${x}" y2="${y + 5}" stroke="#d9a35f" stroke-width=".8"/>`; } s += `</g>`; }
+    if (has("spider")) { const x = 214, y = 74; s += `<g>${[-1, 1].map((d) => [0, 1, 2, 3].map((k) => `<path d="M${x} ${y} q ${d * 7} ${-6 + k * 4} ${d * 12} ${-2 + k * 5}" stroke="#a07a3c" stroke-width="1.2" fill="none"/>`).join("")).join("")}<ellipse cx="${x}" cy="${y}" rx="4" ry="3" fill="#8a6a2f"/><ellipse cx="${x}" cy="${y + 6}" rx="5" ry="6" fill="#b08a3e"/><line x1="${x}" y1="${y - 3}" x2="${x}" y2="${gy}" stroke="#cfd6d2" stroke-width=".5" opacity=".6"/></g>`; }
+  } else if (has("isopod")) s += `<text x="${W / 2}" y="${soilY + 20}" text-anchor="middle" font-size="11" fill="#e8d9b5">太乾了，小動物都躲進土裡</text>`;
+  if (has("fireflies") && !dry) [[60, 60], [140, 44], [250, 70], [290, 40], [190, 100]].forEach(([x, y], i) => s += `<circle class="glow" style="animation-delay:${i * 0.5}s" cx="${x}" cy="${y}" r="7" fill="url(#ff)"/>`);
+  // 水珠
+  if (g.hum >= 70) for (let i = 0; i < 16; i++) s += `<circle cx="${gx + 8 + ((i * 53) % (gw - 16))}" cy="${gy + 10 + ((i * 37) % 120)}" r="${1 + (i % 3) * 0.6}" fill="#e6f4ff" opacity=".45"/>`;
+  if (!has("moss") && !has("isopod")) s += `<text x="${W / 2}" y="80" text-anchor="middle" font-size="12" fill="#b9d8cc">記第一筆帳，開始造景</text>`;
+  s += `</g>`;
+  // 玻璃
+  s += `<rect x="${gx}" y="${gy}" width="${gw}" height="${gh}" rx="10" fill="none" stroke="#9fb7b0" stroke-width="2.5" opacity=".7"/><path d="M${gx + 10} ${gy + 14} V ${gy + 120}" stroke="#ffffff" stroke-width="3" opacity=".12" stroke-linecap="round"/>`;
+  s += `<rect x="${gx + 30}" y="${gy - 6}" width="${gw - 60}" height="8" rx="3" fill="#2b3134"/>`;
+  return s + `</svg>`;
+}
+function renderGame() {
+  const g = game();
+  const next = UNLOCKS.find((u) => u.lv > g.level);
+  const p = (g.xp - g.cur) / Math.max(1, g.nxt - g.cur);
+  const recent = g.gains.filter((x) => x.date).sort((a, b) => b.date.localeCompare(a.date)).slice(0, 8);
+  view.innerHTML = `
+  <div class="terra">${terraSVG(g)}</div>
+  <div class="card">
+    <div class="lvl"><b>Lv.${g.level}</b><span>${esc(TITLES[Math.min(g.level, TITLES.length) - 1])}</span><span class="tiny num" style="margin-left:auto">${fmt(g.xp)} 露水</span></div>
+    <div style="margin:8px 0 4px">${bar(g.xp - g.cur, g.nxt - g.cur, "good")}</div>
+    <div class="tiny">${next ? `再 ${fmt(thr(next.lv) - g.xp)} 露水解鎖：<b style="color:var(--ink)">${esc(next.name)}</b>（Lv.${next.lv}）` : `下一級還差 ${fmt(g.nxt - g.xp)} 露水`}</div>
+    <div class="tiles" style="margin-top:10px">
+      <div class="tile"><div class="k">濕度</div><div class="v num ${g.hum < 40 ? "neg" : ""}">${g.hum}%</div><div class="tiny">${g.hum >= 85 ? "剛噴過水" : g.hum >= 40 ? "還可以" : "太乾了"}</div></div>
+      <div class="tile"><div class="k">連續記帳</div><div class="v num">${g.streak} 天</div><div class="tiny">最佳 ${g.best} 天</div></div>
+    </div>
+  </div>
+  <div class="card"><h2>任務</h2>${g.quests.map((q) => `<div class="quest ${q.done ? "done" : ""}"><span class="ck">${q.done ? "✓" : ""}</span><span>${esc(q.name)}<div class="tiny num">${esc(q.prog)}</div></span><span class="tiny">${esc(q.reward)}</span></div>`).join("")}</div>
+  <div class="card"><h2>徽章<span class="r">${g.badges.filter((b) => b.got).length} / ${g.badges.length}</span></h2>
+    <div class="badges">${g.badges.map((b) => `<div class="badge ${b.got ? "got" : ""}"><div class="m">${b.got ? "印" : "？"}</div>${esc(b.name)}</div>`).join("")}</div></div>
+  <div class="card"><h2>最近拿到的露水</h2>${recent.length ? `<div class="list">${recent.map((x) => `<div class="item" style="cursor:default"><span class="a">${esc(x.why)}</span><span class="amt num down">+${x.n}</span><span class="b">${esc(x.date)}</span></div>`).join("")}</div>` : `<div class="empty">還沒有，回記帳頁記第一筆</div>`}</div>
+  <div class="card"><h2>露水怎麼算</h2><div class="tiny" style="color:var(--ink);line-height:1.8">
+    記帳：每天 +10，每筆再 +4（一天最多算 5 筆）；連續記帳每天再加成，最多 +20<br>
+    記交易：每筆 +20，有寫理由再 +10（一天最多算 3 筆，不獎勵多交易）<br>
+    本月投資達標 +80、守住整個月的預算 +150、預備金每存到 10% +30、寫了理由的推薦每筆 +5<br>
+    濕度看你多久沒記帳：今天記了 100%，三天沒記剩 45%，再乾下去小動物會躲起來。只算有沒有記，不看賺賠。</div></div>`;
+}
+
+/* ───────── 表單 ───────── */
+function openSheet(title, body, onMount) {
+  const o = document.createElement("div"); o.className = "ov";
+  o.innerHTML = `<div class="sheet" role="dialog" aria-modal="true" aria-label="${esc(title)}"><div class="sh-h"><b>${esc(title)}</b><button class="x" type="button" data-close aria-label="關閉">✕</button></div>${body}</div>`;
+  document.body.appendChild(o);
+  const close = () => { o.remove(); document.removeEventListener("keydown", onKey); };
+  const onKey = (e) => { if (e.key === "Escape") close(); };
+  document.addEventListener("keydown", onKey);
+  o.addEventListener("click", (e) => { if (e.target === o || e.target.closest("[data-close]")) close(); });
+  onMount && onMount(o, close);
+  return close;
+}
+function twoStep(btn, label, fn) {
+  if (btn.dataset.armed) { fn(); return; }
+  btn.dataset.armed = "1"; const old = btn.textContent; btn.textContent = label;
+  setTimeout(() => { if (btn.isConnected) { delete btn.dataset.armed; btn.textContent = old; } }, 3000);
+}
+function segHtml(name, opts, val) { return `<div class="seg" data-seg="${name}">${Object.entries(opts).map(([k, v]) => `<button type="button" data-v="${k}" class="${k === val ? "on" : ""}">${v}</button>`).join("")}</div>`; }
+function bindSeg(o, name, cb) { const el = $(`[data-seg="${name}"]`, o); $$("button", el).forEach((b) => b.onclick = () => { $$("button", el).forEach((x) => x.classList.toggle("on", x === b)); cb(b.dataset.v); }); }
+
+function txForm(t) {
+  const st = S.settings, isNew = !t;
+  t = t ? clone(t) : { id: uid(), type: "exp", amt: "", cat: st.expCats.includes("餐飲") ? "餐飲" : st.expCats[0], acct: st.accounts[0], date: today(), note: "" };
+  const catBtns = (type) => (type === "inc" ? st.incCats : st.expCats).map((c) => `<button type="button" data-cat="${esc(c)}" class="${c === t.cat ? "on" : ""}">${esc(c)}</button>`).join("");
+  openSheet(isNew ? "記一筆" : "修改紀錄", `<form class="form" id="txF">
+    ${segHtml("type", { exp: "支出", inc: "收入" }, t.type)}
+    <label class="f big"><span>金額（台幣）</span><input id="tAmt" inputmode="decimal" value="${t.amt === "" ? "" : t.amt}" placeholder="0" required></label>
+    <div class="f"><span>分類</span><div class="cats" id="tCats">${catBtns(t.type)}</div></div>
+    <div class="two"><label class="f"><span>日期</span><input id="tDate" type="date" value="${esc(t.date)}"></label>
+    <label class="f"><span>帳戶</span><select id="tAcct">${st.accounts.map((a) => `<option${a === t.acct ? " selected" : ""}>${esc(a)}</option>`).join("")}</select></label></div>
+    <label class="f"><span>備註</span><input id="tNote" value="${esc(t.note || "")}" placeholder="例：午餐便當"></label>
+    <div class="btns"><button class="btn pri" type="submit" style="flex:1">${isNew ? "記下來" : "儲存"}</button>${isNew ? "" : `<button class="btn danger" type="button" id="tDel">刪除</button>`}</div>
+  </form>`, (o, close) => {
+    const bindCats = () => $$("[data-cat]", o).forEach((b) => b.onclick = () => { t.cat = b.dataset.cat; $$("[data-cat]", o).forEach((x) => x.classList.toggle("on", x === b)); });
+    bindCats();
+    bindSeg(o, "type", (v) => { t.type = v; const list = v === "inc" ? st.incCats : st.expCats; if (!list.includes(t.cat)) t.cat = list[0]; $("#tCats", o).innerHTML = catBtns(v); bindCats(); });
+    if (isNew) setTimeout(() => $("#tAmt", o).focus(), 50);
+    $("#txF", o).onsubmit = (e) => {
+      e.preventDefault();
+      const amt = toNum($("#tAmt", o).value);
+      if (!isNum(amt) || amt <= 0) { toast("請輸入金額"); return; }
+      Object.assign(t, { amt, date: $("#tDate", o).value || today(), acct: $("#tAcct", o).value, note: $("#tNote", o).value.trim() });
+      upsert("tx", t); close(); toast(isNew ? "記好了" : "已更新");
+      if (isNew && t.date.slice(0, 7) !== month) { month = t.date.slice(0, 7); render(); }
+    };
+    if ($("#tDel", o)) $("#tDel", o).onclick = (e) => twoStep(e.target, "再按一次刪除", () => { removeItem("tx", t.id); close(); toast("已刪除"); });
+  });
+}
+function efForm() {
+  const st = S.settings;
+  openSheet("存入緊急預備金", `<form class="form" id="efF"><label class="f big"><span>這次存入</span><input id="efAmt" inputmode="decimal" value="${st.emergencyMonthly}"></label>
+    <label class="f"><span><input type="checkbox" id="efTx" checked style="width:auto"> 同時記一筆支出「預備金」（從可用的錢扣掉）</span></label>
+    <div class="btns"><button class="btn pri" type="submit" style="flex:1">存入</button></div></form>`, (o, close) => {
+    $("#efF", o).onsubmit = (e) => {
+      e.preventDefault(); const v = toNum($("#efAmt", o).value); if (!isNum(v) || v <= 0) return;
+      st.emergencyNow = (st.emergencyNow || 0) + v; st.ua = now();
+      if ($("#efTx", o).checked) { if (!st.expCats.includes("預備金")) st.expCats.push("預備金"); S.tx.push({ id: uid(), ua: now(), type: "exp", amt: v, cat: "預備金", acct: "銀行", date: today(), note: "存入緊急預備金" }); }
+      commit(); close(); toast("預備金 +" + fmt(v));
+    };
+  });
+}
+function tradeForm(t, pre = {}) {
+  const isNew = !t;
+  t = t ? clone(t) : Object.assign({ id: uid(), m: "TW", side: "buy", sym: "", name: "", q: "", p: "", amt: "", fee: "", tax: "", fx: "", date: today(), note: "", recId: "" }, pre);
+  const v = (x) => (x === "" || x == null || (typeof x === "number" && !isFinite(x))) ? "" : x;
+  openSheet(isNew ? "記一筆交易" : "修改交易", `<form class="form" id="trF">
+    ${segHtml("m", MK, t.m)}
+    ${segHtml("side", SIDE, t.side)}
+    <div class="two"><label class="f"><span>代號</span><input id="rSym" value="${esc(t.sym)}" autocapitalize="characters" autocomplete="off" placeholder="0050 / VTI / BTC" required></label>
+    <label class="f"><span>名稱</span><input id="rName" value="${esc(t.name || "")}" placeholder="自動帶入"></label></div>
+    <div class="two" id="qpRow"><label class="f"><span id="qLbl">股數</span><input id="rQ" class="num" inputmode="decimal" value="${v(t.q)}"></label>
+    <label class="f"><span id="pLbl">成交價</span><input id="rP" class="num" inputmode="decimal" value="${v(t.p)}"></label></div>
+    <label class="f" id="amtRow"><span id="aLbl">股利金額</span><input id="rAmt" class="num" inputmode="decimal" value="${v(t.amt)}"></label>
+    <div class="two" id="feeRow"><label class="f"><span>手續費</span><input id="rFee" class="num" inputmode="decimal" value="${v(t.fee)}" placeholder="0"></label>
+    <label class="f" id="taxBox"><span>交易稅</span><input id="rTax" class="num" inputmode="decimal" value="${v(t.tax)}" placeholder="0"></label></div>
+    <div class="two"><label class="f"><span>日期</span><input id="rDate" type="date" value="${esc(t.date)}"></label>
+    <label class="f" id="fxBox"><span>美元匯率</span><input id="rFx" class="num" inputmode="decimal" value="${v(t.fx) || fxNow().toFixed(2)}"></label></div>
+    <label class="f"><span>備註</span><input id="rNote" value="${esc(t.note || "")}" placeholder="例：定期定額、看到燈號便宜加碼"></label>
+    <div class="tiny" id="rTot"></div>
+    <div class="btns"><button class="btn pri" type="submit" style="flex:1">${isNew ? "記下來" : "儲存"}</button>${isNew ? "" : `<button class="btn danger" type="button" id="rDel">刪除</button>`}</div>
+  </form>`, (o, close) => {
+    const paint = () => {
+      const div = t.side === "div";
+      $("#qpRow", o).style.display = div ? "none" : "";
+      $("#amtRow", o).style.display = div ? "" : "none";
+      $("#feeRow", o).style.display = div ? "none" : "";
+      $("#taxBox", o).style.visibility = t.side === "sell" ? "visible" : "hidden";
+      $("#fxBox", o).style.visibility = t.m === "TW" ? "hidden" : "visible";
+      $("#qLbl", o).textContent = t.m === "TW" ? "股數（1 張＝1000 股）" : t.m === "CR" ? "數量（顆）" : "股數（可小數）";
+      $("#pLbl", o).textContent = "成交價（" + MKC[t.m] + "）";
+      $("#aLbl", o).textContent = "股利金額（" + MKC[t.m] + "，實際入帳）";
+      const q = toNum($("#rQ", o).value), p = toNum($("#rP", o).value), fee = toNum($("#rFee", o).value) || 0, tax = toNum($("#rTax", o).value) || 0, fx = toNum($("#rFx", o).value) || fxNow();
+      if (!div && isNum(q) && isNum(p)) {
+        const gross = q * p, net = t.side === "buy" ? gross + fee : gross - fee - tax;
+        $("#rTot", o).innerHTML = `${t.side === "buy" ? "總付出" : "實拿"} <b class="num">${fmtP(net)} ${MKC[t.m]}</b>${t.m !== "TW" ? `（約台幣 <span class="num">${fmt(net * fx)}</span>）` : ""}`;
+      } else $("#rTot", o).textContent = "";
+    };
+    const fill = () => {
+      const sym = normSym(t.m, $("#rSym", o).value); if (!sym) return;
+      const it = radarItem(t.m, sym);
+      if (it && !$("#rName", o).value) $("#rName", o).value = it.n || "";
+      if (!$("#rName", o).value) { const old = S.trades.find((x) => x.m === t.m && x.sym === sym && x.name); if (old) $("#rName", o).value = old.name; }
+      const pr = priceOf(t.m, sym); if (pr && !$("#rP", o).value && t.side !== "div") $("#rP", o).value = pr.p;
+      paint();
+    };
+    bindSeg(o, "m", (x) => { t.m = x; paint(); });
+    bindSeg(o, "side", (x) => { t.side = x; paint(); });
+    $("#rSym", o).onblur = fill;
+    $$("input", o).forEach((i) => i.addEventListener("input", paint));
+    paint();
+    $("#trF", o).onsubmit = (e) => {
+      e.preventDefault();
+      const sym = normSym(t.m, $("#rSym", o).value);
+      if (!sym) { toast("請填代號"); return; }
+      const rec = { sym, name: $("#rName", o).value.trim(), date: $("#rDate", o).value || today(), note: $("#rNote", o).value.trim(), fx: t.m === "TW" ? 1 : (toNum($("#rFx", o).value) || fxNow()) };
+      if (t.side === "div") {
+        const amt = toNum($("#rAmt", o).value); if (!isNum(amt) || amt <= 0) { toast("請填股利金額"); return; }
+        Object.assign(t, rec, { amt, q: 0, p: 0, fee: 0, tax: 0 });
+      } else {
+        const q = toNum($("#rQ", o).value), p = toNum($("#rP", o).value);
+        if (!isNum(q) || q <= 0 || !isNum(p) || p <= 0) { toast("數量和價格都要填"); return; }
+        if (t.side === "sell") { const h = holdings().find((x) => x.k === t.m + ":" + sym); const have = (h ? h.sh : 0) + (isNew ? 0 : (S.trades.find((x) => x.id === t.id)?.side === "sell" ? S.trades.find((x) => x.id === t.id).q : 0)); if (q > have + 1e-9) { toast(`持有只有 ${fmtQ(have)}，不能賣更多`); return; } }
+        Object.assign(t, rec, { q, p, amt: 0, fee: toNum($("#rFee", o).value) || 0, tax: t.side === "sell" ? (toNum($("#rTax", o).value) || 0) : 0 });
+      }
+      upsert("trades", t);
+      if (t.recId) { const r = S.recs.find((x) => x.id === t.recId); if (r && r.status !== "bought") upsert("recs", Object.assign(clone(r), { status: "bought" })); }
+      close(); toast(isNew ? "交易記好了" : "已更新");
+      if (t.m === "CR") loadCrypto();
+    };
+    if ($("#rDel", o)) $("#rDel", o).onclick = (e) => twoStep(e.target, "再按一次刪除", () => { removeItem("trades", t.id); close(); toast("已刪除"); });
+  });
+}
+function holdSheet(h) {
+  if (!h) return;
+  const ts = S.trades.filter((t) => t.m + ":" + t.sym === h.k).sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+  const ov = S.prices[h.k];
+  openSheet(`${h.sym} ${h.name || ""}`, `<div class="form">
+    <div class="tiles">
+      <div class="tile"><div class="k">持有</div><div class="v num">${fmtQ(h.sh)}</div></div>
+      <div class="tile"><div class="k">平均成本（${MKC[h.m]}）</div><div class="v num">${fmtP(h.avg)}</div></div>
+      <div class="tile"><div class="k">市值（台幣）</div><div class="v num">${fmt(h.mvT)}</div></div>
+      <div class="tile"><div class="k">未實現</div><div class="v num ${signCls(h.unT)}">${isNum(h.unT) ? fmt(h.unT) : "－"}</div><div class="tiny num">${pct(h.unP)}</div></div>
+    </div>
+    <div class="tiny">現價 ${isNum(h.px) ? fmtP(h.px) : "未知"}・來源 ${esc(h.pxSrc || "無")}${h.m !== "TW" ? `・損益已含匯率變化` : ""}${h.divT ? `・累計股利 ${fmt(h.divT)} 元` : ""}</div>
+    <form class="two" id="pxF" style="align-items:end"><label class="f"><span>手動現價（自動抓不到時用）</span><input id="pxV" class="num" inputmode="decimal" value="${ov && isNum(ov.p) ? ov.p : ""}"></label>
+      <div class="btns"><button class="btn sm" type="submit">設定</button>${ov && isNum(ov.p) ? `<button class="btn sm" type="button" id="pxClr">改回自動</button>` : ""}</div></form>
+    <div class="btns"><button class="btn pri sm" type="button" id="hBuy">加碼</button><button class="btn sm" type="button" id="hSell">賣出</button><button class="btn sm" type="button" id="hDiv">記股利</button></div>
+    <div class="scroll"><table class="tbl"><thead><tr><th>日期</th><th>動作</th><th class="r">數量</th><th class="r">價格/金額</th></tr></thead><tbody>
+      ${ts.map((t) => `<tr data-t="${esc(t.id)}" style="cursor:pointer"><td class="num">${esc(t.date)}</td><td>${SIDE[t.side]}</td><td class="r num">${t.side === "div" ? "－" : fmtQ(t.q)}</td><td class="r num">${t.side === "div" ? fmt(t.amt, 2) : fmtP(t.p)}</td></tr>`).join("")}
+    </tbody></table></div></div>`, (o, close) => {
+    $("#pxF", o).onsubmit = (e) => { e.preventDefault(); const p = toNum($("#pxV", o).value); if (!isNum(p) || p <= 0) return; S.prices[h.k] = { p, t: now(), d: today() }; commit(); close(); toast("現價已更新"); };
+    if ($("#pxClr", o)) $("#pxClr", o).onclick = () => { S.prices[h.k] = { p: null, t: now() }; commit(); close(); };
+    const pre = { m: h.m, sym: h.sym, name: h.name };
+    $("#hBuy", o).onclick = () => { close(); tradeForm(null, Object.assign({}, pre, { side: "buy", p: isNum(h.px) ? h.px : "" })); };
+    $("#hSell", o).onclick = () => { close(); tradeForm(null, Object.assign({}, pre, { side: "sell", q: h.sh, p: isNum(h.px) ? h.px : "" })); };
+    $("#hDiv", o).onclick = () => { close(); tradeForm(null, Object.assign({}, pre, { side: "div" })); };
+    $$("[data-t]", o).forEach((r) => r.onclick = () => { close(); tradeForm(S.trades.find((x) => x.id === r.dataset.t)); });
+  });
+}
+function recForm(r) {
+  const isNew = !r;
+  r = r ? clone(r) : { id: uid(), m: "TW", sym: "", name: "", src: "Claude", date: today(), px: "", reason: "", status: "watch" };
+  openSheet(isNew ? "新增推薦" : "推薦紀錄", `<form class="form" id="rcF">
+    ${segHtml("m", MK, r.m)}
+    <div class="two"><label class="f"><span>代號</span><input id="cSym" value="${esc(r.sym)}" autocapitalize="characters" autocomplete="off" required></label>
+    <label class="f"><span>名稱</span><input id="cName" value="${esc(r.name || "")}"></label></div>
+    <div class="two"><label class="f"><span>誰推薦的</span><select id="cSrc">${SOURCES.map((s) => `<option${s === r.src ? " selected" : ""}>${s}</option>`).join("")}</select></label>
+    <label class="f"><span>推薦日期</span><input id="cDate" type="date" value="${esc(r.date)}"></label></div>
+    <div class="two"><label class="f"><span>推薦當時價格</span><input id="cPx" class="num" inputmode="decimal" value="${isNum(r.px) ? r.px : ""}" placeholder="自動帶入"></label>
+    <label class="f"><span>狀態</span><select id="cSt">${Object.entries(STATUS).map(([k, v]) => `<option value="${k}"${k === r.status ? " selected" : ""}>${v}</option>`).join("")}</select></label></div>
+    <label class="f"><span>推薦理由</span><textarea id="cWhy" style="min-height:70px">${esc(r.reason || "")}</textarea></label>
+    <div class="btns"><button class="btn pri" type="submit" style="flex:1">儲存</button>${isNew ? "" : `<button class="btn" type="button" id="cBuy">我買了，記交易</button><button class="btn danger" type="button" id="cDel">刪除</button>`}</div>
+  </form>`, (o, close) => {
+    bindSeg(o, "m", (x) => { r.m = x; });
+    $("#cSym", o).onblur = () => {
+      const sym = normSym(r.m, $("#cSym", o).value); if (!sym) return;
+      const it = radarItem(r.m, sym); if (it && !$("#cName", o).value) $("#cName", o).value = it.n || "";
+      const pr = priceOf(r.m, sym); if (pr && !$("#cPx", o).value && $("#cDate", o).value === today()) $("#cPx", o).value = pr.p;
+    };
+    const collect = () => {
+      const sym = normSym(r.m, $("#cSym", o).value); if (!sym) { toast("請填代號"); return null; }
+      return Object.assign(r, { sym, name: $("#cName", o).value.trim(), src: $("#cSrc", o).value, date: $("#cDate", o).value || today(), px: toNum($("#cPx", o).value), status: $("#cSt", o).value, reason: $("#cWhy", o).value.trim() });
+    };
+    $("#rcF", o).onsubmit = (e) => { e.preventDefault(); if (!collect()) return; if (!isNum(r.px)) r.px = null; upsert("recs", r); close(); toast("已儲存"); };
+    if ($("#cBuy", o)) $("#cBuy", o).onclick = () => { if (!collect()) return; if (!isNum(r.px)) r.px = null; upsert("recs", r); close(); const pr = priceOf(r.m, r.sym); tradeForm(null, { m: r.m, sym: r.sym, name: r.name, recId: r.id, p: pr ? pr.p : "", note: "來自推薦：" + r.src }); };
+    if ($("#cDel", o)) $("#cDel", o).onclick = (e) => twoStep(e.target, "再按一次刪除", () => { removeItem("recs", r.id); close(); });
+  });
+}
+function importSheet() {
+  openSheet("匯入備份", `<form class="form" id="imF"><label class="f"><span>選備份檔，或把 JSON 貼在下面</span><input type="file" id="imFile" accept="application/json,.json"></label>
+    <label class="f"><textarea id="imTxt" placeholder="{ ... }"></textarea></label>
+    <div class="tiny">匯入會跟現有資料合併，同一筆以較新的修改為準，不會刪掉現有資料。</div>
+    <div class="btns"><button class="btn pri" type="submit">合併匯入</button></div></form>`, (o, close) => {
+    $("#imFile", o).onchange = async (e) => { const f = e.target.files[0]; if (f) $("#imTxt", o).value = await f.text(); };
+    $("#imF", o).onsubmit = (e) => { e.preventDefault(); try { const d = JSON.parse($("#imTxt", o).value); S = mergeState(S, d); commit(); close(); toast("匯入完成"); } catch (err) { toast("JSON 格式不對"); } };
+  });
+}
+
+/* ───────── AI（在資料 repo 的 GitHub Actions 上跑，金鑰放 Secrets） ───────── */
+let aiBusy = false;
+async function runAI(mode, inputs) {
+  const g = ghCfg(); if (!g) throw new Error("先到「設定」連上 GitHub");
+  const id = uid();
+  await sync();
+  await ghDispatch(g, "ai.yml", Object.assign({ mode, req_id: id }, inputs || {}));
+  for (let i = 0; i < 40; i++) {
+    await sleep(6000);
+    const f = await ghGetFile(g, "ai.json"); const d = f.text ? JSON.parse(f.text) : null;
+    const r = d && d[mode];
+    if (r && r.req_id === id) { RM.ai = d; if (r.error) throw new Error(r.error); return r; }
+  }
+  throw new Error("等超過 4 分鐘，到資料 repo 的 Actions 頁看看「AI 助手」有沒有出錯");
+}
+async function aiCheck() {
+  if (aiBusy) return; aiBusy = true;
+  aiOut = "已送出，GitHub 上的 AI 正在看你的帳（約 1 分鐘）…"; render();
+  try { const r = await runAI("review"); aiOut = r.text || "（沒有內容）"; } catch (e) { aiOut = "沒辦法完成：" + e.message; }
+  aiBusy = false; render();
+}
+function aiPasteSheet() {
+  openSheet("貼上推薦內容", `<form class="form" id="apF"><label class="f"><span>把 Telegram、朋友、文章裡的推薦貼進來</span><textarea id="apTxt" placeholder="例：這週看好 2330、VOO，比特幣跌到 8 萬可以分批…"></textarea></label>
+    <div class="two"><label class="f"><span>誰推薦的</span><select id="apSrc">${SOURCES.map((s) => `<option${s === "Telegram 頻道" ? " selected" : ""}>${s}</option>`).join("")}</select></label><span></span></div>
+    <div class="btns"><button class="btn pri" type="submit">讓 AI 整理</button></div><div id="apOut"></div></form>`, (o, close) => {
+    $("#apF", o).onsubmit = async (e) => {
+      e.preventDefault(); const txt = $("#apTxt", o).value.trim(); if (!txt) return;
+      $("#apOut", o).innerHTML = `<div class="tiny">已送出，GitHub 上的 AI 正在整理（約 1 分鐘）…</div>`;
+      try {
+        const r = await runAI("parse", { text: txt.slice(0, 20000) });
+        const arr = Array.isArray(r.items) ? r.items : [];
+        const items = arr.filter((x) => x && x.sym && ["TW", "US", "CR"].includes(x.m)).map((x) => ({ m: x.m, sym: normSym(x.m, x.sym), name: x.name || "", reason: x.reason || "" }));
+        if (!items.length) { $("#apOut", o).innerHTML = `<div class="empty">沒有找到具體標的</div>`; return; }
+        $("#apOut", o).innerHTML = `<div class="list">${items.map((x, i) => `<label class="item" style="cursor:pointer"><span class="a"><input type="checkbox" data-ap="${i}" checked style="width:auto"> <b>${esc(x.sym)}</b> ${esc(x.name)} <span class="chip">${MK[x.m]}</span></span><span></span><span class="b">${esc(x.reason)}</span></label>`).join("")}</div><div class="btns" style="margin-top:8px"><button class="btn pri" type="button" id="apSave">加入觀察清單</button></div>`;
+        $("#apSave", o).onclick = () => {
+          const src = $("#apSrc", o).value;
+          $$("[data-ap]", o).filter((c) => c.checked).forEach((c) => { const x = items[+c.dataset.ap]; const pr = priceOf(x.m, x.sym); S.recs.push({ id: uid(), ua: now(), m: x.m, sym: x.sym, name: x.name || (radarItem(x.m, x.sym)?.n || ""), src, date: today(), px: pr ? pr.p : null, reason: x.reason, status: "watch" }); });
+          commit(); close(); toast("已加入觀察清單"); loadCrypto();
+        };
+      } catch (err) { $("#apOut", o).innerHTML = `<div class="empty">沒辦法完成：${esc(err.message)}</div>`; }
+    };
+  });
+}
+
+/* ───────── 匯出 ───────── */
+function csv(rows) { return "﻿" + rows.map((r) => r.map((c) => { const s = c == null ? "" : String(c); return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; }).join(",")).join("\n"); }
+function download(name, text, type) { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([text], { type: type + ";charset=utf-8" })); a.download = name; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500); }
+let toastT = null;
+function toast(msg) { let t = $(".toast"); if (!t) { t = document.createElement("div"); t.className = "toast"; t.setAttribute("role", "status"); document.body.appendChild(t); } t.textContent = msg; clearTimeout(toastT); toastT = setTimeout(() => t.remove(), 2200); }
+
+/* ───────── 啟動 ───────── */
+$$("nav.tabs button").forEach((b) => b.onclick = () => { L.tab = b.dataset.tab; saveL(); window.scrollTo(0, 0); render(); });
+$("#fab").onclick = () => { const t = L.tab; if (t === "book") txForm(); else if (t === "invest") tradeForm(); else if (t === "recs") recForm(); };
+$("#syncChip").onclick = () => { if (ghCfg()) sync(); else { L.tab = "settings"; saveL(); render(); } };
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && ghCfg()) sync().then(loadRemote); });
+if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js").catch(() => {});
+render();
+lastGame = game();
+loadRadar().then(loadCrypto);
+if (ghCfg()) sync().then(loadRemote);
+</script>
+</body>
+</html>
