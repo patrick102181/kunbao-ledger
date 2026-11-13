@@ -10,6 +10,12 @@ on:
         default: "all"
         type: choice
         options: [all, tw, us, core]
+      period:
+        description: "回測期間（12y＝近 12 年；max＝能抓多久抓多久，含 2000、2008 兩次大熊市）"
+        required: true
+        default: "12y"
+        type: choice
+        options: ["12y", "max"]
 
 permissions:
   contents: write
@@ -21,7 +27,7 @@ concurrency:
 jobs:
   backtest:
     runs-on: ubuntu-latest
-    timeout-minutes: 180
+    timeout-minutes: 300
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -31,7 +37,7 @@ jobs:
       - name: 安裝套件
         run: pip install -r requirements.txt
       - name: 回測
-        run: python backtest.py --market "${{ inputs.market }}"
+        run: python backtest.py --market "${{ inputs.market }}" --period "${{ inputs.period }}"
       - name: 存回 repo
         run: |
           git config user.name "kunbao-bot"
