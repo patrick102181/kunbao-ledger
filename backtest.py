@@ -278,7 +278,7 @@ def main():
         except Exception as e:  # noqa
             out["core"] = {"error": repr(e)}
     M.save_json(path, out)
-    print(json.dumps({k: v for k, v in out.items() if k != "rules"}, ensure_ascii=False, indent=1)[:6000])
+    print(json.dumps({k: v for k, v in out.items() if k != "rules"}, ensure_ascii=False)[:60000])
 
 
 if __name__ == "__main__":
