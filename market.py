@@ -252,6 +252,11 @@ def update_fundamentals(market, tickers, today):
     """每檔基本面最多 FUND_MAX_AGE_DAYS 天更新一次；第一次會抓比較多。回傳 {ticker: dict}"""
     path = os.path.join(CACHE, f"fund_{market}.json")
     cache = load_json(path, {})
+    # 舊版快取的季資料是 [年月, 營收, 毛利, EPS] 四欄，新版多了淨利：[年月, 營收, 毛利, 淨利, EPS]。
+    # 沒轉換的話 fin_trend 讀 q[4] 會 IndexError，整個台股／美股都寫不出來（2026-11-13 踩到）
+    for v in cache.values():
+        if isinstance(v, dict) and v.get("qs"):
+            v["qs"] = [list(q[:3]) + [None, q[3]] if len(q) == 4 else list(q) for q in v["qs"]]
     tstr = today.strftime("%Y-%m-%d")
     cutoff = (today - timedelta(days=FUND_MAX_AGE_DAYS)).strftime("%Y-%m-%d")
     stale = [t for t in tickers if t not in cache or cache[t].get("_d", "") < cutoff or "qs" not in cache[t]]
@@ -318,7 +323,7 @@ def quality_score(fd, sec, rev_yoy=None):
 def fin_trend(fd, rev_yoy=None):
     """財報趨勢：營收年增、毛利率變化（跟去年同季比，沒有就跟上一季比）、EPS 年增。
     三項有兩項以上變好且沒有變差＝轉強(up)；兩項以上變差＝轉弱(down)；其他＝持平(flat)"""
-    qs = [q for q in ((fd or {}).get("qs") or []) if q[1]]
+    qs = [q for q in ((fd or {}).get("qs") or []) if len(q) >= 5 and q[1]]  # 欄位不齊的季資料直接略過，不讓整個市場掛掉
     gmd = epsg = revg = None
     if qs:
         last = qs[-1]
