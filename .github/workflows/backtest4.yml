@@ -1,0 +1,66 @@
+name: 回測四道濾網（完整）
+
+# 每週照當時的資料重新選股（族群、資金流、財報、買點），測選股本身和 App 的買法，結果寫到 data/backtest4.json
+on:
+  workflow_dispatch:
+    inputs:
+      market:
+        description: "要回測哪個市場"
+        required: true
+        default: "all"
+        type: choice
+        options: [all, tw, us]
+      years:
+        description: "回測幾年"
+        required: true
+        default: "12"
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: backtest
+  cancel-in-progress: false
+
+jobs:
+  backtest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: 安裝套件
+        run: pip install -r requirements.txt
+      - name: 回測
+        env:
+          MARKET: ${{ inputs.market }}
+          YEARS: ${{ inputs.years }}
+        run: python backtest4.py --market "$MARKET" --years "$YEARS"
+      - name: 結果先存成 artifact（推不上去也不會不見）
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backtest4
+          path: |
+            data/backtest4.json
+            data/cache/bt_*.json
+          if-no-files-found: ignore
+      - name: 存回 repo
+        if: always()
+        run: |
+          git config user.name "kunbao-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/backtest4.json data/cache/bt_*.json 2>/dev/null || true
+          git diff --cached --quiet && exit 0
+          git commit -m "四道濾網回測 $(date -u +%F)"
+          git reset --hard HEAD
+          git clean -fd
+          for i in 1 2 3; do
+            git pull --rebase origin main && git push origin HEAD:main && exit 0
+            sleep 10
+          done
+          exit 1
