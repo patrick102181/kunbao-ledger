@@ -268,7 +268,8 @@ details summary{cursor:pointer;color:var(--blue);font-size:14px;font-weight:700;
 .hx .hp small{font-size:12px;margin-left:6px}
 .hx .hp u{text-decoration:none;font-family:var(--f-body);font-size:12px;color:var(--blue)}
 .hx .hs{grid-column:1/-1;display:grid;grid-template-columns:repeat(3,1fr);border-top:1px dashed var(--hair);padding-top:7px;margin-top:2px}
-.hx .hs>span{display:flex;align-items:baseline;gap:6px;min-width:0}
+.hx .hs>span{display:grid;grid-template-columns:auto auto;justify-content:start;align-items:baseline;column-gap:2px;min-width:0}
+.hx .hs>span small{grid-column:1/-1;line-height:1.4}
 .hx .hs small{font-size:11px;color:var(--muted)}
 .hx .hs b{font-weight:500;font-size:14px}
 
@@ -288,6 +289,26 @@ details summary{cursor:pointer;color:var(--blue);font-size:14px;font-weight:700;
 .pick .pe input{height:36px;border:1px solid var(--hair);background:var(--paper);padding:0 8px;font-size:14px;min-width:0;width:100%;-webkit-appearance:none;appearance:none;border-radius:0}
 .pick .pe input[type=date]::-webkit-date-and-time-value{text-align:left}
 .pick .pt{display:flex;align-items:center;justify-content:space-between;font-size:12px;color:var(--muted)}
+
+/* 雨林箱一直活著：水珠滑落、孢子飄、跳蟲跳、苔蘚呼吸；點一下箱子會噴水 */
+.terra{cursor:pointer;-webkit-tap-highlight-color:transparent}
+.t-run,.t-spore,.t-hop,.t-moss,.t-spray{transform-box:fill-box}
+.t-run{animation:t-run linear infinite}
+@keyframes t-run{0%,55%{transform:translateY(0);opacity:.45}85%{opacity:.45}100%{transform:translateY(70px);opacity:0}}
+.t-spore{animation:t-spore ease-in-out infinite}
+@keyframes t-spore{0%{transform:translate(0,0);opacity:0}15%{opacity:.7}50%{transform:translate(6px,-55px)}85%{opacity:.5}100%{transform:translate(-4px,-110px);opacity:0}}
+.t-hop{transform-origin:50% 100%;animation:t-hop ease-out infinite}
+@keyframes t-hop{0%,55%,100%{transform:translate(0,0)}64%{transform:translate(5px,-14px)}74%{transform:translate(10px,0)}80%{transform:translate(11px,-4px)}86%{transform:translate(12px,0)}94%{transform:translate(6px,0)}}
+.t-moss{transform-origin:50% 100%;animation:t-moss 4s ease-in-out infinite alternate}
+@keyframes t-moss{from{transform:scale(1)}to{transform:scale(1.06,1.1)}}
+.terra.spray .t-spray{animation:t-spray 1.4s ease-in forwards}
+@keyframes t-spray{0%{opacity:0;transform:translateY(0)}10%{opacity:.8}100%{opacity:0;transform:translateY(120px)}}
+
+/* 幣別：數字後面的小字，台幣、美元、USDT 一眼分得出來 */
+.cur{font-style:normal;font-family:var(--f-body);font-size:10.5px;font-weight:500;color:var(--muted);margin-left:3px;letter-spacing:0}
+.hx .hv .cur{font-size:11px}
+.hx .hs b+.cur{margin-left:2px}
+.cur-u{font-family:var(--f-body);font-size:10.5px;color:var(--muted);font-weight:400;line-height:1.2}
 </style>
 </head>
 <body>
@@ -335,7 +356,9 @@ const signCls = (n) => !isNum(n) || Math.abs(n) < 1e-9 ? "" : n > 0 ? "up" : "do
 const toNum = (v) => { const n = parseFloat(String(v ?? "").replace(/[,\s]/g, "")); return isFinite(n) ? n : NaN; };
 const sum = (arr, f) => arr.reduce((a, x) => a + (typeof f === "function" ? f(x) : x[f]) , 0);
 const MK = { TW: "台股", US: "美股", CR: "加密貨幣" };
-const MKC = { TW: "TWD", US: "USD", CR: "USDT" };
+const CUR = { TW: "台幣", US: "美元", CR: "USDT" };
+const cur = (m) => `<i class="cur">${CUR[m] || ""}</i>`;
+const MKC = CUR;
 const LIGHT = { cheap: "便宜", fair: "合理", exp: "偏貴", trap: "基本面弱" };
 const SIDE = { buy: "買進", sell: "賣出", div: "股利" };
 const STATUS = { watch: "觀察中", bought: "已買", pass: "略過" };
@@ -762,9 +785,9 @@ function renderInvest() {
   view.innerHTML = `
   <div class="tiles">
     <div class="tile"><div class="k">總市值（台幣）</div><div class="v num">${fmt(mv)}</div></div>
-    <div class="tile"><div class="k">投入成本</div><div class="v num">${fmt(cost)}</div></div>
-    <div class="tile"><div class="k">未實現損益</div><div class="v num ${signCls(un)}">${priced.length ? fmt(un) : "－"}</div><div class="tiny num">${priced.length ? pct(unBase ? un / unBase : NaN) : "還沒有現價"}</div></div>
-    <div class="tile"><div class="k">已實現＋股利</div><div class="v num ${signCls(real)}">${fmt(real)}</div></div>
+    <div class="tile"><div class="k">投入成本（台幣）</div><div class="v num">${fmt(cost)}</div></div>
+    <div class="tile"><div class="k">未實現損益（台幣）</div><div class="v num ${signCls(un)}">${priced.length ? fmt(un) : "－"}</div><div class="tiny num">${priced.length ? pct(unBase ? un / unBase : NaN) : "還沒有現價"}</div></div>
+    <div class="tile"><div class="k">已實現＋股利（台幣）</div><div class="v num ${signCls(real)}">${fmt(real)}</div></div>
   </div>
   <div class="card"><h2>資產配置 vs 目標<span class="r">三角形＝目標</span></h2>
     ${tot > 0 ? `<div style="margin:-4px 0 10px">${needReb ? `<span class="chip alert">偏離超過 5 個百分點，該再平衡</span>` : `<span class="chip okc">在目標範圍內</span>`}</div>` : ""}
@@ -772,7 +795,7 @@ function renderInvest() {
       <div class="stack"><i style="width:${(r.cur * 100).toFixed(1)}%;${Math.abs(r.dev) > 0.05 ? "background:var(--seal)" : ""}"></i><u style="left:calc(${(r.tgt * 100).toFixed(1)}% - 1px)"></u></div></div>`).join("")}</div>
       ${needReb ? `<p class="tiny" style="margin:8px 0 0">${rebalanceHint(allocRows, tot)}</p>` : ""}` : `<div class="empty">記下第一筆買進後，這裡會顯示台股、美股、加密貨幣的比例</div>`}
   </div>
-  <div class="card"><h2>本月定期定額<span class="r num">${fmt(monthBuysTWD(mo))} / ${fmt(st.investMonthly)}</span></h2>
+  <div class="card"><h2>本月定期定額（台幣）<span class="r num">${fmt(monthBuysTWD(mo))} / ${fmt(st.investMonthly)}</span></h2>
     ${monthFull ? `<div class="tiny" style="margin:-4px 0 4px">這個月已投入 ${fmt(monthBuysTWD(mo))}，額度用完了，下面的燈號給下個月參考</div>` : ""}
     <div class="list">${st.plans.map((p) => { const d = planDone(p), g = dcaSig(p); return `<div class="item" style="cursor:default"><span class="a">${esc(p.sym)} <span class="muted">${esc(p.name)}</span>${p.role ? ` <span class="chip">${esc(p.role)}</span>` : ""}${d >= p.amt * 0.9 ? ` <span class="chip okc">已扣</span>` : ""}</span><span class="amt num">${fmt(d)} <span class="tiny">/ ${fmt(p.amt)}</span></span><span class="b">${MK[p.m]}${p.day ? `，每月 ${p.day} 號` : ""}${p.bk ? `，${esc(p.bk)}` : ""}${p.auto ? `<br>${esc(p.auto)}` : ""}</span><span><button class="btn sm" type="button" data-plan="${esc(p.id)}">記這筆</button></span>
       <span class="dca" style="grid-column:1/3"><span class="chip ${g.cls}">今天：${esc(g.label)}</span>${g.why ? `<span class="why">${esc(g.why)}</span>` : ""}</span></div>`; }).join("") || `<div class="empty">到設定加入定期定額計畫</div>`}</div>
@@ -783,15 +806,15 @@ function renderInvest() {
     ${ghCfg() ? `<div class="btns" style="margin:-4px 0 4px;align-items:center"><button class="btn sm" type="button" id="pxRefresh">更新現價</button><span class="tiny">${esc(priceJob || (RM.prices ? "自動抓價：" + (RM.prices.updated || "") : "還沒抓過價，按一下更新"))}</span></div>` : ""}
     <div class="list">${act.length ? act.sort((a, b) => b.valT - a.valT).map((h) => `<button class="hold hx" type="button" data-hold="${esc(h.k)}">
       <span class="hn"><b>${esc(h.sym)}</b><span>${esc(h.name)}</span></span>
-      <span class="hv num">${fmt(h.valT)}</span>
+      <span class="hv num">${fmt(h.valT)}<i class="cur">台幣</i></span>
       <span class="hm"><i class="mk ${h.m.toLowerCase()}"></i>${MK[h.m]}${h.bks.length ? `<em>${esc(h.bks.join("、"))}</em>` : ""}</span>
-      <span class="hp num ${signCls(h.unT)}">${isNum(h.unT) ? `${h.unT > 0 ? "+" : h.unT < 0 ? "−" : ""}${fmt(Math.abs(h.unT))}<small>${h.unT > 0 ? "+" : h.unT < 0 ? "−" : ""}${isNum(h.unP) ? (Math.abs(h.unP) * 100).toFixed(1) + "%" : ""}</small>` : `<u>點這裡填現價</u>`}</span>
-      <span class="hs"><span><small>${h.m === "CR" ? "顆數" : "股數"}</small><b class="num">${fmtQ(h.sh)}</b></span><span><small>均價</small><b class="num">${fmtP(h.avg)}</b></span><span><small>現價</small><b class="num">${isNum(h.px) ? fmtP(h.px) : "－"}</b></span></span></button>`).join("") : `<div class="empty">還沒有持股，按右下角 ＋ 記第一筆買進</div>`}</div>
+      <span class="hp num ${signCls(h.unT)}">${isNum(h.unT) ? `${h.unT > 0 ? "+" : h.unT < 0 ? "−" : ""}${fmt(Math.abs(h.unT))}<i class="cur">台幣</i><small>${h.unT > 0 ? "+" : h.unT < 0 ? "−" : ""}${isNum(h.unP) ? (Math.abs(h.unP) * 100).toFixed(1) + "%" : ""}</small>` : `<u>點這裡填現價</u>`}</span>
+      <span class="hs"><span><small>${h.m === "CR" ? "顆數" : "股數"}</small><b class="num">${fmtQ(h.sh)}</b></span><span><small>均價</small><b class="num">${fmtP(h.avg)}</b>${cur(h.m)}</span><span><small>現價</small><b class="num">${isNum(h.px) ? fmtP(h.px) : "－"}</b>${cur(h.m)}</span></span></button>`).join("") : `<div class="empty">還沒有持股，按右下角 ＋ 記第一筆買進</div>`}</div>
     ${H.some((h) => h.sh === 0) ? `<details><summary>已出清的標的（${H.filter((h) => h.sh === 0).length}）</summary>${H.filter((h) => h.sh === 0).map((h) => `<div class="item" style="cursor:default"><span class="a">${esc(h.sym)} <span class="muted">${esc(h.name)}</span></span><span class="amt num ${signCls(h.realT + h.divT)}">${fmt(h.realT + h.divT)}</span></div>`).join("")}</details>` : ""}
   </div>
   <div class="card"><h2>交易紀錄<span class="r">${trades.length} 筆</span></h2>
     <div class="scroll"><table class="tbl"><thead><tr><th>日期</th><th>標的</th><th>動作</th><th class="r">數量</th><th class="r">價格/金額</th></tr></thead><tbody>
-    ${trades.slice(0, 60).map((t) => `<tr data-trade="${esc(t.id)}" style="cursor:pointer"><td class="num">${esc((t.date || "").slice(2))}</td><td>${esc(t.sym)}<div class="tiny">${MK[t.m]}</div></td><td class="${t.side === "buy" ? "up" : t.side === "sell" ? "down" : ""}">${SIDE[t.side]}</td><td class="r num">${t.side === "div" ? "－" : fmtQ(t.q)}</td><td class="r num">${t.side === "div" ? fmt(t.amt, 0) : fmtP(t.p)}</td></tr>`).join("") || `<tr><td colspan="5" class="empty">還沒有交易</td></tr>`}
+    ${trades.slice(0, 60).map((t) => `<tr data-trade="${esc(t.id)}" style="cursor:pointer"><td class="num">${esc((t.date || "").slice(2))}</td><td>${esc(t.sym)}<div class="tiny">${MK[t.m]}</div></td><td class="${t.side === "buy" ? "up" : t.side === "sell" ? "down" : ""}">${SIDE[t.side]}</td><td class="r num">${t.side === "div" ? "－" : fmtQ(t.q)}</td><td class="r num">${t.side === "div" ? fmt(t.amt, t.m === "TW" ? 0 : 2) : fmtP(t.p)}<div class="cur-u">${CUR[t.m]}</div></td></tr>`).join("") || `<tr><td colspan="5" class="empty">還沒有交易</td></tr>`}
     </tbody></table></div>${trades.length > 60 ? `<div class="tiny">只列最近 60 筆，完整紀錄可在設定匯出 CSV</div>` : ""}
   </div>`;
   $("#dcaAi").onclick = dcaAsk;
@@ -1061,7 +1084,7 @@ function terraSVG(g) {
   s += `<path d="M${gx} ${soilY + 27} H ${gx + gw}" stroke="#000" stroke-opacity=".35" stroke-width="2"/>`;
   for (let i = 0; i < 14; i++) s += `<ellipse cx="${24 + i * 21}" cy="${soilY - 1 + (i % 3)}" rx="6" ry="2.4" fill="${["#8a5a2b", "#a0692f", "#6e4422"][i % 3]}" transform="rotate(${(i * 37) % 50 - 25} ${24 + i * 21} ${soilY})"/>`;
   if (has("wood")) s += `<path d="M40 ${soilY + 2} C 90 120, 150 110, 230 ${soilY - 46}" stroke="#5b3a24" stroke-width="12" fill="none" stroke-linecap="round"/><path d="M150 112 L 176 92" stroke="#5b3a24" stroke-width="6" stroke-linecap="round"/>`;
-  if (has("moss")) for (let i = 0; i < 18; i++) s += `<circle cx="${20 + i * 16.5}" cy="${soilY - 3 - (i % 2) * 2}" r="${6 + (i % 3)}" fill="${dry ? "#9a9a5a" : i % 3 ? "#2f7a35" : "#1d5a26"}"/>`;
+  if (has("moss")) for (let i = 0; i < 18; i++) s += `<circle cx="${20 + i * 16.5}" cy="${soilY - 3 - (i % 2) * 2}" r="${6 + (i % 3)}" fill="${dry ? "#9a9a5a" : i % 3 ? "#2f7a35" : "#1d5a26"}" class="t-moss" style="animation-delay:-${(i * 0.37) % 4}s"/>`;
   if (has("fern")) [[262, soilY], [52, soilY]].forEach(([x, y], j) => {
     s += `<g class="sway" opacity="${dry ? 0.6 : 1}">`;
     for (let k = -2; k <= 2; k++) {
@@ -1088,7 +1111,20 @@ function terraSVG(g) {
   } else if (has("isopod")) s += `<text x="${W / 2}" y="${soilY + 20}" text-anchor="middle" font-size="11" fill="#111">太乾了，小動物都躲進土裡</text>`;
   if (has("fireflies") && !dry) [[60, 60], [140, 44], [250, 70], [290, 40], [190, 100]].forEach(([x, y], i) => s += `<circle class="glow" style="animation-delay:${i * 0.5}s" cx="${x}" cy="${y}" r="7" fill="url(#ff)"/>`);
   // 水珠
-  if (g.hum >= 70) for (let i = 0; i < 16; i++) s += `<circle cx="${gx + 8 + ((i * 53) % (gw - 16))}" cy="${gy + 10 + ((i * 37) % 120)}" r="${1 + (i % 3) * 0.6}" fill="#1f4fa0" opacity=".35"/>`;
+  // 玻璃上的凝結水珠：濕度越高越多，其中幾顆會慢慢滑下來
+  const nDrop = g.hum >= 70 ? 16 : g.hum >= 40 ? 8 : 3;
+  for (let i = 0; i < nDrop; i++) {
+    const x = gx + 8 + ((i * 53) % (gw - 16)), y = gy + 10 + ((i * 37) % 120), r = 1 + (i % 3) * 0.6;
+    s += i % 3 === 0 && g.hum >= 40
+      ? `<circle class="t-run" style="animation-duration:${7 + (i % 5) * 1.7}s;animation-delay:-${(i * 1.3) % 7}s" cx="${x}" cy="${y}" r="${r + 0.4}" fill="#1f4fa0" opacity=".45"/>`
+      : `<circle cx="${x}" cy="${y}" r="${r}" fill="#1f4fa0" opacity=".3"/>`;
+  }
+  // 空氣中的孢子與水氣：慢慢往上飄
+  for (let i = 0; i < 9; i++) s += `<circle class="t-spore" style="animation-duration:${9 + (i % 4) * 2.5}s;animation-delay:-${i * 1.9}s" cx="${gx + 20 + i * 31}" cy="${soilY - 8}" r="${0.9 + (i % 3) * 0.35}" fill="${i % 2 ? "#2f7a35" : "#8d8a83"}" opacity="0"/>`;
+  // 跳蟲：從一開始就住在土裡的清潔工，太乾會躲起來
+  if (!hide) [[60, 0], [128, 1.1], [205, 2.3], [262, 0.6], [96, 3.1]].forEach(([x, d], i) => s += `<g class="t-hop" style="animation-duration:${2.6 + (i % 3) * 0.7}s;animation-delay:-${d}s"><ellipse cx="${x}" cy="${soilY + 2}" rx="2.6" ry="1.5" fill="#f7f6f2" stroke="#111" stroke-width=".4"/></g>`);
+  // 點一下噴水：從蓋子灑下水霧
+  for (let i = 0; i < 14; i++) s += `<circle class="t-spray" style="animation-delay:${(i % 7) * 0.07}s" cx="${W / 2 - 60 + i * 9}" cy="${gy + 6}" r="${1.2 + (i % 3) * 0.5}" fill="#1f4fa0" opacity="0"/>`;
   if (!has("moss") && !has("isopod")) s += `<text x="${W / 2}" y="80" text-anchor="middle" font-size="12" fill="#5f5d58">記第一筆帳，開始造景</text>`;
   s += `</g>`;
   // 玻璃
@@ -1102,7 +1138,7 @@ function renderGame() {
   const p = (g.xp - g.cur) / Math.max(1, g.nxt - g.cur);
   const recent = g.gains.filter((x) => x.date).sort((a, b) => b.date.localeCompare(a.date)).slice(0, 8);
   view.innerHTML = `
-  <div class="terra">${terraSVG(g)}</div>
+  <div class="terra" id="terraBox" role="button" aria-label="點一下噴水">${terraSVG(g)}</div>
   <div class="card">
     <div class="lvl"><b>Lv.${g.level}</b><span>${esc(TITLES[Math.min(g.level, TITLES.length) - 1])}</span><span class="tiny num" style="margin-left:auto">${fmt(g.xp)} 露水</span></div>
     <div style="margin:8px 0 4px">${bar(g.xp - g.cur, g.nxt - g.cur, "good")}</div>
@@ -1121,6 +1157,8 @@ function renderGame() {
     記交易：每筆 +20，有寫理由再 +10（一天最多算 3 筆，不獎勵多交易）<br>
     本月投資達標 +80、守住整個月的預算 +150、預備金每存到 10% +30、寫了理由的推薦每筆 +5<br>
     濕度看你多久沒記帳：今天記了 100%，三天沒記剩 45%，再乾下去小動物會躲起來。只算有沒有記，不看賺賠。</div></div>`;
+  const tb = $("#terraBox");
+  if (tb) tb.onclick = () => { tb.classList.remove("spray"); void tb.offsetWidth; tb.classList.add("spray"); setTimeout(() => tb.classList.remove("spray"), 1600); };
 }
 
 /* ───────── 表單 ───────── */
@@ -1266,16 +1304,16 @@ function holdSheet(h) {
   openSheet(`${h.sym} ${h.name || ""}`, `<div class="form">
     <div class="tiles">
       <div class="tile"><div class="k">持有</div><div class="v num">${fmtQ(h.sh)}</div></div>
-      <div class="tile"><div class="k">平均成本（${MKC[h.m]}）</div><div class="v num">${fmtP(h.avg)}</div></div>
+      <div class="tile"><div class="k">平均成本（${CUR[h.m]}）</div><div class="v num">${fmtP(h.avg)}</div></div>
       <div class="tile"><div class="k">市值（台幣）</div><div class="v num">${fmt(h.mvT)}</div></div>
-      <div class="tile"><div class="k">未實現</div><div class="v num ${signCls(h.unT)}">${isNum(h.unT) ? fmt(h.unT) : "－"}</div><div class="tiny num">${pct(h.unP)}</div></div>
+      <div class="tile"><div class="k">未實現（台幣）</div><div class="v num ${signCls(h.unT)}">${isNum(h.unT) ? fmt(h.unT) : "－"}</div><div class="tiny num">${pct(h.unP)}</div></div>
     </div>
-    <div class="tiny">現價 ${isNum(h.px) ? fmtP(h.px) : "未知"}・來源 ${esc(h.pxSrc || "無")}${h.m !== "TW" ? `・損益已含匯率變化` : ""}${h.divT ? `・累計股利 ${fmt(h.divT)} 元` : ""}</div>
-    <form class="two" id="pxF" style="align-items:end"><label class="f"><span>手動現價（自動抓不到時用）</span><input id="pxV" class="num" inputmode="decimal" value="${ov && isNum(ov.p) ? ov.p : ""}"></label>
+    <div class="tiny">現價 ${isNum(h.px) ? fmtP(h.px) + " " + CUR[h.m] : "未知"}・來源 ${esc(h.pxSrc || "無")}${h.m !== "TW" ? `・損益已含匯率變化` : ""}${h.divT ? `・累計股利 ${fmt(h.divT)} 台幣` : ""}</div>
+    <form class="two" id="pxF" style="align-items:end"><label class="f"><span>手動現價（${CUR[h.m]}，自動抓不到時用）</span><input id="pxV" class="num" inputmode="decimal" value="${ov && isNum(ov.p) ? ov.p : ""}"></label>
       <div class="btns"><button class="btn sm" type="submit">設定</button>${ov && isNum(ov.p) ? `<button class="btn sm" type="button" id="pxClr">改回自動</button>` : ""}</div></form>
     <div class="btns"><button class="btn pri sm" type="button" id="hBuy">加碼</button><button class="btn sm" type="button" id="hSell">賣出</button><button class="btn sm" type="button" id="hDiv">記股利</button></div>
     <div class="scroll"><table class="tbl"><thead><tr><th>日期</th><th>動作</th><th class="r">數量</th><th class="r">價格/金額</th></tr></thead><tbody>
-      ${ts.map((t) => `<tr data-t="${esc(t.id)}" style="cursor:pointer"><td class="num">${esc(t.date)}</td><td>${SIDE[t.side]}</td><td class="r num">${t.side === "div" ? "－" : fmtQ(t.q)}</td><td class="r num">${t.side === "div" ? fmt(t.amt, 2) : fmtP(t.p)}</td></tr>`).join("")}
+      ${ts.map((t) => `<tr data-t="${esc(t.id)}" style="cursor:pointer"><td class="num">${esc(t.date)}</td><td>${SIDE[t.side]}</td><td class="r num">${t.side === "div" ? "－" : fmtQ(t.q)}</td><td class="r num">${t.side === "div" ? fmt(t.amt, 2) : fmtP(t.p)}<div class="cur-u">${CUR[t.m]}</div></td></tr>`).join("")}
     </tbody></table></div></div>`, (o, close) => {
     $("#pxF", o).onsubmit = (e) => { e.preventDefault(); const p = toNum($("#pxV", o).value); if (!isNum(p) || p <= 0) return; S.prices[h.k] = { p, t: now(), d: today() }; commit(); close(); toast("現價已更新"); };
     if ($("#pxClr", o)) $("#pxClr", o).onclick = () => { S.prices[h.k] = { p: null, t: now() }; commit(); close(); };
