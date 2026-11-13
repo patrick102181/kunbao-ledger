@@ -35,7 +35,8 @@ COST = {"tw": (0.001425, 0.004425), "us": (0.0005, 0.0005)}
 INDEX = {"tw": "^TWII", "us": "^GSPC"}
 
 
-def sim_stock(dc, dh, dv, liq_min):
+def sim_stock(dc, dh, dv, liq_min, allow=None):
+    """allow：只允許在這些週進場（四道濾網通過的週）；None＝不限制"""
     """單一檔：回傳交易清單"""
     dc = dc.dropna()
     if len(dc) < 400:
@@ -81,6 +82,8 @@ def sim_stock(dc, dh, dv, liq_min):
             if pos["left"] <= 1e-9:
                 trades.append(close_pos(pos))
                 pos = None
+            continue
+        if allow is not None and wd not in allow:
             continue
         if not (0 <= c / ma - 1 <= 0.04 and bool(wup.iloc[i])):
             continue
