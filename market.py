@@ -609,7 +609,7 @@ def tw_universe():
                 if cfi.startswith("ES") and code.isdigit() and len(code) == 4:
                     ind = str(x[c_ind]).strip() if c_ind and pd.notna(x[c_ind]) else ""
                     rows.append({"c": code, "n": name, "m": mk, "sec": ind})
-                elif cfi.startswith("CE") and re.fullmatch(r"00\d{2,4}B?", code) and not ETF_EXCLUDE.search(name):
+                elif cfi.startswith("CE") and re.fullmatch(r"00\d{2,4}[AB]?", code) and not ETF_EXCLUDE.search(name):
                     rows.append({"c": code, "n": name, "m": mk, "sec": "債券ETF" if code.endswith("B") else "股票ETF", "etf": True})
             time.sleep(2)
         if len(rows) < 1000:

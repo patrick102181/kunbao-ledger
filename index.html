@@ -7,147 +7,209 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="坤寶存摺">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="theme-color" content="#1d2b4f">
+<meta name="theme-color" content="#f2f1ed">
 <title>坤寶存摺</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Jost:wght@400;500;600&family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
 <style>
+/* 包浩斯：形式追隨功能。
+   底是白與灰，結構線是黑；紅＝主要動作與超支警示，藍＝投資與數據，黃＝目前位置與提醒。
+   不用陰影、漸層、花紋；卡片是直角方塊，圓形只給「動作」（新增、拍照），三角形只給「目標刻度」。
+   數字與英文用 Jost（Futura 系幾何字），中文用 Noto Sans TC。 */
 :root{
-  /* 版面：手機單欄、底部分頁列；金額一律等寬數字靠右，像銀行存摺的格線帳 */
-  --paper:#eef1f6; --card:#ffffff; --ink:#1d2b4f; --muted:#67718a; --line:#d8dde8; --accent:#2b4fa8;
-  --seal:#c8372d; --up:#d0342c; --down:#1d8a4a; --warn:#b7791f; --chip:#e5eaf3; --fill:#2b4fa8;
+  --paper:#f2f1ed; --card:#ffffff; --ink:#111111; --muted:#5f5d58; --faint:#8d8a83; --line:#111111; --hair:#d9d6cf;
+  --red:#d7261e; --blue:#1f4fa0; --yellow:#f2bf1e;
+  --up:#d7261e; --down:#1d7a45; --warn:#f2bf1e; --seal:#d7261e; --accent:#d7261e; --fill:#111111; --chip:#ecebe6;
   --f-body:"Noto Sans TC",-apple-system,"PingFang TC","Microsoft JhengHei",sans-serif;
-  --f-num:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+  --f-num:"Jost","Futura","Century Gothic","Noto Sans TC",sans-serif;
+  --f-label:var(--f-body);
   color-scheme:light;
 }
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
-  --paper:#0f131c; --card:#171d2a; --ink:#e6eaf3; --muted:#9aa3b8; --line:#283043; --accent:#86a2f2;
-  --seal:#f06c60; --up:#ff6b61; --down:#40c47c; --warn:#e2aa4c; --chip:#222a3b; --fill:#86a2f2; color-scheme:dark}}
-:root[data-theme="dark"]{
-  --paper:#0f131c; --card:#171d2a; --ink:#e6eaf3; --muted:#9aa3b8; --line:#283043; --accent:#86a2f2;
-  --seal:#f06c60; --up:#ff6b61; --down:#40c47c; --warn:#e2aa4c; --chip:#222a3b; --fill:#86a2f2; color-scheme:dark}
 *{box-sizing:border-box}
-html,body{margin:0;height:100%}
-body{background:var(--paper);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.5;-webkit-text-size-adjust:100%}
+html,body{margin:0;min-height:100%}
+body{background:var(--paper);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.55;-webkit-text-size-adjust:100%}
 button,input,select,textarea{font:inherit;color:inherit}
 button{cursor:pointer}
-:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-.num{font-family:var(--f-num);font-variant-numeric:tabular-nums;white-space:nowrap}
-.app{max-width:560px;margin:0 auto;padding:0 16px calc(88px + env(safe-area-inset-bottom))}
-header.top{position:sticky;top:0;z-index:5;background:var(--paper);padding:calc(10px + env(safe-area-inset-top)) 0 8px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--line)}
-header.top h1{font-size:20px;font-weight:900;margin:0;letter-spacing:.06em}
-.seal{display:inline-grid;place-items:center;width:30px;height:30px;border:2px solid var(--seal);color:var(--seal);border-radius:6px;font-size:13px;font-weight:900;transform:rotate(-6deg)}
-.sync{margin-left:auto;font-size:12px;padding:3px 10px;border-radius:999px;background:var(--chip);color:var(--muted);border:0}
-.sync.ok{color:var(--down)} .sync.err{color:var(--seal)} .sync.busy{color:var(--warn)}
+button:active{transform:translateY(1px)}
+:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+.num{font-family:var(--f-num);font-variant-numeric:tabular-nums lining-nums;font-weight:500;white-space:nowrap}
+.app{max-width:560px;margin:0 auto;padding:0 16px calc(96px + env(safe-area-inset-bottom))}
+header.top{position:sticky;top:0;z-index:5;background:var(--paper);padding:calc(12px + env(safe-area-inset-top)) 0 10px;display:flex;align-items:center;gap:10px;border-bottom:2px solid var(--ink)}
+header.top h1{font-size:19px;font-weight:900;margin:0;letter-spacing:.12em}
+.seal{display:inline-flex;align-items:flex-end;gap:2px;height:16px;font-size:0;color:transparent;border:0;flex:none}
+.seal i{display:block;width:12px;height:12px}
+.seal i:nth-child(1){background:var(--red);border-radius:50%}
+.seal i:nth-child(2){background:var(--blue)}
+.seal i:nth-child(3){width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent;border-bottom:12px solid var(--yellow)}
+.sync{margin-left:auto;font-size:12px;border:1.5px solid var(--ink);background:var(--card);color:var(--ink);border-radius:0}
+.sync::before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--faint);margin-right:6px;vertical-align:.1em}
+.sync.ok::before{background:var(--blue)} .sync.err::before{background:var(--red)} .sync.busy::before{background:var(--yellow)}
 main{display:grid;gap:14px;padding-top:14px}
-.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px}
-.card h2{font-size:15px;margin:0 0 10px;display:flex;align-items:center;gap:8px;text-wrap:balance}
-.card h2 .r{margin-left:auto;font-weight:400;font-size:12px;color:var(--muted)}
+.card{background:var(--card);border:1.5px solid var(--ink);border-radius:0;padding:14px 14px 12px}
+.card h2{font-size:15px;font-weight:900;letter-spacing:.06em;margin:-14px -14px 12px;padding:9px 14px 8px;border-bottom:1.5px solid var(--ink);display:flex;align-items:baseline;gap:8px;text-wrap:balance}
+.card h2 .r{margin-left:auto;font-weight:400;font-size:12px;letter-spacing:0;color:var(--muted)}
+.card h2 .r.num{font-family:var(--f-num);font-size:14px;color:var(--ink)}
 .muted{color:var(--muted)} .tiny{font-size:12px;color:var(--muted)}
-.tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.tile{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
-.tile .k{font-size:12px;color:var(--muted)} .tile .v{font-size:19px;font-weight:600}
-.up{color:var(--up)} .down{color:var(--down)} .neg{color:var(--seal)}
+/* 記帳頁頂：一張海報——大數字＋收入去向的比例條 */
+.hero{display:grid;gap:12px;padding:4px 0 2px}
+.hero .mrow{display:flex;align-items:center;gap:0;border:1.5px solid var(--ink);background:var(--card);width:max-content}
+.hero .mrow b{font-weight:700;font-size:15px;letter-spacing:.08em;min-width:128px;text-align:center;border-left:1.5px solid var(--ink);border-right:1.5px solid var(--ink);padding:.12em 10px 0;line-height:calc(34px - .12em)}
+.hero .mrow .ib{border:0;width:36px;height:34px}
+.hero .k{font-size:13px;color:var(--muted);font-weight:500}
+.hero .big{font-family:var(--f-num);font-variant-numeric:tabular-nums lining-nums;font-weight:500;font-size:68px;line-height:.95;letter-spacing:-.02em;color:var(--ink)}
+.hero .big.neg{color:var(--red)}
+.hero .big small{font-family:var(--f-body);font-size:18px;color:var(--muted);margin-left:6px;font-weight:500;letter-spacing:0}
+.flow{display:flex;height:14px;border:1.5px solid var(--ink);background:var(--card)}
+.flow i{display:block;height:100%}
+.flow .e{background:var(--red)} .flow .v{background:var(--blue)} .flow .l{background:var(--yellow)}
+.hero .trio{display:grid;grid-template-columns:repeat(3,1fr);border:1.5px solid var(--ink);background:var(--card)}
+.hero .trio>div{padding:8px 10px;border-left:1.5px solid var(--ink)} .hero .trio>div:first-child{border-left:0}
+.hero .kl::before,.hero .trio .k::before{content:"";display:inline-block;width:9px;height:9px;margin-right:6px;vertical-align:.05em}
+.hero .kl::before{background:var(--yellow)} .hero .trio .ki::before{border:1.5px solid var(--ink)} .hero .trio .ke::before{background:var(--red)} .hero .trio .kv::before{background:var(--blue)}
+.hero .trio .v{font-size:22px}
+.tiles{display:grid;grid-template-columns:1fr 1fr;border:1.5px solid var(--ink);background:var(--card)}
+.tile{padding:10px 12px;border-right:1.5px solid var(--ink);border-bottom:1.5px solid var(--ink)}
+.tile:nth-child(2n){border-right:0} .tile:nth-last-child(-n+2){border-bottom:0}
+.tile .k{font-size:12px;color:var(--muted)} .tile .v{font-size:26px;line-height:1.2}
+.up{color:var(--up)} .down{color:var(--down)} .neg{color:var(--red)}
 .month{display:flex;align-items:center;justify-content:center;gap:14px}
-.month b{font-size:17px;font-family:var(--f-num)}
-.ib{border:1px solid var(--line);background:var(--card);border-radius:10px;width:36px;height:36px}
-.bar{height:8px;background:var(--chip);border-radius:99px;overflow:hidden}
-.bar>i{display:block;height:100%;background:var(--fill);border-radius:99px}
-.bar.over>i{background:var(--seal)} .bar.warn>i{background:var(--warn)} .bar.good>i{background:var(--down)}
-.brow{display:grid;gap:4px;padding:6px 0}
-.brow .t{display:flex;justify-content:space-between;gap:8px;font-size:14px}
+.month b{font-size:16px}
+.ib{border:1.5px solid var(--ink);background:var(--card);border-radius:0;width:34px;height:34px;color:var(--ink);flex:none}
+.bar{height:8px;background:var(--chip);border-radius:0;overflow:hidden}
+.bar>i{display:block;height:100%;background:var(--ink)}
+.bar.over>i{background:var(--red)} .bar.warn>i{background:var(--yellow)} .bar.good>i{background:var(--blue)}
+.brow{display:grid;gap:5px;padding:6px 0}
+.brow .t{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-size:14px}
+.brow .t .num{font-size:16px}
 .list{display:grid}
-.item{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px;padding:10px 2px;border-top:1px dashed var(--line);text-align:left;background:none;border-left:0;border-right:0;border-bottom:0;width:100%}
+.item{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px;padding:10px 0;border-top:1px solid var(--hair);text-align:left;background:none;border-left:0;border-right:0;border-bottom:0;width:100%}
 .item:first-child{border-top:0}
-.item .a{font-weight:500} .item .b{font-size:12px;color:var(--muted)} .item .amt{text-align:right;font-weight:600}
-.dayh{font-size:12px;color:var(--muted);padding:10px 2px 2px;display:flex;justify-content:space-between;border-bottom:1px solid var(--line)}
-.chip{display:inline-flex;align-items:center;gap:4px;font-size:12px;padding:2px 8px;border-radius:999px;background:var(--chip);color:var(--muted);white-space:nowrap}
-.chip.cheap{background:color-mix(in srgb,var(--down) 16%,transparent);color:var(--down)}
-.chip.fair{background:var(--chip);color:var(--ink)}
-.chip.exp{background:color-mix(in srgb,var(--up) 14%,transparent);color:var(--up)}
-.chip.trap{background:color-mix(in srgb,var(--warn) 18%,transparent);color:var(--warn)}
-.chip.alert{background:color-mix(in srgb,var(--seal) 14%,transparent);color:var(--seal)}
-.chip.okc{background:color-mix(in srgb,var(--down) 14%,transparent);color:var(--down)}
-.btn{border:1px solid var(--line);background:var(--card);border-radius:10px;padding:8px 14px;font-weight:500}
-.btn.pri{background:var(--accent);border-color:var(--accent);color:#fff}
-:root[data-theme="dark"] .btn.pri{color:#0f131c}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .btn.pri{color:#0f131c}}
-.btn.danger{color:var(--seal)}
-.btn.sm{padding:4px 10px;font-size:13px;border-radius:8px}
+.item .a{font-weight:500} .item .b{font-size:12px;color:var(--muted)} .item .amt{text-align:right;font-size:17px}
+.dayh{font-size:12px;font-weight:700;color:var(--ink);padding:12px 0 4px;display:flex;justify-content:space-between;align-items:baseline;border-bottom:1.5px solid var(--ink)}
+.dayh .num{font-size:13px}
+.chip{display:inline-flex;align-items:center;gap:5px;font-size:12px;border:1px solid var(--ink);border-radius:0;background:var(--card);color:var(--ink);white-space:nowrap;line-height:1.5}
+.chip.cheap::before,.chip.exp::before,.chip.trap::before,.chip.alert::before,.chip.okc::before,.chip.go::before{content:"";width:8px;height:8px;flex:none}
+.chip.cheap::before,.chip.go::before{background:var(--blue)}
+.chip.okc::before{background:var(--ink);border-radius:50%}
+.chip.exp::before,.chip.alert::before{background:var(--red);border-radius:50%}
+.chip.trap::before{width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-bottom:9px solid var(--yellow);background:none}
+.btn{border:1.5px solid var(--ink);background:var(--card);border-radius:0;font-weight:700}
+.btn.pri{background:var(--red);border-color:var(--red);color:#fff}
+.btn.danger{color:var(--red);border-color:var(--red)}
+.btn.sm{font-size:13px;font-weight:500}
+.btn:disabled{opacity:.45}
 .btns{display:flex;flex-wrap:wrap;gap:8px}
-nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:6;background:var(--card);border-top:1px solid var(--line);display:flex;justify-content:center;padding-bottom:env(safe-area-inset-bottom)}
+/* 導覽：五格等寬網格，目前所在格頂上一條黃色粗線 */
+nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:6;background:var(--card);border-top:2px solid var(--ink);display:flex;justify-content:center;padding-bottom:env(safe-area-inset-bottom)}
 nav.tabs .in{display:grid;grid-template-columns:repeat(5,1fr);width:100%;max-width:560px}
-nav.tabs button{border:0;background:none;padding:10px 0 9px;font-size:13px;color:var(--muted);display:grid;justify-items:center;gap:2px}
-nav.tabs button .g{font-size:17px;font-weight:900;font-family:var(--f-body)}
-nav.tabs button[aria-current="page"]{color:var(--accent)}
-.fab{position:fixed;right:max(16px,calc(50% - 264px));bottom:calc(76px + env(safe-area-inset-bottom));z-index:7;width:56px;height:56px;border-radius:18px;border:0;background:var(--accent);color:#fff;font-size:28px;box-shadow:0 6px 18px rgba(20,30,60,.28)}
-.ov{position:fixed;inset:0;z-index:20;background:rgba(10,14,24,.45);display:flex;align-items:flex-end;justify-content:center}
-.sheet{background:var(--card);width:100%;max-width:560px;max-height:92%;overflow:auto;border-radius:18px 18px 0 0;padding:14px 16px calc(18px + env(safe-area-inset-bottom))}
-.sh-h{display:flex;align-items:center;margin-bottom:10px} .sh-h b{font-size:17px}
-.x{margin-left:auto;border:0;background:var(--chip);border-radius:10px;width:34px;height:34px}
-.form{display:grid;gap:10px}
-.f{display:grid;gap:4px} .f>span{font-size:12px;color:var(--muted)}
-.f input,.f select,.f textarea{width:100%;border:1px solid var(--line);background:var(--paper);border-radius:10px;padding:9px 11px;font-size:16px}
+nav.tabs button{border:0;border-left:1px solid var(--hair);background:none;padding:8px 0 8px;font-size:11px;font-weight:500;color:var(--muted);display:grid;justify-items:center;gap:4px;position:relative;border-radius:0}
+nav.tabs button:first-child{border-left:0}
+nav.tabs button .g{width:22px;height:22px;display:block}
+nav.tabs button[aria-current="page"]{color:var(--ink);font-weight:700}
+nav.tabs button[aria-current="page"]::before{content:"";position:absolute;left:0;right:0;top:-2px;height:4px;background:var(--yellow)}
+nav.tabs button[aria-current="page"] .g .f{fill:currentColor}
+nav.tabs button[aria-current="page"][data-tab="book"] .g .f{fill:var(--red)}
+nav.tabs button[aria-current="page"][data-tab="invest"] .g .f{fill:var(--blue)}
+nav.tabs button[aria-current="page"][data-tab="recs"] .g .f{fill:var(--yellow)}
+/* 動作鍵：圓形。新增＝紅色實心圓，拍照＝白底黑框圓 */
+.fab{position:fixed;right:max(16px,calc(50% - 264px));bottom:calc(76px + env(safe-area-inset-bottom));z-index:7;width:56px;height:56px;border-radius:50%;border:0;background:var(--red);color:#fff;font-size:0;display:grid;place-items:center;padding:0}
+.fab::before,.fab::after{content:"";position:absolute;background:#fff;width:22px;height:2.5px}
+.fab::after{width:2.5px;height:22px}
+.cam{position:fixed;right:max(22px,calc(50% - 258px));bottom:calc(142px + env(safe-area-inset-bottom));z-index:7;width:44px;height:44px;border-radius:50%;display:grid;place-items:center;padding:0;color:var(--ink);background:var(--card);border:1.5px solid var(--ink)}
+.cam svg{width:21px;height:21px}
+.ov{position:fixed;inset:0;z-index:20;background:rgba(17,17,17,.45);display:flex;align-items:flex-end;justify-content:center}
+.sheet{background:var(--card);border-top:3px solid var(--ink);width:100%;max-width:560px;max-height:92%;overflow:auto;border-radius:0;padding:14px 16px calc(18px + env(safe-area-inset-bottom))}
+.sh-h{display:flex;align-items:center;margin-bottom:12px} .sh-h b{font-size:18px;font-weight:900;letter-spacing:.06em}
+.x{margin-left:auto;border:1.5px solid var(--ink);background:var(--card);border-radius:50%;width:34px;height:34px;color:var(--ink)}
+.form{display:grid;gap:12px}
+.f{display:grid;gap:5px} .f>span{font-size:12px;font-weight:700;color:var(--ink)}
+.f input,.f select,.f textarea{width:100%;border:1.5px solid var(--ink);background:var(--card);border-radius:0;padding:9px 11px;font-size:16px}
+.f input:focus,.f select:focus,.f textarea:focus{outline:0;border-color:var(--blue);box-shadow:inset 0 0 0 1.5px var(--blue)}
 .f textarea{min-height:110px;resize:vertical}
 .two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.big input{font-family:var(--f-num);font-size:26px;font-weight:600;text-align:right}
-.seg{display:flex;background:var(--chip);border-radius:10px;padding:3px;gap:3px}
-.seg button{flex:1;border:0;background:none;border-radius:8px;padding:7px 0;font-size:14px;color:var(--muted)}
-.seg button.on{background:var(--card);color:var(--ink);font-weight:700;box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.big input{font-family:var(--f-num);font-variant-numeric:tabular-nums lining-nums;font-size:38px;font-weight:500;text-align:right;padding:4px 12px}
+.seg{display:flex;border:1.5px solid var(--ink);border-radius:0;background:var(--card)}
+.seg button{flex:1;border:0;border-left:1.5px solid var(--ink);background:none;border-radius:0;font-size:14px;color:var(--ink)}
+.seg button:first-child{border-left:0}
+.seg button .n{font-family:var(--f-num);font-weight:500;margin-left:4px}
+.seg button.on{background:var(--ink);color:#fff;font-weight:700}
 .cats{display:flex;flex-wrap:wrap;gap:6px}
-.cats button{border:1px solid var(--line);background:var(--paper);border-radius:999px;padding:5px 12px;font-size:14px}
-.cats button.on{border-color:var(--accent);background:var(--accent);color:#fff}
-.hold{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px;padding:11px 2px;border-top:1px dashed var(--line);width:100%;text-align:left;background:none;border-left:0;border-right:0;border-bottom:0}
+.cats button{border:1.5px solid var(--ink);background:var(--card);border-radius:999px;font-size:14px}
+.cats button.on{background:var(--yellow);font-weight:700}
+.hold{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px;padding:11px 0;border-top:1px solid var(--hair);width:100%;text-align:left;background:none;border-left:0;border-right:0;border-bottom:0}
 .hold:first-child{border-top:0}
 .hold .b,.item .b{white-space:normal;overflow-wrap:anywhere}
 .hold .a,.item .a{min-width:0;overflow-wrap:anywhere}
+.hold .num{font-size:17px}
+.hold .b{font-size:12.5px;color:var(--muted)} .hold .b.num{font-family:var(--f-body);font-size:12.5px;font-weight:400;white-space:normal}
 main,.card{min-width:0}
 .tbl{width:100%;border-collapse:collapse;font-size:13px}
-.tbl th,.tbl td{padding:7px 4px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
-.tbl th{font-weight:500;color:var(--muted);font-size:12px}
+.tbl th,.tbl td{padding:7px 4px;border-bottom:1px solid var(--hair);text-align:left;vertical-align:top}
+.tbl th{font-weight:700;color:var(--ink);font-size:12px;border-bottom:1.5px solid var(--ink)}
 .tbl th{white-space:nowrap} .tbl .btn{white-space:nowrap}
+.tbl td .num,.tbl td.num{font-size:14px}
 .tbl td.r,.tbl th.r{text-align:right}
 .scroll{overflow-x:auto}
-.empty{padding:14px 4px;color:var(--muted);font-size:14px}
-.aiout{white-space:pre-wrap;font-size:14px;background:var(--paper);border-radius:10px;padding:12px;border:1px solid var(--line)}
-.toast{position:fixed;left:50%;bottom:calc(150px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:30;background:var(--ink);color:var(--paper);padding:9px 16px;border-radius:999px;font-size:14px;max-width:90%}
+.empty{padding:14px 0;color:var(--muted);font-size:14px}
+.aiout{white-space:pre-wrap;font-size:14px;background:var(--paper);border-left:4px solid var(--blue);padding:10px 12px}
+.toast{position:fixed;left:50%;bottom:calc(150px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:30;background:var(--ink);color:#fff;border-radius:0;font-size:14px;max-width:90%}
 .erow{display:grid;grid-template-columns:1fr 92px 40px;gap:6px;align-items:center;margin-bottom:6px}
-.erow input,.erow select{border:1px solid var(--line);background:var(--paper);border-radius:8px;padding:7px 8px;font-size:15px;width:100%;min-width:0}
-.erow.rec,.erow.r5{grid-template-columns:72px minmax(0,1fr) 92px 36px;padding-bottom:8px;border-bottom:1px dashed var(--line)}
+.erow input,.erow select{border:1.5px solid var(--ink);background:var(--card);border-radius:0;padding:7px 8px;font-size:15px;width:100%;min-width:0}
+.erow.rec,.erow.r5{grid-template-columns:72px minmax(0,1fr) 92px 36px;padding-bottom:8px;border-bottom:1px solid var(--hair)}
 .erow.rec [data-rk=name]{grid-column:1/3;grid-row:1} .erow.rec [data-rk=type]{grid-column:1;grid-row:2} .erow.rec [data-rk=cat]{grid-column:2;grid-row:2}
 .erow.rec [data-rk=amt]{grid-column:3;grid-row:1} .erow.rec .ib,.erow.r5 .ib{grid-column:4;grid-row:1}
 .erow.r5 [data-pk=m]{grid-column:1;grid-row:1} .erow.r5 [data-pk=sym]{grid-column:2;grid-row:1} .erow.r5 [data-pk=amt]{grid-column:3;grid-row:1} .erow.r5 [data-pk=name]{grid-column:1/4;grid-row:2}
 .chart svg{display:block;width:100%;height:auto}
-.alloc{display:grid;gap:10px}
-.alloc .t{display:flex;justify-content:space-between;font-size:14px}
-.stack{position:relative;height:10px;background:var(--chip);border-radius:99px}
-.stack>i{position:absolute;top:0;bottom:0;left:0;background:var(--fill);border-radius:99px}
-.stack>u{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--ink);text-decoration:none}
-details summary{cursor:pointer;color:var(--accent);font-size:14px;padding:6px 0}
-/* 雨林箱養成 */
-.terra{border-radius:14px;overflow:hidden;background:#0f1a17;border:1px solid var(--line)}
+.alloc{display:grid;gap:12px}
+.alloc .t{display:flex;justify-content:space-between;align-items:baseline;font-size:14px}
+.stack{position:relative;height:10px;background:var(--chip);margin-bottom:6px}
+.stack>i{position:absolute;top:0;bottom:0;left:0;background:var(--blue)}
+.stack>u{position:absolute;bottom:-7px;width:0;height:0;margin-left:-6px;border-left:6px solid transparent;border-right:6px solid transparent;border-bottom:9px solid var(--ink);text-decoration:none}
+details summary{cursor:pointer;color:var(--blue);font-size:14px;font-weight:700;padding:6px 0}
+/* 雨林箱 */
+.terra{overflow:hidden;background:#fff;border:1.5px solid var(--ink)}
 .terra svg{display:block;width:100%;height:auto}
 .lvl{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
-.lvl b{font-size:22px}
-.badges{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px}
-.badge{border:1px solid var(--line);border-radius:12px;padding:8px;text-align:center;font-size:12px;background:var(--paper)}
-.badge .m{display:grid;place-items:center;width:34px;height:34px;margin:0 auto 4px;border-radius:50%;border:2px solid var(--muted);color:var(--muted);font-weight:900;font-size:14px}
-.badge.got{background:var(--card)} .badge.got .m{border-color:var(--seal);color:var(--seal);transform:rotate(-8deg)}
-.badge:not(.got){opacity:.55}
-.quest{display:grid;grid-template-columns:24px 1fr auto;gap:8px;align-items:center;padding:8px 0;border-top:1px dashed var(--line)}
+.lvl b{font-family:var(--f-num);font-size:34px;font-weight:500}
+.badges{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));border-top:1.5px solid var(--ink);border-left:1.5px solid var(--ink)}
+.badge{border-right:1.5px solid var(--ink);border-bottom:1.5px solid var(--ink);padding:10px 6px;text-align:center;font-size:12px;background:var(--card)}
+.badge .m{padding-top:.1em;display:grid;place-items:center;width:34px;height:34px;margin:0 auto 6px;border:1.5px dashed var(--faint);color:var(--faint);font-weight:700;font-size:14px;border-radius:50%}
+.badge.got .m{border:0;background:var(--red);color:#fff}
+.badge.got:nth-child(3n+2) .m{background:var(--blue);border-radius:0}
+.badge.got:nth-child(3n) .m{background:var(--yellow);color:var(--ink);border-radius:0;clip-path:polygon(50% 0,100% 100%,0 100%);padding-top:.5em}
+.badge:not(.got){color:var(--faint)}
+.quest{display:grid;grid-template-columns:24px 1fr auto;gap:10px;align-items:center;padding:9px 0;border-top:1px solid var(--hair)}
 .quest:first-child{border-top:0}
-.quest .ck{width:20px;height:20px;border-radius:6px;border:2px solid var(--line);display:grid;place-items:center;font-size:13px;color:#fff}
-.quest.done .ck{background:var(--down);border-color:var(--down)}
-.mini{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
-.mini .dot{width:38px;height:38px;border-radius:10px;background:#16302a;display:grid;place-items:center;color:#9fe0b6;font-weight:900;font-size:13px;flex:none}
-.mini .t{flex:1;min-width:0;font-size:13px}
-.mini .t b{font-size:14px}
+.quest .ck{width:20px;height:20px;border:1.5px solid var(--ink);display:grid;place-items:center;font-size:12px;color:#fff;border-radius:0}
+.quest.done .ck{background:var(--blue);border-color:var(--blue)}
+.mini{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:var(--card);border:1.5px solid var(--ink);border-radius:0;padding:8px 12px 8px 8px}
+.mini .dot{padding-top:3px;width:40px;height:40px;background:var(--ink);display:grid;place-items:center;color:#fff;font-family:var(--f-num);font-weight:500;font-size:14px;flex:none}
+.mini .t{flex:1;min-width:0;font-size:13px;color:var(--muted)}
+.mini .t b{font-size:14px;color:var(--ink);font-weight:700}
+.mini .tiny.num{font-size:15px;color:var(--ink)}
 .lvup{text-align:center;padding:10px 0 4px}
-.lvup .big{font-size:40px;font-weight:900;color:var(--seal)}
+.lvup .big{font-family:var(--f-num);font-size:56px;font-weight:500;color:var(--red)}
+.shot{display:block;width:100%;max-height:220px;object-fit:contain;background:var(--paper);border:1.5px solid var(--ink)}
+.pick{display:grid;grid-template-columns:22px minmax(0,1fr) auto;gap:4px 10px;align-items:center;padding:10px 0;border-top:1px solid var(--hair)}
+.pick:first-child{border-top:0}
+.pick input{width:18px;height:18px;accent-color:var(--red)}
+.pick .e{grid-column:2/4;font-size:12px;color:var(--muted)}
+.dca{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:6px}
+.dca .why{flex-basis:100%;font-size:12px;color:var(--muted)}
+/* 置中：Noto Sans TC 放在框裡會偏上約 0.05em，用上下不對稱的內距補回 */
+.chip{padding:calc(2px + .055em) 8px calc(2px - .055em)}
+.btn{padding:calc(8px + .08em) 16px calc(8px - .08em);display:inline-flex;align-items:center;justify-content:center}
+.btn.sm{padding:calc(5px + .07em) 12px calc(5px - .07em)}
+.sync{padding:calc(4px + .055em) 10px calc(4px - .055em)}
+.seg button{padding:calc(7px + .05em) 0 calc(7px - .05em)}
+.cats button{padding:calc(5px + .05em) 13px calc(5px - .05em)}
+.toast{padding:calc(9px + .05em) 18px calc(9px - .05em)}
+.ib,.x{display:inline-grid;place-items:center;padding:0}
+.ib svg,.x svg{width:16px;height:16px;display:block}
 @media (prefers-reduced-motion:no-preference){
   .crawl{animation:crawl 9s ease-in-out infinite alternate}
   .crawl2{animation:crawl 13s ease-in-out infinite alternate-reverse}
@@ -156,27 +218,29 @@ details summary{cursor:pointer;color:var(--accent);font-size:14px;padding:6px 0}
   @keyframes crawl{from{transform:translateX(0)}to{transform:translateX(26px)}}
   @keyframes glow{from{opacity:.25}to{opacity:1}}
   @keyframes sway{from{transform:rotate(-2deg)}to{transform:rotate(2deg)}}
+  .sheet{animation:up .16s ease-out}@keyframes up{from{transform:translateY(16px)}to{transform:none}}
 }
-@media (prefers-reduced-motion:no-preference){.sheet{animation:up .18s ease-out}@keyframes up{from{transform:translateY(24px);opacity:.6}to{transform:none;opacity:1}}}
-@media (max-width:360px){.tiles{grid-template-columns:1fr}}
+@media (max-width:360px){.hero .big{font-size:54px}}
 </style>
 </head>
 <body>
 <div class="app">
   <header class="top">
-    <span class="seal" aria-hidden="true">坤</span>
+    <span class="seal" aria-hidden="true"><i></i><i></i><i></i></span>
     <h1>坤寶存摺</h1>
     <button class="sync" id="syncChip" type="button">本機</button>
   </header>
   <main id="view"></main>
 </div>
 <button class="fab" id="fab" type="button" aria-label="新增">＋</button>
+<button class="cam" id="cam" type="button" aria-label="拍照讓 AI 記帳"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8.5A1.5 1.5 0 0 1 5.5 7h2l1.4-2h6.2l1.4 2h2A1.5 1.5 0 0 1 20 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 17.5z"/><circle cx="12" cy="12.5" r="3.4"/></svg></button>
+<input type="file" id="camIn" accept="image/*" hidden>
 <nav class="tabs" aria-label="分頁"><div class="in">
-  <button type="button" data-tab="book"><span class="g">帳</span>記帳</button>
-  <button type="button" data-tab="invest"><span class="g">股</span>投資</button>
-  <button type="button" data-tab="recs"><span class="g">薦</span>推薦</button>
-  <button type="button" data-tab="game"><span class="g">林</span>雨林箱</button>
-  <button type="button" data-tab="settings"><span class="g">設</span>設定</button>
+  <button type="button" data-tab="book"><svg class="g" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="miter"><rect class="f" x="5" y="5" width="14" height="14"/></svg>記帳</button>
+  <button type="button" data-tab="invest"><svg class="g" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="miter"><path class="f" d="M12 4.5 20 19H4z"/></svg>投資</button>
+  <button type="button" data-tab="recs"><svg class="g" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="miter"><circle class="f" cx="12" cy="12" r="7.5"/></svg>推薦</button>
+  <button type="button" data-tab="game"><svg class="g" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="miter"><path class="f" d="M4.5 19.5h15v-6a7.5 7.5 0 0 0-15 0z"/></svg>雨林箱</button>
+  <button type="button" data-tab="settings"><svg class="g" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="miter"><path d="M4 8h16M4 16h16"/><rect class="f" x="13" y="5.5" width="5" height="5"/><circle class="f" cx="8.5" cy="16" r="2.6"/></svg>設定</button>
 </div></nav>
 
 <script>
@@ -230,9 +294,9 @@ const DEFAULT_SETTINGS = {
     { id: "r-rent", name: "房租", type: "exp", cat: "房租", amt: 12000, acct: "銀行" }
   ],
   plans: [
-    { id: "p-us", m: "US", sym: "VTI", name: "美國全市場", amt: 5000 },
-    { id: "p-tw", m: "TW", sym: "006208", name: "富邦台50", amt: 4000 },
-    { id: "p-cr", m: "CR", sym: "BTC", name: "比特幣", amt: 1000 }
+    { id: "p-tw", m: "TW", sym: "0050", name: "元大台灣50", amt: 4500, bk: "永豐大戶投", role: "核心" },
+    { id: "p-us", m: "US", sym: "VT", name: "全球股市", amt: 4400, bk: "永豐大戶投", role: "核心" },
+    { id: "p-cr", m: "CR", sym: "BTC", name: "比特幣", amt: 1120, bk: "OURBIT", day: 5, auto: "每期 35 USDT，平台自動扣", role: "衛星" }
   ]
 };
 function normalize(st) {
@@ -240,6 +304,8 @@ function normalize(st) {
   const s = Object.assign(clone(DEFAULT_SETTINGS), st.settings || {});
   s.budgets = Object.assign({}, s.budgets || {});
   s.targets = Object.assign({ US: 0, TW: 0, CR: 0 }, s.targets || {});
+  // 舊版預設的範例計畫（VTI 5000／006208 4000／BTC 1000）換成實際在買的
+  if ((s.plans || []).length === 3 && s.plans.map((p) => p.sym + p.amt).join() === "VTI5000,0062084000,BTC1000") s.plans = clone(DEFAULT_SETTINGS.plans);
   if (!s.radarBase || /kevunchiang24|market-radar/.test(s.radarBase)) s.radarBase = "./data"; // 只用自己抓的資料
   return { v: 1, settings: s, tx: st.tx || [], trades: st.trades || [], recs: st.recs || [], prices: st.prices || {}, del: st.del || {} };
 }
@@ -458,8 +524,9 @@ function holdings() {
   const ts = [...S.trades].sort((a, b) => (a.date || "").localeCompare(b.date || "") || (a.ua || 0) - (b.ua || 0));
   for (const t of ts) {
     const k = t.m + ":" + t.sym;
-    const h = map[k] || (map[k] = { k, m: t.m, sym: t.sym, name: "", sh: 0, cost: 0, costT: 0, real: 0, realT: 0, div: 0, divT: 0, n: 0 });
+    const h = map[k] || (map[k] = { k, m: t.m, sym: t.sym, name: "", sh: 0, cost: 0, costT: 0, real: 0, realT: 0, div: 0, divT: 0, n: 0, bks: [] });
     if (t.name) h.name = t.name;
+    if (t.bk && !h.bks.includes(t.bk)) h.bks.push(t.bk);
     h.n++;
     const fx = t.m === "TW" ? 1 : (t.fx || S.settings.fx);
     if (t.side === "buy") {
@@ -489,7 +556,7 @@ function holdings() {
   });
 }
 function monthBuysTWD(mo) {
-  return sum(S.trades.filter((t) => t.side === "buy" && (t.date || "").startsWith(mo)), (t) => toTWD(t.m, t.q * t.p + (t.fee || 0), t.fx || S.settings.fx));
+  return sum(S.trades.filter((t) => t.side === "buy" && !t.open && (t.date || "").startsWith(mo)), (t) => toTWD(t.m, t.q * t.p + (t.fee || 0), t.fx || S.settings.fx));
 }
 
 /* ───────── 畫面 ───────── */
@@ -498,6 +565,7 @@ function render() {
   const t = L.tab;
   $$("nav.tabs button").forEach((b) => b.setAttribute("aria-current", b.dataset.tab === t ? "page" : "false"));
   $("#fab").style.display = t === "settings" || t === "game" ? "none" : "";
+  $("#cam").style.display = t === "book" || t === "invest" ? "" : "none";
   $("#fab").setAttribute("aria-label", t === "book" ? "記一筆帳" : t === "invest" ? "記一筆交易" : "新增推薦");
   if (t === "book") renderBook(); else if (t === "invest") renderInvest(); else if (t === "recs") renderRecs(); else if (t === "game") renderGame(); else renderSettings();
   paintSync();
@@ -521,14 +589,17 @@ function renderBook() {
   const pending = st.recurring.filter((r) => !S.tx.some((t) => t.rid === r.id && (t.date || "").startsWith(month)));
   const isCur = month === today().slice(0, 7);
   view.innerHTML = `
+  <section class="hero">
+    <div class="mrow"><button class="ib" type="button" id="mPrev" aria-label="上個月"><svg viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3.5 5.5 8l4.5 4.5"/></svg></button><b>${monthLabel(month)}</b><button class="ib" type="button" id="mNext" aria-label="下個月"><svg viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.5 10.5 8 6 12.5"/></svg></button></div>
+    <div><div class="k kl">這個月還能用</div><div class="big ${left < 0 ? "neg" : ""}">${fmt(left)}<small>元</small></div></div>
+    <div class="flow" role="img" aria-label="收入去向：支出 ${fmt(exp)}、投資 ${fmt(inv)}、剩下 ${fmt(Math.max(0, left))}">${(() => { const tot = Math.max(inc, exp + inv, 1); return `<i class="e" style="width:${(exp / tot * 100).toFixed(2)}%"></i><i class="v" style="width:${(inv / tot * 100).toFixed(2)}%"></i><i class="l" style="width:${(Math.max(0, left) / tot * 100).toFixed(2)}%"></i>`; })()}</div>
+    <div class="trio">
+      <div><div class="k ki">收入</div><div class="v num">${fmt(inc)}</div></div>
+      <div><div class="k ke">支出</div><div class="v num">${fmt(exp)}</div></div>
+      <div><div class="k kv">投資</div><div class="v num">${fmt(inv)}</div></div>
+    </div>
+  </section>
   ${miniTerra()}
-  <div class="month"><button class="ib" type="button" id="mPrev" aria-label="上個月">‹</button><b>${monthLabel(month)}</b><button class="ib" type="button" id="mNext" aria-label="下個月">›</button></div>
-  <div class="tiles">
-    <div class="tile"><div class="k">收入</div><div class="v num">${fmt(inc)}</div></div>
-    <div class="tile"><div class="k">支出</div><div class="v num">${fmt(exp)}</div></div>
-    <div class="tile"><div class="k">投資投入</div><div class="v num">${fmt(inv)}</div></div>
-    <div class="tile"><div class="k">剩下可用</div><div class="v num ${left < 0 ? "neg" : ""}">${fmt(left)}</div></div>
-  </div>
   ${pending.length ? `<div class="card"><h2>本月固定收支還沒記<span class="r">${pending.map((r) => esc(r.name)).join("、")}</span></h2>
     <div class="btns"><button class="btn pri sm" type="button" id="applyRec">一鍵記上 ${pending.length} 筆</button></div></div>` : ""}
   <div class="card"><h2>本月預算<span class="r num">${fmt(exp)} / ${fmt(totalBudget)}</span></h2>
@@ -541,7 +612,7 @@ function renderBook() {
       <div class="tiny">${st.emergencyNow >= st.emergencyTarget ? "已存滿，之後每月 " + fmt(st.emergencyMonthly) + " 可以改投資" : "還差 " + fmt(st.emergencyTarget - st.emergencyNow) + "，每月存 " + fmt(st.emergencyMonthly) + " 約 " + Math.ceil((st.emergencyTarget - st.emergencyNow) / Math.max(1, st.emergencyMonthly)) + " 個月存滿"}</div>
       <div class="btns" style="margin-top:6px"><button class="btn sm" type="button" id="efAdd">存入預備金</button></div></div>
   </div>
-  <div class="card chart"><h2>每日支出<span class="r">${isCur ? "今天標深色" : ""}</span></h2>${dailyChart(tx)}</div>
+  <div class="card chart"><h2>每日支出<span class="r">${isCur ? "紅色是今天" : ""}</span></h2>${dailyChart(tx)}</div>
   <div class="card"><h2>明細<span class="r">${tx.length} 筆</span></h2>
     <div class="f"><input id="txQ" type="search" placeholder="搜尋備註、分類、金額" value="${esc(txQuery)}" aria-label="搜尋明細"></div>
     <div id="txList" class="list"></div></div>`;
@@ -585,11 +656,11 @@ function dailyChart(tx) {
   let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="每日支出長條圖，不含房租">`;
   s += `<line x1="0" x2="${W}" y1="${H - pb}" y2="${H - pb}" stroke="var(--line)"/>`;
   s += `<line x1="0" x2="${W}" y1="${pt}" y2="${pt}" stroke="var(--line)" stroke-dasharray="3 4"/>`;
-  s += `<text x="${W}" y="${pt - 3}" text-anchor="end" font-size="10" fill="var(--muted)" font-family="IBM Plex Mono,monospace">${fmt(max)}</text>`;
+  s += `<text x="${W}" y="${pt - 3}" text-anchor="end" font-size="10" fill="var(--muted)" font-family="Jost,sans-serif" font-weight="500">${fmt(max)}</text>`;
   vals.forEach((v, i) => {
     const h = v / max * (H - pb - pt); const x = i * bw + bw * 0.18;
-    if (v > 0) s += `<rect x="${x.toFixed(1)}" y="${(H - pb - h).toFixed(1)}" width="${(bw * 0.64).toFixed(1)}" height="${h.toFixed(1)}" rx="2" fill="var(--fill)" opacity="${i + 1 === td ? 1 : 0.55}"/>`;
-    if ([1, 10, 20, days].includes(i + 1)) s += `<text x="${(i * bw + bw / 2).toFixed(1)}" y="${H - 4}" text-anchor="middle" font-size="10" fill="var(--muted)" font-family="IBM Plex Mono,monospace">${i + 1}</text>`;
+    if (v > 0) s += `<rect x="${x.toFixed(1)}" y="${(H - pb - h).toFixed(1)}" width="${(bw * 0.64).toFixed(1)}" height="${h.toFixed(1)}" fill="${i + 1 === td ? "var(--red)" : "var(--ink)"}"/>`;
+    if ([1, 10, 20, days].includes(i + 1)) s += `<text x="${(i * bw + bw / 2).toFixed(1)}" y="${H - 4}" text-anchor="middle" font-size="10" fill="var(--muted)" font-family="Jost,sans-serif" font-weight="500">${i + 1}</text>`;
   });
   return s + `</svg><div class="tiny">不含房租</div>`;
 }
@@ -609,7 +680,9 @@ function renderInvest() {
   });
   const needReb = tot > 0 && allocRows.some((r) => Math.abs(r.dev) > 0.05);
   const mo = today().slice(0, 7);
-  const planDone = (p) => sum(S.trades.filter((t) => t.side === "buy" && t.m === p.m && t.sym === p.sym && (t.date || "").startsWith(mo)), (t) => toTWD(t.m, t.q * t.p + (t.fee || 0), t.fx));
+  const monthFull = monthBuysTWD(mo) >= st.investMonthly;
+  if (st.plans.some((p) => p.m === "CR" && p.sym === "BTC")) loadBtcMayer();
+  const planDone = (p) => sum(S.trades.filter((t) => t.side === "buy" && !t.open && t.m === p.m && t.sym === p.sym && (t.date || "").startsWith(mo)), (t) => toTWD(t.m, t.q * t.p + (t.fee || 0), t.fx));
   const trades = [...S.trades].sort((a, b) => (b.date || "").localeCompare(a.date || "") || (b.ua || 0) - (a.ua || 0));
   view.innerHTML = `
   <div class="tiles">
@@ -618,19 +691,23 @@ function renderInvest() {
     <div class="tile"><div class="k">未實現損益</div><div class="v num ${signCls(un)}">${priced.length ? fmt(un) : "－"}</div><div class="tiny num">${priced.length ? pct(unBase ? un / unBase : NaN) : "還沒有現價"}</div></div>
     <div class="tile"><div class="k">已實現＋股利</div><div class="v num ${signCls(real)}">${fmt(real)}</div></div>
   </div>
-  <div class="card"><h2>資產配置 vs 目標<span class="r">黑線＝目標</span></h2>
+  <div class="card"><h2>資產配置 vs 目標<span class="r">三角形＝目標</span></h2>
     ${tot > 0 ? `<div style="margin:-4px 0 10px">${needReb ? `<span class="chip alert">偏離超過 5 個百分點，該再平衡</span>` : `<span class="chip okc">在目標範圍內</span>`}</div>` : ""}
     ${tot > 0 ? `<div class="alloc">${allocRows.map((r) => `<div><div class="t"><span>${MK[r.m]}</span><span class="num">${(r.cur * 100).toFixed(1)}% <span class="tiny">目標 ${(r.tgt * 100).toFixed(0)}%・${r.dev >= 0 ? "+" : ""}${(r.dev * 100).toFixed(1)}</span></span></div>
       <div class="stack"><i style="width:${(r.cur * 100).toFixed(1)}%;${Math.abs(r.dev) > 0.05 ? "background:var(--seal)" : ""}"></i><u style="left:calc(${(r.tgt * 100).toFixed(1)}% - 1px)"></u></div></div>`).join("")}</div>
       ${needReb ? `<p class="tiny" style="margin:8px 0 0">${rebalanceHint(allocRows, tot)}</p>` : ""}` : `<div class="empty">記下第一筆買進後，這裡會顯示台股、美股、加密貨幣的比例</div>`}
   </div>
   <div class="card"><h2>本月定期定額<span class="r num">${fmt(monthBuysTWD(mo))} / ${fmt(st.investMonthly)}</span></h2>
-    <div class="list">${st.plans.map((p) => { const d = planDone(p); return `<div class="item" style="cursor:default"><span class="a">${esc(p.sym)} <span class="muted">${esc(p.name)}</span> ${d >= p.amt * 0.9 ? `<span class="chip okc">已扣</span>` : ""}</span><span class="amt num">${fmt(d)} <span class="tiny">/ ${fmt(p.amt)}</span></span><span class="b">${MK[p.m]}</span><span><button class="btn sm" type="button" data-plan="${esc(p.id)}">記這筆</button></span></div>`; }).join("") || `<div class="empty">到設定加入定期定額計畫</div>`}</div>
+    ${monthFull ? `<div class="tiny" style="margin:-4px 0 4px">這個月已投入 ${fmt(monthBuysTWD(mo))}，額度用完了，下面的燈號給下個月參考</div>` : ""}
+    <div class="list">${st.plans.map((p) => { const d = planDone(p), g = dcaSig(p); return `<div class="item" style="cursor:default"><span class="a">${esc(p.sym)} <span class="muted">${esc(p.name)}</span>${p.role ? ` <span class="chip">${esc(p.role)}</span>` : ""}${d >= p.amt * 0.9 ? ` <span class="chip okc">已扣</span>` : ""}</span><span class="amt num">${fmt(d)} <span class="tiny">/ ${fmt(p.amt)}</span></span><span class="b">${MK[p.m]}${p.day ? `，每月 ${p.day} 號` : ""}${p.bk ? `，${esc(p.bk)}` : ""}${p.auto ? `<br>${esc(p.auto)}` : ""}</span><span><button class="btn sm" type="button" data-plan="${esc(p.id)}">記這筆</button></span>
+      <span class="dca" style="grid-column:1/3"><span class="chip ${g.cls}">今天：${esc(g.label)}</span>${g.why ? `<span class="why">${esc(g.why)}</span>` : ""}</span></div>`; }).join("") || `<div class="empty">到設定加入定期定額計畫</div>`}</div>
+    <div class="btns" style="margin-top:10px"><button class="btn sm" type="button" id="dcaAi"${dcaBusy ? " disabled" : ""}>問 AI 今天怎麼買</button>${ghCfg() ? "" : `<span class="tiny" style="align-self:center">要先到設定連上 GitHub</span>`}</div>
+    ${dcaOut ? `<div class="aiout" style="margin-top:10px">${esc(dcaOut)}</div>` : ""}
   </div>
   <div class="card"><h2>持股<span class="r">${R.loading ? "讀取市場資料中…" : `匯率 ${fmt(fxNow(), 2)}`}</span></h2>
     ${ghCfg() ? `<div class="btns" style="margin:-4px 0 4px;align-items:center"><button class="btn sm" type="button" id="pxRefresh">更新現價</button><span class="tiny">${esc(priceJob || (RM.prices ? "自動抓價：" + (RM.prices.updated || "") : "還沒抓過價，按一下更新"))}</span></div>` : ""}
     <div class="list">${act.length ? act.sort((a, b) => b.valT - a.valT).map((h) => `<button class="hold" type="button" data-hold="${esc(h.k)}">
-      <span class="a"><b>${esc(h.sym)}</b> <span class="muted">${esc(h.name)}</span> <span class="chip">${MK[h.m]}</span></span>
+      <span class="a"><b>${esc(h.sym)}</b> <span class="muted">${esc(h.name)}</span> <span class="chip">${MK[h.m]}</span>${h.bks.length ? ` <span class="chip">${esc(h.bks.join("、"))}</span>` : ""}</span>
       <span class="amt num" style="text-align:right">${fmt(h.valT)}</span>
       <span class="b num">${fmtQ(h.sh)} ${h.m === "CR" ? "顆" : "股"}・均價 ${fmtP(h.avg)}・現價 ${isNum(h.px) ? fmtP(h.px) : "未知"}</span>
       <span class="b num ${signCls(h.unT)}" style="text-align:right">${isNum(h.unT) ? fmt(h.unT) + "（" + pct(h.unP) + "）" : "點這裡填現價"}</span></button>`).join("") : `<div class="empty">還沒有持股，按右下角 ＋ 記第一筆買進</div>`}</div>
@@ -641,7 +718,8 @@ function renderInvest() {
     ${trades.slice(0, 60).map((t) => `<tr data-trade="${esc(t.id)}" style="cursor:pointer"><td class="num">${esc((t.date || "").slice(2))}</td><td>${esc(t.sym)}<div class="tiny">${MK[t.m]}</div></td><td class="${t.side === "buy" ? "up" : t.side === "sell" ? "down" : ""}">${SIDE[t.side]}</td><td class="r num">${t.side === "div" ? "－" : fmtQ(t.q)}</td><td class="r num">${t.side === "div" ? fmt(t.amt, 0) : fmtP(t.p)}</td></tr>`).join("") || `<tr><td colspan="5" class="empty">還沒有交易</td></tr>`}
     </tbody></table></div>${trades.length > 60 ? `<div class="tiny">只列最近 60 筆，完整紀錄可在設定匯出 CSV</div>` : ""}
   </div>`;
-  $$("[data-plan]").forEach((b) => b.onclick = () => { const p = st.plans.find((x) => x.id === b.dataset.plan); const pr = priceOf(p.m, p.sym); const px = pr ? pr.p : NaN; tradeForm(null, { m: p.m, sym: p.sym, name: p.name, p: isNum(px) ? px : "", q: isNum(px) ? +(p.amt / toTWD(p.m, px, fxNow())).toFixed(p.m === "CR" ? 6 : p.m === "US" ? 4 : 0) : "" }); });
+  $("#dcaAi").onclick = dcaAsk;
+  $$("[data-plan]").forEach((b) => b.onclick = () => { const p = st.plans.find((x) => x.id === b.dataset.plan); const pr = priceOf(p.m, p.sym); const px = pr ? pr.p : NaN; tradeForm(null, { m: p.m, sym: p.sym, name: p.name, bk: p.bk || "", note: p.auto ? "定投自動扣款" : "定期定額", p: isNum(px) ? px : "", q: isNum(px) ? +(p.amt / toTWD(p.m, px, fxNow())).toFixed(p.m === "CR" ? 6 : p.m === "US" ? 4 : 0) : "" }); });
   $$("[data-hold]").forEach((b) => b.onclick = () => holdSheet(H.find((h) => h.k === b.dataset.hold)));
   if ($("#pxRefresh")) $("#pxRefresh").onclick = refreshPrices;
   $$("[data-trade]").forEach((r) => r.onclick = () => tradeForm(S.trades.find((x) => x.id === r.dataset.trade)));
@@ -672,7 +750,7 @@ function renderRecs() {
   <div class="card"><h2>衛星層候選：美股</h2>${pickTable("US", us)}
     <p class="tiny" style="margin:8px 0 0">用四道濾網篩出（熱門族群＋資金流＋財報轉強＋長線買點觸發，策略參考市場雷達），資料是自己每天從證交所、Yahoo 抓的。這套濾網沒有回測驗證，名單不是買進建議；單股不超過衛星層 10%。</p></div>
   <div class="card"><h2>我的推薦紀錄<span class="r">${S.recs.length} 筆</span></h2>
-    <div class="seg" role="tablist">${["watch", "bought", "pass", "all"].map((k) => `<button type="button" class="${recFilter === k ? "on" : ""}" data-rf="${k}">${k === "all" ? "全部" : STATUS[k]}（${k === "all" ? S.recs.length : S.recs.filter((r) => r.status === k).length}）</button>`).join("")}</div>
+    <div class="seg" role="tablist">${["watch", "bought", "pass", "all"].map((k) => `<button type="button" class="${recFilter === k ? "on" : ""}" data-rf="${k}">${k === "all" ? "全部" : STATUS[k]} <span class="n">${k === "all" ? S.recs.length : S.recs.filter((r) => r.status === k).length}</span></button>`).join("")}</div>
     <div class="list" style="margin-top:6px">${recs.map((r) => { const pr = priceOf(r.m, r.sym); const ch = pr && isNum(r.px) && r.px > 0 ? pr.p / r.px - 1 : NaN; return `<button class="hold" type="button" data-rec="${esc(r.id)}">
       <span class="a"><b>${esc(r.sym)}</b> <span class="muted">${esc(r.name || "")}</span> <span class="chip">${MK[r.m]}</span> <span class="chip">${esc(r.src || "")}</span></span>
       <span class="amt num ${signCls(ch)}" style="text-align:right">${isNum(ch) ? pct(ch) : "－"}</span>
@@ -730,12 +808,12 @@ function renderSettings() {
   </div>
 
   <div class="card"><h2>每月固定收支</h2>
-    <div id="recList">${st.recurring.map((r, i) => `<div class="erow rec" data-ri="${i}"><input value="${esc(r.name)}" data-rk="name" aria-label="名稱"><select data-rk="type" aria-label="收或支"><option value="exp"${r.type === "exp" ? " selected" : ""}>支出</option><option value="inc"${r.type === "inc" ? " selected" : ""}>收入</option></select><input class="num" inputmode="decimal" value="${r.amt}" data-rk="amt" aria-label="金額"><select data-rk="cat" aria-label="分類">${(r.type === "inc" ? st.incCats : st.expCats).map((c) => `<option${c === r.cat ? " selected" : ""}>${esc(c)}</option>`).join("")}</select><button class="ib" type="button" data-rdel="${i}" aria-label="刪除">✕</button></div>`).join("")}</div>
+    <div id="recList">${st.recurring.map((r, i) => `<div class="erow rec" data-ri="${i}"><input value="${esc(r.name)}" data-rk="name" aria-label="名稱"><select data-rk="type" aria-label="收或支"><option value="exp"${r.type === "exp" ? " selected" : ""}>支出</option><option value="inc"${r.type === "inc" ? " selected" : ""}>收入</option></select><input class="num" inputmode="decimal" value="${r.amt}" data-rk="amt" aria-label="金額"><select data-rk="cat" aria-label="分類">${(r.type === "inc" ? st.incCats : st.expCats).map((c) => `<option${c === r.cat ? " selected" : ""}>${esc(c)}</option>`).join("")}</select><button class="ib" type="button" data-rdel="${i}" aria-label="刪除"><svg viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button></div>`).join("")}</div>
     <button class="btn sm" type="button" id="recAdd">新增固定項目</button>
   </div>
 
   <div class="card"><h2>定期定額計畫<span class="r num">合計 ${fmt(sum(st.plans, "amt"))}</span></h2>
-    <div id="planList">${st.plans.map((p, i) => `<div class="erow r5" data-pi="${i}"><select data-pk="m" aria-label="市場">${["US", "TW", "CR"].map((m) => `<option value="${m}"${p.m === m ? " selected" : ""}>${m === "CR" ? "加密" : MK[m]}</option>`).join("")}</select><input value="${esc(p.sym)}" data-pk="sym" aria-label="代號" autocapitalize="characters"><input value="${esc(p.name)}" data-pk="name" aria-label="名稱" placeholder="名稱"><input class="num" inputmode="decimal" value="${p.amt}" data-pk="amt" aria-label="每月金額"><button class="ib" type="button" data-pdel="${i}" aria-label="刪除">✕</button></div>`).join("")}</div>
+    <div id="planList">${st.plans.map((p, i) => `<div class="erow r5" data-pi="${i}"><select data-pk="m" aria-label="市場">${["US", "TW", "CR"].map((m) => `<option value="${m}"${p.m === m ? " selected" : ""}>${m === "CR" ? "加密" : MK[m]}</option>`).join("")}</select><input value="${esc(p.sym)}" data-pk="sym" aria-label="代號" autocapitalize="characters"><input value="${esc(p.name)}" data-pk="name" aria-label="名稱" placeholder="名稱"><input class="num" inputmode="decimal" value="${p.amt}" data-pk="amt" aria-label="每月金額"><button class="ib" type="button" data-pdel="${i}" aria-label="刪除"><svg viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button></div>`).join("")}</div>
     <button class="btn sm" type="button" id="planAdd">新增計畫</button>
   </div>
 
@@ -789,7 +867,7 @@ function renderSettings() {
   if ($("#pxNow")) $("#pxNow").onclick = refreshPrices;
   $("#expJson").onclick = () => download(`坤寶存摺備份-${today()}.json`, JSON.stringify(S, null, 1), "application/json");
   $("#expTx").onclick = () => download(`記帳-${today()}.csv`, csv([["日期", "收支", "分類", "金額", "帳戶", "備註"], ...[...S.tx].sort((a, b) => a.date.localeCompare(b.date)).map((t) => [t.date, t.type === "inc" ? "收入" : "支出", t.cat, t.amt, t.acct, t.note])]), "text/csv");
-  $("#expTr").onclick = () => download(`交易-${today()}.csv`, csv([["日期", "市場", "代號", "名稱", "動作", "數量", "價格", "股利金額", "手續費", "交易稅", "匯率", "備註"], ...[...S.trades].sort((a, b) => a.date.localeCompare(b.date)).map((t) => [t.date, MK[t.m], t.sym, t.name, SIDE[t.side], t.q, t.p, t.amt, t.fee, t.tax, t.fx, t.note])]), "text/csv");
+  $("#expTr").onclick = () => download(`交易-${today()}.csv`, csv([["日期", "市場", "代號", "名稱", "動作", "數量", "價格", "股利金額", "手續費", "交易稅", "匯率", "平台", "備註"], ...[...S.trades].sort((a, b) => a.date.localeCompare(b.date)).map((t) => [t.date, MK[t.m], t.sym, t.name, SIDE[t.side], t.q, t.p, t.amt, t.fee, t.tax, t.fx, t.bk || "", t.note])]), "text/csv");
   $("#impJson").onclick = importSheet;
 }
 
@@ -823,7 +901,7 @@ function game() {
   const last = days[days.length - 1], gap = last ? dayDiff(last, td) : 99;
   const curStreak = gap <= 1 ? streak : 0;
   const tByDay = {};
-  S.trades.forEach((t) => { if (t.date && t.date <= td) (tByDay[t.date] = tByDay[t.date] || []).push(t); });
+  S.trades.forEach((t) => { if (t.date && !t.open && t.date <= td) (tByDay[t.date] = tByDay[t.date] || []).push(t); });
   for (const [d, arr] of Object.entries(tByDay)) arr.slice(0, 3).forEach((t) => {
     add(20, `記下${SIDE[t.side]} ${t.sym}`, d);
     if ((t.note || "").trim().length >= 4) add(10, `寫下${SIDE[t.side]}理由`, d);
@@ -876,27 +954,36 @@ function rewardCheck() {
 }
 function miniTerra() {
   const g = game();
-  return `<button class="mini" type="button" id="miniT"><span class="dot">Lv${g.level}</span><span class="t"><b>雨林箱 濕度 ${g.hum}%</b>${g.streak ? `・連續記帳 ${g.streak} 天` : ""}<br><span class="muted">${g.todayDone ? "今天噴過水了，牠們很開心" : g.gap >= 3 && g.gap < 99 ? "箱子有點乾，記一筆帳幫它噴水" : "今天還沒記帳，記一筆就能噴水"}</span></span><span class="tiny num">${g.xp} 露水</span></button>`;
+  return `<button class="mini" type="button" id="miniT"><span class="dot">Lv${g.level}</span><span class="t"><b>雨林箱濕度 ${g.hum}%</b><br>${g.streak ? `連續 ${g.streak} 天，` : ""}${g.todayDone ? "今天噴過水了" : g.gap >= 3 && g.gap < 99 ? "箱子有點乾，記一筆噴水" : "記一筆就能噴水"}</span><span class="tiny num">${g.xp} 露水</span></button>`;
 }
 function terraSVG(g) {
   const has = (k) => UNLOCKS.some((u) => u.k === k && u.lv <= g.level);
   const dry = g.hum < 40, hide = g.hum < 40;
   const W = 320, H = 210, gx = 14, gy = 12, gw = 292, gh = 186, soilY = 150;
   let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="雨林箱，等級 ${g.level}，濕度 ${g.hum}%">`;
-  s += `<defs><linearGradient id="tg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${dry ? "#2a2a22" : "#163a30"}"/><stop offset="1" stop-color="${dry ? "#1b1a15" : "#0d211b"}"/></linearGradient>
-    <radialGradient id="ff"><stop offset="0" stop-color="#fff7a8"/><stop offset="1" stop-color="#fff7a8" stop-opacity="0"/></radialGradient></defs>`;
-  s += `<clipPath id="tc"><rect x="${gx}" y="${gy}" width="${gw}" height="${gh}" rx="10"/></clipPath><g clip-path="url(#tc)">`;
-  s += `<rect x="${gx}" y="${gy}" width="${gw}" height="${gh}" rx="10" fill="url(#tg)"/>`;
-  if (has("mist") && !dry) s += `<g opacity=".35"><ellipse cx="90" cy="34" rx="70" ry="12" fill="#cfe9e1"/><ellipse cx="210" cy="30" rx="80" ry="10" fill="#cfe9e1"/></g>`;
+  s += `<defs><radialGradient id="ff"><stop offset="0" stop-color="#f2bf1e"/><stop offset="1" stop-color="#f2bf1e" stop-opacity="0"/></radialGradient></defs>`;
+  s += `<clipPath id="tc"><rect x="${gx}" y="${gy}" width="${gw}" height="${gh}" rx="0"/></clipPath><g clip-path="url(#tc)">`;
+  s += `<rect x="${gx}" y="${gy}" width="${gw}" height="${gh}" rx="0" fill="${dry ? "#ebe6da" : "#f7f6f2"}"/>`;
+  if (has("mist") && !dry) s += `<g opacity=".35"><ellipse cx="90" cy="34" rx="70" ry="12" fill="#d9d6cf"/><ellipse cx="210" cy="30" rx="80" ry="10" fill="#d9d6cf"/></g>`;
   // 底土
-  s += `<rect x="${gx}" y="${soilY + 26}" width="${gw}" height="${gh - (soilY + 26 - gy)}" fill="#3b4a55"/>`;
-  s += `<path d="M${gx} ${soilY} Q 90 ${soilY - 8} 160 ${soilY - 2} T ${gx + gw} ${soilY - 4} V ${soilY + 28} H ${gx} Z" fill="${dry ? "#7a6248" : "#4a3427"}"/>`;
+  s += `<rect x="${gx}" y="${soilY + 26}" width="${gw}" height="${gh - (soilY + 26 - gy)}" fill="#8d8a83"/>`;
+  for (let i = 0; i < 26; i++) s += `<circle cx="${gx + 6 + i * 11.4}" cy="${soilY + 33 + (i % 3) * 4}" r="${3.4 + (i % 2)}" fill="#5f5d58"/>`;
+  s += `<path d="M${gx} ${soilY} Q 90 ${soilY - 8} 160 ${soilY - 2} T ${gx + gw} ${soilY - 4} V ${soilY + 28} H ${gx} Z" fill="${dry ? "#8a6a48" : "#3b2a1e"}"/>`;
+  s += `<path d="M${gx} ${soilY + 27} H ${gx + gw}" stroke="#000" stroke-opacity=".35" stroke-width="2"/>`;
   for (let i = 0; i < 14; i++) s += `<ellipse cx="${24 + i * 21}" cy="${soilY - 1 + (i % 3)}" rx="6" ry="2.4" fill="${["#8a5a2b", "#a0692f", "#6e4422"][i % 3]}" transform="rotate(${(i * 37) % 50 - 25} ${24 + i * 21} ${soilY})"/>`;
   if (has("wood")) s += `<path d="M40 ${soilY + 2} C 90 120, 150 110, 230 ${soilY - 46}" stroke="#5b3a24" stroke-width="12" fill="none" stroke-linecap="round"/><path d="M150 112 L 176 92" stroke="#5b3a24" stroke-width="6" stroke-linecap="round"/>`;
-  if (has("moss")) for (let i = 0; i < 18; i++) s += `<circle cx="${20 + i * 16.5}" cy="${soilY - 3 - (i % 2) * 2}" r="${6 + (i % 3)}" fill="${dry ? "#7d8a4a" : ["#3f8f3a", "#4fa847", "#2f7a35"][i % 3]}"/>`;
+  if (has("moss")) for (let i = 0; i < 18; i++) s += `<circle cx="${20 + i * 16.5}" cy="${soilY - 3 - (i % 2) * 2}" r="${6 + (i % 3)}" fill="${dry ? "#9a9a5a" : i % 3 ? "#2f7a35" : "#1d5a26"}"/>`;
   if (has("fern")) [[262, soilY], [52, soilY]].forEach(([x, y], j) => {
     s += `<g class="sway" opacity="${dry ? 0.6 : 1}">`;
-    for (let k = -2; k <= 2; k++) s += `<path d="M${x} ${y} Q ${x + k * 14} ${y - 40} ${x + k * 26} ${y - 62 + Math.abs(k) * 10}" stroke="${dry ? "#8b8f4a" : "#5cbf5a"}" stroke-width="3" fill="none"/>`;
+    for (let k = -2; k <= 2; k++) {
+      const cx = x + k * 14, cy = y - 40, ex = x + k * 26, ey = y - 62 + Math.abs(k) * 10, col = dry ? "#8b8f4a" : k % 2 ? "#4fb653" : "#6fd067";
+      s += `<path d="M${x} ${y} Q ${cx} ${cy} ${ex} ${ey}" stroke="${dry ? "#6f733c" : "#2f7a35"}" stroke-width="1.6" fill="none"/>`;
+      for (let t = 0.18; t < 0.98; t += 0.1) {
+        const px = (1 - t) * (1 - t) * x + 2 * (1 - t) * t * cx + t * t * ex, py = (1 - t) * (1 - t) * y + 2 * (1 - t) * t * cy + t * t * ey;
+        const dx = 2 * (1 - t) * (cx - x) + 2 * t * (ex - cx), dy = 2 * (1 - t) * (cy - y) + 2 * t * (ey - cy), ang = Math.atan2(dy, dx) * 180 / Math.PI, L = 9 * (1.1 - t);
+        [-1, 1].forEach((sd) => s += `<ellipse cx="${(px).toFixed(1)}" cy="${(py).toFixed(1)}" rx="${L.toFixed(1)}" ry="${(L * 0.32).toFixed(1)}" fill="${col}" transform="rotate(${(ang + sd * 62).toFixed(0)} ${px.toFixed(1)} ${py.toFixed(1)}) translate(${(L * 0.8).toFixed(1)} 0)"/>`);
+      }
+    }
     s += `</g>`;
   });
   if (has("bromeliad")) { s += `<g transform="translate(200 ${soilY - 50})">`; for (let k = 0; k < 7; k++) s += `<path d="M0 0 Q ${-18 + k * 6} -16 ${-24 + k * 8} -30" stroke="${k % 2 ? "#c8372d" : "#3d8f4a"}" stroke-width="5" fill="none" stroke-linecap="round"/>`; s += `</g>`; }
@@ -909,15 +996,15 @@ function terraSVG(g) {
     });
     if (has("millipede")) { s += `<g class="crawl2">`; for (let i = 0; i < 14; i++) { const x = 40 + i * 5.2, y = soilY + 14 - Math.sin(i / 2.2) * 4; s += `<circle cx="${x}" cy="${y}" r="3.4" fill="${i === 13 ? "#3a1d14" : "#6b2a1c"}"/><line x1="${x}" y1="${y + 2}" x2="${x}" y2="${y + 5}" stroke="#d9a35f" stroke-width=".8"/>`; } s += `</g>`; }
     if (has("spider")) { const x = 214, y = 74; s += `<g>${[-1, 1].map((d) => [0, 1, 2, 3].map((k) => `<path d="M${x} ${y} q ${d * 7} ${-6 + k * 4} ${d * 12} ${-2 + k * 5}" stroke="#a07a3c" stroke-width="1.2" fill="none"/>`).join("")).join("")}<ellipse cx="${x}" cy="${y}" rx="4" ry="3" fill="#8a6a2f"/><ellipse cx="${x}" cy="${y + 6}" rx="5" ry="6" fill="#b08a3e"/><line x1="${x}" y1="${y - 3}" x2="${x}" y2="${gy}" stroke="#cfd6d2" stroke-width=".5" opacity=".6"/></g>`; }
-  } else if (has("isopod")) s += `<text x="${W / 2}" y="${soilY + 20}" text-anchor="middle" font-size="11" fill="#e8d9b5">太乾了，小動物都躲進土裡</text>`;
+  } else if (has("isopod")) s += `<text x="${W / 2}" y="${soilY + 20}" text-anchor="middle" font-size="11" fill="#111">太乾了，小動物都躲進土裡</text>`;
   if (has("fireflies") && !dry) [[60, 60], [140, 44], [250, 70], [290, 40], [190, 100]].forEach(([x, y], i) => s += `<circle class="glow" style="animation-delay:${i * 0.5}s" cx="${x}" cy="${y}" r="7" fill="url(#ff)"/>`);
   // 水珠
-  if (g.hum >= 70) for (let i = 0; i < 16; i++) s += `<circle cx="${gx + 8 + ((i * 53) % (gw - 16))}" cy="${gy + 10 + ((i * 37) % 120)}" r="${1 + (i % 3) * 0.6}" fill="#e6f4ff" opacity=".45"/>`;
-  if (!has("moss") && !has("isopod")) s += `<text x="${W / 2}" y="80" text-anchor="middle" font-size="12" fill="#b9d8cc">記第一筆帳，開始造景</text>`;
+  if (g.hum >= 70) for (let i = 0; i < 16; i++) s += `<circle cx="${gx + 8 + ((i * 53) % (gw - 16))}" cy="${gy + 10 + ((i * 37) % 120)}" r="${1 + (i % 3) * 0.6}" fill="#1f4fa0" opacity=".35"/>`;
+  if (!has("moss") && !has("isopod")) s += `<text x="${W / 2}" y="80" text-anchor="middle" font-size="12" fill="#5f5d58">記第一筆帳，開始造景</text>`;
   s += `</g>`;
   // 玻璃
-  s += `<rect x="${gx}" y="${gy}" width="${gw}" height="${gh}" rx="10" fill="none" stroke="#9fb7b0" stroke-width="2.5" opacity=".7"/><path d="M${gx + 10} ${gy + 14} V ${gy + 120}" stroke="#ffffff" stroke-width="3" opacity=".12" stroke-linecap="round"/>`;
-  s += `<rect x="${gx + 30}" y="${gy - 6}" width="${gw - 60}" height="8" rx="3" fill="#2b3134"/>`;
+  s += `<rect x="${gx}" y="${gy}" width="${gw}" height="${gh}" rx="0" fill="none" stroke="#111" stroke-width="2.5"/>`;
+  s += `<rect x="${gx + 30}" y="${gy - 6}" width="${gw - 60}" height="8" rx="3" fill="#111"/><circle cx="${W / 2}" cy="${gy - 2}" r="3" fill="${dry ? "#8d8a83" : "#f2bf1e"}"/>`;
   return s + `</svg>`;
 }
 function renderGame() {
@@ -950,7 +1037,7 @@ function renderGame() {
 /* ───────── 表單 ───────── */
 function openSheet(title, body, onMount) {
   const o = document.createElement("div"); o.className = "ov";
-  o.innerHTML = `<div class="sheet" role="dialog" aria-modal="true" aria-label="${esc(title)}"><div class="sh-h"><b>${esc(title)}</b><button class="x" type="button" data-close aria-label="關閉">✕</button></div>${body}</div>`;
+  o.innerHTML = `<div class="sheet" role="dialog" aria-modal="true" aria-label="${esc(title)}"><div class="sh-h"><b>${esc(title)}</b><button class="x" type="button" data-close aria-label="關閉"><svg viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button></div>${body}</div>`;
   document.body.appendChild(o);
   const close = () => { o.remove(); document.removeEventListener("keydown", onKey); };
   const onKey = (e) => { if (e.key === "Escape") close(); };
@@ -967,9 +1054,9 @@ function twoStep(btn, label, fn) {
 function segHtml(name, opts, val) { return `<div class="seg" data-seg="${name}">${Object.entries(opts).map(([k, v]) => `<button type="button" data-v="${k}" class="${k === val ? "on" : ""}">${v}</button>`).join("")}</div>`; }
 function bindSeg(o, name, cb) { const el = $(`[data-seg="${name}"]`, o); $$("button", el).forEach((b) => b.onclick = () => { $$("button", el).forEach((x) => x.classList.toggle("on", x === b)); cb(b.dataset.v); }); }
 
-function txForm(t) {
+function txForm(t, pre) {
   const st = S.settings, isNew = !t;
-  t = t ? clone(t) : { id: uid(), type: "exp", amt: "", cat: st.expCats.includes("餐飲") ? "餐飲" : st.expCats[0], acct: st.accounts[0], date: today(), note: "" };
+  t = t ? clone(t) : Object.assign({ id: uid(), type: "exp", amt: "", cat: st.expCats.includes("餐飲") ? "餐飲" : st.expCats[0], acct: st.accounts[0], date: today(), note: "" }, pre || {});
   const catBtns = (type) => (type === "inc" ? st.incCats : st.expCats).map((c) => `<button type="button" data-cat="${esc(c)}" class="${c === t.cat ? "on" : ""}">${esc(c)}</button>`).join("");
   openSheet(isNew ? "記一筆" : "修改紀錄", `<form class="form" id="txF">
     ${segHtml("type", { exp: "支出", inc: "收入" }, t.type)}
@@ -1008,6 +1095,9 @@ function efForm() {
     };
   });
 }
+const BROKERS = ["永豐大戶投", "永豐金證券", "國泰證券", "元大證券", "富邦證券", "凱基證券", "玉山證券", "Firstrade", "嘉信 Schwab", "盈透 IBKR", "複委託", "幣安 Binance", "MAX", "BitoPro", "OKX", "冷錢包"];
+const brokers = () => [...new Set([...S.trades.map((t) => t.bk).filter(Boolean), ...BROKERS])];
+const lastBk = (m) => { const t = [...S.trades].filter((x) => x.m === m && x.bk).sort((a, b) => (b.ua || 0) - (a.ua || 0))[0]; return t ? t.bk : ""; };
 function tradeForm(t, pre = {}) {
   const isNew = !t;
   t = t ? clone(t) : Object.assign({ id: uid(), m: "TW", side: "buy", sym: "", name: "", q: "", p: "", amt: "", fee: "", tax: "", fx: "", date: today(), note: "", recId: "" }, pre);
@@ -1024,6 +1114,7 @@ function tradeForm(t, pre = {}) {
     <label class="f" id="taxBox"><span>交易稅</span><input id="rTax" class="num" inputmode="decimal" value="${v(t.tax)}" placeholder="0"></label></div>
     <div class="two"><label class="f"><span>日期</span><input id="rDate" type="date" value="${esc(t.date)}"></label>
     <label class="f" id="fxBox"><span>美元匯率</span><input id="rFx" class="num" inputmode="decimal" value="${v(t.fx) || fxNow().toFixed(2)}"></label></div>
+    <label class="f"><span>平台</span><input id="rBk" list="bkList" value="${esc(t.bk || lastBk(t.m))}" autocomplete="off" placeholder="例：國泰證券、Firstrade、幣安"><datalist id="bkList">${brokers().map((b) => `<option value="${esc(b)}">`).join("")}</datalist></label>
     <label class="f"><span>備註</span><input id="rNote" value="${esc(t.note || "")}" placeholder="例：定期定額、看到燈號便宜加碼"></label>
     <div class="tiny" id="rTot"></div>
     <div class="btns"><button class="btn pri" type="submit" style="flex:1">${isNew ? "記下來" : "儲存"}</button>${isNew ? "" : `<button class="btn danger" type="button" id="rDel">刪除</button>`}</div>
@@ -1052,7 +1143,7 @@ function tradeForm(t, pre = {}) {
       const pr = priceOf(t.m, sym); if (pr && !$("#rP", o).value && t.side !== "div") $("#rP", o).value = pr.p;
       paint();
     };
-    bindSeg(o, "m", (x) => { t.m = x; paint(); });
+    bindSeg(o, "m", (x) => { const bk = $("#rBk", o); if (!bk.value || bk.value === lastBk(t.m)) bk.value = lastBk(x); t.m = x; paint(); });
     bindSeg(o, "side", (x) => { t.side = x; paint(); });
     $("#rSym", o).onblur = fill;
     $$("input", o).forEach((i) => i.addEventListener("input", paint));
@@ -1061,7 +1152,7 @@ function tradeForm(t, pre = {}) {
       e.preventDefault();
       const sym = normSym(t.m, $("#rSym", o).value);
       if (!sym) { toast("請填代號"); return; }
-      const rec = { sym, name: $("#rName", o).value.trim(), date: $("#rDate", o).value || today(), note: $("#rNote", o).value.trim(), fx: t.m === "TW" ? 1 : (toNum($("#rFx", o).value) || fxNow()) };
+      const rec = { sym, name: $("#rName", o).value.trim(), date: $("#rDate", o).value || today(), note: $("#rNote", o).value.trim(), bk: $("#rBk", o).value.trim(), fx: t.m === "TW" ? 1 : (toNum($("#rFx", o).value) || fxNow()) };
       if (t.side === "div") {
         const amt = toNum($("#rAmt", o).value); if (!isNum(amt) || amt <= 0) { toast("請填股利金額"); return; }
         Object.assign(t, rec, { amt, q: 0, p: 0, fee: 0, tax: 0 });
@@ -1197,6 +1288,117 @@ function toast(msg) { let t = $(".toast"); if (!t) { t = document.createElement(
 
 /* ───────── 啟動 ───────── */
 $$("nav.tabs button").forEach((b) => b.onclick = () => { L.tab = b.dataset.tab; saveL(); window.scrollTo(0, 0); render(); });
+
+/* ───────── 定期定額：今天適合買嗎（規則照市場雷達核心層：偏貴照扣不停、便宜可加碼、戰術層觸發先別加碼） ───────── */
+let BTCM = null, dcaOut = "", dcaBusy = false;
+async function loadBtcMayer() {
+  if (BTCM && Date.now() - BTCM.t < 30 * 60e3) return;
+  try {
+    const [k, t] = await Promise.all([
+      fetch("https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1d&limit=200", { cache: "no-store" }).then((r) => r.json()),
+      fetch("https://api.binance.com/api/v3/ticker/24hr?symbol=BTCUSDT", { cache: "no-store" }).then((r) => r.json())]);
+    const closes = k.map((x) => +x[4]).filter(isNum); if (closes.length < 150) return;
+    const ma = closes.reduce((a, b) => a + b, 0) / closes.length, px = +t.lastPrice;
+    BTCM = { t: Date.now(), px, ma, m: px / ma, ch: +t.priceChangePercent / 100 };
+    render();
+  } catch (e) {}
+}
+function dcaSig(p) {
+  const out = (label, cls, why) => ({ label, cls, why });
+  if (p.m === "CR") {
+    if (p.sym !== "BTC") return out("沒有燈號資料", "", "目前只對比特幣算 200 日均線");
+    if (!BTCM) return out("讀取中", "", "");
+    const m = BTCM.m, base = `現價是 200 日均線的 ${m.toFixed(2)} 倍`, d = BTCM.ch <= -0.03 ? `，今天跌 ${pct(-BTCM.ch)}` : BTCM.ch >= 0.04 ? `，今天漲 ${pct(BTCM.ch)}` : "";
+    if (m < 0.8) return out("便宜，可以多買一點", "go", base + "（低於 0.8 倍算便宜）" + d);
+    if (m < 1.5) return out("照常扣", "okc", base + "（0.8～1.5 倍算合理）" + d);
+    if (m < 2.4) return out("偏貴，照常扣不加碼", "", base + "（1.5～2.4 倍偏貴）" + d);
+    return out("過熱，這期先減半", "alert", base + "（超過 2.4 倍歷史上多半是高點）" + d);
+  }
+  const it = radarItem(p.m, p.sym);
+  if (!it) return out("沒有燈號資料", "", R.tw || R.us ? "這檔不在每日掃描的清單裡" : "市場資料還沒讀到");
+  const tac = R.macro && R.macro.tactical && R.macro.tactical.markets && R.macro.tactical.markets[p.m === "TW" ? "tw" : "us"];
+  const why = [isNum(it.b) ? `年線乖離 ${pct(it.b, 0)}` : "", isNum(it.pos) ? `在 5 年區間的 ${Math.round(it.pos * 100)}% 位置` : ""].filter(Boolean).join("，")
+    + (isNum(it.ch) && it.ch <= -0.015 ? `，今天跌 ${pct(-it.ch)}，今天買比平常划算一點` : isNum(it.ch) && it.ch >= 0.02 ? `，今天漲 ${pct(it.ch)}，不急的話等扣款日就好` : "");
+  if (tac && tac.on) return out("照最低額扣，先別加碼", "alert", "戰術層觸發，核心層要減碼。" + why);
+  if (it.l === "cheap") return out("便宜，可以多買一點", "go", why);
+  if (it.l === "exp") return out("偏貴，照常扣不加碼", "", why);
+  return out("照常扣", "okc", why);
+}
+async function dcaAsk() {
+  if (dcaBusy) return; dcaBusy = true;
+  const st = S.settings, mo = today().slice(0, 7);
+  const info = { 日期: today(), 每月投資目標: st.investMonthly, 本月已投入: Math.round(monthBuysTWD(mo)),
+    計畫: st.plans.map((p) => ({ 市場: MK[p.m], 代號: p.sym, 名稱: p.name, 每月台幣: p.amt, 角色: p.role || "", 平台: p.bk || "", 扣款日: p.day || "", 燈號判斷: dcaSig(p) })),
+    今日判讀: R.sum ? R.sum.headline : null, 戰術層: R.macro ? R.macro.tactical.on : null, 債務週期: R.macro && R.macro.stage ? R.macro.stage.name : null };
+  dcaOut = "已送出，AI 正在看今天的燈號（約 1 分鐘）…"; render();
+  try { const r = await runAI("dca", { text: JSON.stringify(info) }); dcaOut = r.text || "（沒有內容）"; } catch (e) { dcaOut = "沒辦法完成：" + e.message; }
+  dcaBusy = false; render();
+}
+
+/* ───────── 拍照讓 AI 記帳：照片先放進私人資料 repo 的 inbox/，GitHub Actions 上的 Claude 讀完就刪 ───────── */
+async function shrinkImage(file) {
+  const url = URL.createObjectURL(file);
+  try {
+    const img = await new Promise((ok, bad) => { const i = new Image(); i.onload = () => ok(i); i.onerror = bad; i.src = url; });
+    const k = Math.min(1, 1600 / Math.max(img.naturalWidth, img.naturalHeight));
+    const c = document.createElement("canvas"); c.width = Math.round(img.naturalWidth * k); c.height = Math.round(img.naturalHeight * k);
+    c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+    return c.toDataURL("image/jpeg", 0.82);
+  } finally { URL.revokeObjectURL(url); }
+}
+async function ghPutB64(g, path, b64, msg) {
+  const r = await fetch(ghPath(g, path), { method: "PUT", headers: Object.assign({ "Content-Type": "application/json" }, ghHeaders(g)), body: JSON.stringify({ message: msg, content: b64 }) });
+  if (!r.ok) throw new Error(r.status === 403 || r.status === 404 ? "金鑰沒有寫入權限" : "上傳照片失敗 " + r.status);
+}
+async function photoFlow(file) {
+  const g = ghCfg();
+  if (!g) { toast("先到「設定」連上 GitHub，AI 才能讀照片"); return; }
+  let dataUrl;
+  try { dataUrl = await shrinkImage(file); } catch (e) { toast("讀不到這張照片"); return; }
+  let state = { busy: true, err: "", tx: [], trades: [] };
+  openSheet("拍照記帳", `<div class="form"><img class="shot" alt="要讓 AI 讀的照片" src="${dataUrl}"><div id="phOut"><div class="empty">AI 正在讀照片，大約 1 分鐘…</div></div></div>`, async (o, close) => {
+    const paint = () => {
+      const box = $("#phOut", o); if (!box) return;
+      if (state.busy) return;
+      if (state.err) { box.innerHTML = `<div class="empty">沒辦法完成：${esc(state.err)}</div>`; return; }
+      const rows = [...state.tx.map((t, i) => ({ k: "tx", i, t })), ...state.trades.map((t, i) => ({ k: "tr", i, t }))];
+      if (!rows.length) { box.innerHTML = `<div class="empty">照片裡沒看到金額或成交紀錄，換一張清楚一點的再試</div>`; return; }
+      box.innerHTML = `<div class="tiny" style="margin-bottom:4px">AI 看到 ${rows.length} 筆，勾掉不要的，點「修改」可以先改再記</div><div class="list">${rows.map((r) => {
+        const t = r.t;
+        const main = r.k === "tx" ? `${t.type === "inc" ? "收入" : "支出"}・${esc(t.cat || "")}${t.note ? ` <span class="muted">${esc(t.note)}</span>` : ""}` : `${SIDE[t.side] || "買進"} <b>${esc(t.sym || "")}</b> <span class="muted">${esc(t.name || "")}</span>`;
+        const amt = r.k === "tx" ? `<span class="num">${fmt(t.amt)}</span>` : `<span class="num">${fmtQ(t.q)} × ${fmtP(t.p)}</span>`;
+        const ex = r.k === "tx" ? `${esc(t.date || "")}・${esc(t.acct || "")}` : `${esc(t.date || "")}・${MK[t.m] || ""}${t.bk ? "・" + esc(t.bk) : ""}${t.fee ? `・手續費 ${fmtP(t.fee)}` : ""}`;
+        return `<label class="pick"><input type="checkbox" checked data-k="${r.k}" data-i="${r.i}"><span>${main}</span><span>${amt}</span><span class="e">${ex} <button class="btn sm" type="button" data-ed="${r.k}:${r.i}" style="margin-left:6px">修改</button></span></label>`; }).join("")}</div>
+        <div class="btns" style="margin-top:10px"><button class="btn pri" type="button" id="phSave" style="flex:1">記下勾選的</button></div>`;
+      $$("[data-ed]", box).forEach((b) => b.onclick = (e) => {
+        e.preventDefault(); const [k, i] = b.dataset.ed.split(":"); const t = (k === "tx" ? state.tx : state.trades)[+i];
+        close(); if (k === "tx") txForm(null, t); else tradeForm(null, t);
+      });
+      $("#phSave", box).onclick = () => {
+        let n = 0;
+        $$("input[type=checkbox]", box).forEach((c) => {
+          if (!c.checked) return; const t = (c.dataset.k === "tx" ? state.tx : state.trades)[+c.dataset.i];
+          if (c.dataset.k === "tx") { if (!isNum(t.amt) || t.amt <= 0) return; S.tx.push(Object.assign({ id: uid(), ua: now(), acct: S.settings.accounts[0], date: today(), note: "" }, t, { src: "photo" })); n++; }
+          else { if (!t.sym || !(t.side === "div" ? t.amt > 0 : t.q > 0 && t.p > 0)) return; S.trades.push(Object.assign({ id: uid(), ua: now(), m: "TW", side: "buy", name: "", q: 0, p: 0, amt: 0, fee: 0, tax: 0, date: today(), note: "", bk: "" }, t, { fx: t.m === "TW" ? 1 : fxNow(), src: "photo" })); n++; }
+        });
+        if (!n) { toast("沒有可以記的項目"); return; }
+        commit(); close(); toast(`記好 ${n} 筆`);
+      };
+    };
+    try {
+      const id = uid(), path = `inbox/${id}.jpg`;
+      await ghPutB64(g, path, dataUrl.split(",")[1], "拍照記帳暫存（AI 讀完會刪）");
+      const hints = { path, today: today(), expCats: S.settings.expCats, incCats: S.settings.incCats, accounts: S.settings.accounts, brokers: brokers() };
+      const r = await runAI("photo", { text: JSON.stringify(hints) });
+      const norm = (x) => { const o2 = Object.assign({}, x); ["amt", "q", "p", "fee", "tax"].forEach((k) => { if (o2[k] != null) o2[k] = toNum(o2[k]); }); return o2; };
+      state = { busy: false, err: "", tx: (r.tx || []).map(norm), trades: (r.trades || []).map((t) => Object.assign(norm(t), { sym: normSym(t.m, t.sym) })) };
+    } catch (e) { state = { busy: false, err: e.message, tx: [], trades: [] }; }
+    paint();
+  });
+}
+$("#cam").onclick = () => $("#camIn").click();
+$("#camIn").onchange = (e) => { const f = e.target.files[0]; e.target.value = ""; if (f) photoFlow(f); };
+
 $("#fab").onclick = () => { const t = L.tab; if (t === "book") txForm(); else if (t === "invest") tradeForm(); else if (t === "recs") recForm(); };
 $("#syncChip").onclick = () => { if (ghCfg()) sync(); else { L.tab = "settings"; saveL(); render(); } };
 document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && ghCfg()) sync().then(loadRemote); });
