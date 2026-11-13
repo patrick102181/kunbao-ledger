@@ -161,7 +161,7 @@ main,.card{min-width:0}
 .erow input,.erow select{border:1.5px solid var(--ink);background:var(--card);border-radius:0;padding:7px 8px;font-size:15px;width:100%;min-width:0}
 .erow.rec,.erow.r5{grid-template-columns:72px minmax(0,1fr) 92px 36px;padding-bottom:8px;border-bottom:1px solid var(--hair)}
 .erow.rec [data-rk=name]{grid-column:1/3;grid-row:1} .erow.rec [data-rk=type]{grid-column:1;grid-row:2} .erow.rec [data-rk=cat]{grid-column:2;grid-row:2}
-.erow.rec [data-rk=amt]{grid-column:3;grid-row:1} .erow.rec .ib,.erow.r5 .ib{grid-column:4;grid-row:1}
+.erow.rec [data-rk=amt]{grid-column:3;grid-row:1} .erow.rec .vary{grid-column:3/5;grid-row:2;display:flex;align-items:center;gap:5px;font-size:12px;white-space:nowrap} .erow.rec .vary input{width:16px;height:16px;accent-color:var(--red)} .erow.rec .ib,.erow.r5 .ib{grid-column:4;grid-row:1}
 .erow.r5 [data-pk=m]{grid-column:1;grid-row:1} .erow.r5 [data-pk=sym]{grid-column:2;grid-row:1} .erow.r5 [data-pk=amt]{grid-column:3;grid-row:1} .erow.r5 [data-pk=name]{grid-column:1/4;grid-row:2}
 .chart svg{display:block;width:100%;height:auto}
 .alloc{display:grid;gap:12px}
@@ -290,7 +290,7 @@ const DEFAULT_SETTINGS = {
   fx: 32.85,
   radarBase: "./data",
   recurring: [
-    { id: "r-salary", name: "薪水", type: "inc", cat: "薪水", amt: 45000, acct: "銀行" },
+    { id: "r-salary", name: "薪水", type: "inc", cat: "薪水", amt: 45000, acct: "銀行", vary: true },
     { id: "r-rent", name: "房租", type: "exp", cat: "房租", amt: 12000, acct: "銀行" }
   ],
   plans: [
@@ -304,6 +304,7 @@ function normalize(st) {
   const s = Object.assign(clone(DEFAULT_SETTINGS), st.settings || {});
   s.budgets = Object.assign({}, s.budgets || {});
   s.targets = Object.assign({ US: 0, TW: 0, CR: 0 }, s.targets || {});
+  s.recurring = (s.recurring || []).map((r) => r.id === "r-salary" && r.vary === undefined ? Object.assign({}, r, { vary: true }) : r); // 薪水會因請假變動
   // 舊版預設的範例計畫（VTI 5000／006208 4000／BTC 1000）換成實際在買的
   if ((s.plans || []).length === 3 && s.plans.map((p) => p.sym + p.amt).join() === "VTI5000,0062084000,BTC1000") s.plans = clone(DEFAULT_SETTINGS.plans);
   if (!s.radarBase || /kevunchiang24|market-radar/.test(s.radarBase)) s.radarBase = "./data"; // 只用自己抓的資料
@@ -588,6 +589,7 @@ function renderBook() {
   const totalBudget = sum(st.expCats, (c) => st.budgets[c] || 0);
   const pending = st.recurring.filter((r) => !S.tx.some((t) => t.rid === r.id && (t.date || "").startsWith(month)));
   const isCur = month === today().slice(0, 7);
+  const pendFix = pending.filter((r) => !r.vary), pendVary = pending.filter((r) => r.vary);
   view.innerHTML = `
   <section class="hero">
     <div class="mrow"><button class="ib" type="button" id="mPrev" aria-label="上個月"><svg viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3.5 5.5 8l4.5 4.5"/></svg></button><b>${monthLabel(month)}</b><button class="ib" type="button" id="mNext" aria-label="下個月"><svg viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.5 10.5 8 6 12.5"/></svg></button></div>
@@ -601,7 +603,8 @@ function renderBook() {
   </section>
   ${miniTerra()}
   ${pending.length ? `<div class="card"><h2>本月固定收支還沒記<span class="r">${pending.map((r) => esc(r.name)).join("、")}</span></h2>
-    <div class="btns"><button class="btn pri sm" type="button" id="applyRec">一鍵記上 ${pending.length} 筆</button></div></div>` : ""}
+    <div class="btns">${pendFix.length ? `<button class="btn pri sm" type="button" id="applyRec">一鍵記上 ${pendFix.map((r) => esc(r.name)).join("、")}</button>` : ""}${pendVary.map((r) => `<button class="btn sm" type="button" data-recv="${esc(r.id)}">記${esc(r.name)}（填實際金額）</button>`).join("")}</div>
+    ${pendVary.length ? `<div class="tiny" style="margin-top:6px">${pendVary.map((r) => esc(r.name)).join("、")}每個月金額不一定（例如請假扣薪），會先帶上次的金額，改成實拿的再記</div>` : ""}</div>` : ""}
   <div class="card"><h2>本月預算<span class="r num">${fmt(exp)} / ${fmt(totalBudget)}</span></h2>
     ${bar(exp, totalBudget)}
     <div style="margin-top:8px">${cats.map((c) => { const u = byCat[c] || 0, b = st.budgets[c] || 0; return `<div class="brow"><div class="t"><span>${esc(c)}</span><span class="num ${b && u > b ? "neg" : ""}">${fmt(u)}${b ? ` <span class="tiny">/ ${fmt(b)}</span>` : ""}</span></div>${b ? bar(u, b) : ""}</div>`; }).join("") || `<div class="empty">還沒有支出</div>`}</div>
@@ -623,9 +626,14 @@ function renderBook() {
   $("#txQ").oninput = (e) => { txQuery = e.target.value; renderTxList(tx); };
   if ($("#applyRec")) $("#applyRec").onclick = () => {
     const d = isCur ? today() : month + "-01";
-    pending.forEach((r) => S.tx.push({ id: uid(), ua: now(), type: r.type, amt: r.amt, cat: r.cat, acct: r.acct || "銀行", date: d, note: r.name + "（固定）", rid: r.id }));
+    pendFix.forEach((r) => S.tx.push({ id: uid(), ua: now(), type: r.type, amt: r.amt, cat: r.cat, acct: r.acct || "銀行", date: d, note: r.name + "（固定）", rid: r.id }));
     commit(); toast("已記上固定收支");
   };
+  $$("[data-recv]").forEach((b) => b.onclick = () => {
+    const r = st.recurring.find((x) => x.id === b.dataset.recv); if (!r) return;
+    const last = [...S.tx].filter((t) => t.rid === r.id).sort((a, b2) => (b2.date || "").localeCompare(a.date || ""))[0];
+    txForm(null, { type: r.type, amt: last ? last.amt : r.amt, cat: r.cat, acct: r.acct || "銀行", date: isCur ? today() : month + "-01", note: r.name, rid: r.id });
+  });
   $("#efAdd").onclick = efForm;
 }
 function renderTxList(tx) {
@@ -808,7 +816,7 @@ function renderSettings() {
   </div>
 
   <div class="card"><h2>每月固定收支</h2>
-    <div id="recList">${st.recurring.map((r, i) => `<div class="erow rec" data-ri="${i}"><input value="${esc(r.name)}" data-rk="name" aria-label="名稱"><select data-rk="type" aria-label="收或支"><option value="exp"${r.type === "exp" ? " selected" : ""}>支出</option><option value="inc"${r.type === "inc" ? " selected" : ""}>收入</option></select><input class="num" inputmode="decimal" value="${r.amt}" data-rk="amt" aria-label="金額"><select data-rk="cat" aria-label="分類">${(r.type === "inc" ? st.incCats : st.expCats).map((c) => `<option${c === r.cat ? " selected" : ""}>${esc(c)}</option>`).join("")}</select><button class="ib" type="button" data-rdel="${i}" aria-label="刪除"><svg viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button></div>`).join("")}</div>
+    <div id="recList">${st.recurring.map((r, i) => `<div class="erow rec" data-ri="${i}"><input value="${esc(r.name)}" data-rk="name" aria-label="名稱"><select data-rk="type" aria-label="收或支"><option value="exp"${r.type === "exp" ? " selected" : ""}>支出</option><option value="inc"${r.type === "inc" ? " selected" : ""}>收入</option></select><input class="num" inputmode="decimal" value="${r.amt}" data-rk="amt" aria-label="金額"><select data-rk="cat" aria-label="分類">${(r.type === "inc" ? st.incCats : st.expCats).map((c) => `<option${c === r.cat ? " selected" : ""}>${esc(c)}</option>`).join("")}</select><label class="vary"><input type="checkbox" data-rk="vary"${r.vary ? " checked" : ""}>金額會變</label><button class="ib" type="button" data-rdel="${i}" aria-label="刪除"><svg viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4l8 8M12 4l-8 8"/></svg></button></div>`).join("")}</div>
     <button class="btn sm" type="button" id="recAdd">新增固定項目</button>
   </div>
 
@@ -850,7 +858,7 @@ function renderSettings() {
   $("#accts").onchange = (e) => { const v = listIn(e.target.value); if (v.length) { st.accounts = v; saveSettings(); } };
   $$("[data-ri]").forEach((row) => $$("[data-rk]", row).forEach((el) => el.onchange = () => {
     const r = st.recurring[+row.dataset.ri], k = el.dataset.rk;
-    if (k === "amt") { const v = toNum(el.value); if (!isNum(v)) return; r.amt = v; } else r[k] = el.value;
+    if (k === "amt") { const v = toNum(el.value); if (!isNum(v)) return; r.amt = v; } else if (k === "vary") r.vary = el.checked; else r[k] = el.value;
     if (k === "type") r.cat = (r.type === "inc" ? st.incCats : st.expCats)[0];
     saveSettings();
   }));
