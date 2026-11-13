@@ -551,6 +551,28 @@ async function refreshPrices() {
   } catch (e) { priceJob = "沒辦法更新：" + e.message; }
   render();
 }
+/* 開盤中價格太舊就自動叫 GitHub 抓一次：台股 9:00–14:30、美股含盤前盤後 16:00–隔天 9:00（台灣時間，週一到週五）。
+   按「同步」時超過 10 分鐘就抓；打開 App 時超過 30 分鐘才抓，避免一直觸發 */
+function marketLive(d = new Date()) {
+  const t = new Date(d.toLocaleString("en-US", { timeZone: "Asia/Taipei" })), wd = t.getDay(), mm = t.getHours() * 60 + t.getMinutes();
+  const tw = wd >= 1 && wd <= 5 && mm >= 540 && mm <= 870;
+  const us = (wd >= 1 && wd <= 5 && mm >= 960) || (wd >= 2 && wd <= 6 && mm <= 540);   // 美股盤前 16:00 起、盤後到隔天 9:00
+  return tw || us;
+}
+function autoPrices(manual) {
+  if (!ghCfg() || priceJob.startsWith("已送出")) return;
+  const last = (RM.prices && RM.prices.updated_ts) || 0, age = (now() - last) / 60e3;
+  const asked = (now() - (L.pxAsk || 0)) / 60e3;
+  const t = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Taipei" })), wd = t.getDay(), mm = t.getHours() * 60 + t.getMinutes();
+  const twClose = new Date(now() - (mm - 815) * 60e3).getTime();   // 今天台灣 13:35
+  const needClose = wd >= 1 && wd <= 5 && mm >= 815 && last < twClose;   // 台股收盤後還沒抓到今天收盤價
+  if (asked < 10) return;
+  if (!needClose) {
+    if (!marketLive()) { if (manual) toast("台股、美股（含盤前盤後）都休市中，現在顯示的是最後成交價"); return; }
+    if (age < (manual ? 10 : 30)) return;
+  }
+  L.pxAsk = now(); saveL(); refreshPrices();
+}
 async function ghPut(g, data, sha) {
   const body = { message: "坤寶存摺同步 " + new Date().toISOString(), content: utf8ToB64(JSON.stringify(data)) };
   if (sha) body.sha = sha;
@@ -649,7 +671,7 @@ function priceOf(m, sym) {
   if (ov && isNum(ov.p)) return { p: ov.p, src: "手動 " + (ov.d || "") };
   if (m === "CR" && CR[sym]) return { p: CR[sym].p, src: CR[sym].src };
   const rp = RM.prices && RM.prices.prices && RM.prices.prices[m + ":" + sym];
-  if (rp && isNum(rp.p)) return { p: rp.p, src: (rp.src || "自動") + " " + (rp.d || "") };
+  if (rp && isNum(rp.p)) return { p: rp.p, src: (rp.src || "自動") + " " + (rp.t || rp.d || "") };
   if (m === "CR") return null;
   const it = radarItem(m, sym);
   if (it) return { p: it.px, src: "每日市場資料 " + ((m === "TW" ? R.tw : R.us).updated || ""), item: it };
@@ -1675,8 +1697,8 @@ $("#cam").onclick = () => $("#camIn").click();
 $("#camIn").onchange = (e) => { const fs = [...e.target.files]; e.target.value = ""; if (fs.length) photoFlow(fs); };
 
 $("#fab").onclick = () => { const t = L.tab; if (t === "book") txForm(); else if (t === "invest") tradeForm(); else if (t === "recs") recForm(); };
-$("#syncChip").onclick = () => { if (ghCfg()) sync(); else { L.tab = "settings"; saveL(); render(); } };
-document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && ghCfg()) sync().then(loadRemote); });
+$("#syncChip").onclick = () => { if (ghCfg()) { sync().then(loadRemote).then(() => autoPrices(true)); } else { L.tab = "settings"; saveL(); render(); } };
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && ghCfg()) sync().then(loadRemote).then(() => autoPrices(false)); });
 if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js").catch(() => {});
 if (location.protocol === "https:") { const here = location.origin + location.pathname.replace(/[^/]*$/, ""); if (S.settings.appUrl !== here) { S.settings.appUrl = here; S.settings.ua = now(); LS.set("kb-state", S); } }
 render();
