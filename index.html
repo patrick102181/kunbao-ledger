@@ -221,6 +221,73 @@ details summary{cursor:pointer;color:var(--blue);font-size:14px;font-weight:700;
   .sheet{animation:up .16s ease-out}@keyframes up{from{transform:translateY(16px)}to{transform:none}}
 }
 @media (max-width:360px){.hero .big{font-size:54px}}
+
+/* 衛星層候選：手機上用兩欄卡片列，代號與分數對齊、觸發條件各自成一個標籤 */
+.cand{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px 12px;padding:12px 0;border-top:1px solid var(--hair)}
+.cand:first-child{border-top:0}
+.cand .cn{display:flex;align-items:baseline;gap:8px;min-width:0}
+.cand .cn b{font-family:var(--f-num);font-weight:600;font-size:17px;flex:none}
+.cand .cn span{font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.cand .cs{display:flex;align-items:baseline;gap:6px;justify-self:end}
+.cand .cs small{font-size:11px;color:var(--muted)}
+.cand .cs .num{font-size:22px;line-height:1;min-width:2ch;text-align:right}
+.cand .ct{display:flex;flex-wrap:wrap;gap:6px;align-content:center;min-width:0}
+.cand .ct .chip{background:var(--paper);border-color:var(--hair)}
+.cand .ca{display:flex;align-items:center;gap:8px;justify-self:end}
+.cand .ct,.cand .ca{align-self:start}
+.cand .chip,.cand .btn.sm{height:30px;padding-top:.055em;padding-bottom:0}
+.cand .ca .chip{min-width:68px;justify-content:center}
+.cand .ca .btn.sm{min-width:64px}
+
+/* iPhone Safari：日期欄有內建最小寬度會撐出格子、下拉選單有自己的箭頭——全部統一成同高同寬的方框 */
+.two>*{min-width:0}
+.f input,.f select,.erow input,.erow select{-webkit-appearance:none;appearance:none;margin:0;font-size:16px;line-height:1.2}
+.f input,.f select{height:46px;min-width:0;max-width:100%;display:block}
+.f.big input{height:64px;font-size:38px;line-height:1}
+.f input[type=date]{width:100%;text-align:left;padding-top:0;padding-bottom:0}
+.f input[type=date]::-webkit-date-and-time-value{text-align:left;margin:0}
+.f input[type=date]::-webkit-calendar-picker-indicator{opacity:.8}
+.f select,.erow select{background:var(--card) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%23111' stroke-width='1.6'/%3E%3C/svg%3E") no-repeat right 12px center/12px 8px;padding-right:32px}
+.erow input,.erow select{height:38px}
+.f input[list]{background:var(--card) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%23111' stroke-width='1.6'/%3E%3C/svg%3E") no-repeat right 12px center/12px 8px;padding-right:32px}
+.f input[list]::-webkit-calendar-picker-indicator{opacity:0}
+.erow select{background-position:right 8px center;padding-right:24px}
+
+/* 持股：每檔同一個網格——第一行代號＋市值、第二行市場與平台＋損益、第三行股數／均價／現價三欄對齊 */
+.hx{grid-template-columns:minmax(0,1fr) auto;gap:6px 12px;padding:13px 0}
+.hx .hn{display:flex;align-items:baseline;gap:8px;min-width:0}
+.hx .hn b{font-family:var(--f-num);font-weight:600;font-size:17px;flex:none}
+.hx .hn span{font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.hx .hv{font-size:20px;line-height:1.1;text-align:right;align-self:baseline}
+.hx .hm{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);min-width:0;white-space:nowrap}
+.hx .hm em{font-style:normal;padding-left:8px;margin-left:2px;border-left:1px solid var(--hair);overflow:hidden;text-overflow:ellipsis}
+.hx .mk{display:inline-block;width:9px;height:9px;flex:none}
+.hx .mk.tw{background:var(--red)} .hx .mk.us{background:var(--blue)}
+.hx .mk.cr{width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-bottom:9px solid var(--yellow)}
+.hx .hp{font-size:14px;text-align:right;white-space:nowrap}
+.hx .hp small{font-size:12px;margin-left:6px}
+.hx .hp u{text-decoration:none;font-family:var(--f-body);font-size:12px;color:var(--blue)}
+.hx .hs{grid-column:1/-1;display:grid;grid-template-columns:repeat(3,1fr);border-top:1px dashed var(--hair);padding-top:7px;margin-top:2px}
+.hx .hs>span{display:flex;align-items:baseline;gap:6px;min-width:0}
+.hx .hs small{font-size:11px;color:var(--muted)}
+.hx .hs b{font-weight:500;font-size:14px}
+
+.shots{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.shots img{display:block;width:100%;aspect-ratio:1;object-fit:cover;border:1.5px solid var(--ink);background:var(--paper)}
+
+.pick{grid-template-columns:22px minmax(0,1fr) 112px;gap:8px 10px;align-items:center}
+.pick .pk{display:flex;align-items:center;gap:8px;min-width:0}
+.pick .pk select{height:38px;border:1.5px solid var(--ink);background:var(--card);padding:0 26px 0 8px;font-size:15px;min-width:0;flex:1}
+.pick .pk b{font-family:var(--f-num);font-weight:600}
+.pick .pk .muted{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.pick .ty{flex:none;font-size:12px;font-weight:700;padding:0 6px;line-height:22px;border:1px solid var(--ink)}
+.pick .ty.inc{background:var(--blue);border-color:var(--blue);color:#fff}
+.pick .pa{height:38px;border:1.5px solid var(--ink);background:var(--card);text-align:right;padding:0 10px;font-size:18px;width:100%;-webkit-appearance:none;appearance:none}
+.pick .pq{text-align:right;font-size:15px}
+.pick .pe{grid-column:2/4;display:grid;grid-template-columns:150px minmax(0,1fr);gap:8px}
+.pick .pe input{height:36px;border:1px solid var(--hair);background:var(--paper);padding:0 8px;font-size:14px;min-width:0;width:100%;-webkit-appearance:none;appearance:none;border-radius:0}
+.pick .pe input[type=date]::-webkit-date-and-time-value{text-align:left}
+.pick .pt{display:flex;align-items:center;justify-content:space-between;font-size:12px;color:var(--muted)}
 </style>
 </head>
 <body>
@@ -234,7 +301,7 @@ details summary{cursor:pointer;color:var(--blue);font-size:14px;font-weight:700;
 </div>
 <button class="fab" id="fab" type="button" aria-label="新增">＋</button>
 <button class="cam" id="cam" type="button" aria-label="拍照讓 AI 記帳"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8.5A1.5 1.5 0 0 1 5.5 7h2l1.4-2h6.2l1.4 2h2A1.5 1.5 0 0 1 20 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 17.5z"/><circle cx="12" cy="12.5" r="3.4"/></svg></button>
-<input type="file" id="camIn" accept="image/*" hidden>
+<input type="file" id="camIn" accept="image/*" multiple hidden>
 <nav class="tabs" aria-label="分頁"><div class="in">
   <button type="button" data-tab="book"><svg class="g" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="miter"><rect class="f" x="5" y="5" width="14" height="14"/></svg>記帳</button>
   <button type="button" data-tab="invest"><svg class="g" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="miter"><path class="f" d="M12 4.5 20 19H4z"/></svg>投資</button>
@@ -714,11 +781,12 @@ function renderInvest() {
   </div>
   <div class="card"><h2>持股<span class="r">${R.loading ? "讀取市場資料中…" : `匯率 ${fmt(fxNow(), 2)}`}</span></h2>
     ${ghCfg() ? `<div class="btns" style="margin:-4px 0 4px;align-items:center"><button class="btn sm" type="button" id="pxRefresh">更新現價</button><span class="tiny">${esc(priceJob || (RM.prices ? "自動抓價：" + (RM.prices.updated || "") : "還沒抓過價，按一下更新"))}</span></div>` : ""}
-    <div class="list">${act.length ? act.sort((a, b) => b.valT - a.valT).map((h) => `<button class="hold" type="button" data-hold="${esc(h.k)}">
-      <span class="a"><b>${esc(h.sym)}</b> <span class="muted">${esc(h.name)}</span> <span class="chip">${MK[h.m]}</span>${h.bks.length ? ` <span class="chip">${esc(h.bks.join("、"))}</span>` : ""}</span>
-      <span class="amt num" style="text-align:right">${fmt(h.valT)}</span>
-      <span class="b num">${fmtQ(h.sh)} ${h.m === "CR" ? "顆" : "股"}・均價 ${fmtP(h.avg)}・現價 ${isNum(h.px) ? fmtP(h.px) : "未知"}</span>
-      <span class="b num ${signCls(h.unT)}" style="text-align:right">${isNum(h.unT) ? fmt(h.unT) + "（" + pct(h.unP) + "）" : "點這裡填現價"}</span></button>`).join("") : `<div class="empty">還沒有持股，按右下角 ＋ 記第一筆買進</div>`}</div>
+    <div class="list">${act.length ? act.sort((a, b) => b.valT - a.valT).map((h) => `<button class="hold hx" type="button" data-hold="${esc(h.k)}">
+      <span class="hn"><b>${esc(h.sym)}</b><span>${esc(h.name)}</span></span>
+      <span class="hv num">${fmt(h.valT)}</span>
+      <span class="hm"><i class="mk ${h.m.toLowerCase()}"></i>${MK[h.m]}${h.bks.length ? `<em>${esc(h.bks.join("、"))}</em>` : ""}</span>
+      <span class="hp num ${signCls(h.unT)}">${isNum(h.unT) ? `${h.unT > 0 ? "+" : h.unT < 0 ? "−" : ""}${fmt(Math.abs(h.unT))}<small>${h.unT > 0 ? "+" : h.unT < 0 ? "−" : ""}${isNum(h.unP) ? (Math.abs(h.unP) * 100).toFixed(1) + "%" : ""}</small>` : `<u>點這裡填現價</u>`}</span>
+      <span class="hs"><span><small>${h.m === "CR" ? "顆數" : "股數"}</small><b class="num">${fmtQ(h.sh)}</b></span><span><small>均價</small><b class="num">${fmtP(h.avg)}</b></span><span><small>現價</small><b class="num">${isNum(h.px) ? fmtP(h.px) : "－"}</b></span></span></button>`).join("") : `<div class="empty">還沒有持股，按右下角 ＋ 記第一筆買進</div>`}</div>
     ${H.some((h) => h.sh === 0) ? `<details><summary>已出清的標的（${H.filter((h) => h.sh === 0).length}）</summary>${H.filter((h) => h.sh === 0).map((h) => `<div class="item" style="cursor:default"><span class="a">${esc(h.sym)} <span class="muted">${esc(h.name)}</span></span><span class="amt num ${signCls(h.realT + h.divT)}">${fmt(h.realT + h.divT)}</span></div>`).join("")}</details>` : ""}
   </div>
   <div class="card"><h2>交易紀錄<span class="r">${trades.length} 筆</span></h2>
@@ -746,7 +814,12 @@ function renderRecs() {
   const has = (m, c) => S.recs.some((r) => r.m === m && r.sym === String(c));
   const benches = [...(R.tw?.benchmarks || []).map((x) => ({ ...x, mk: "TW" })), ...(R.us?.benchmarks || []).map((x) => ({ ...x, mk: "US" }))].filter((x) => x.l);
   const pickTable = (m, rows) => !rows ? `<div class="empty">${R.loading ? "讀取中…" : "沒有資料"}</div>` : !rows.length ? `<div class="empty">今天沒有股票同時通過四道濾網</div>` :
-    `<div class="scroll"><table class="tbl"><thead><tr><th>股票</th><th>觸發</th><th class="r">長線分</th><th>燈號</th><th></th></tr></thead><tbody>${rows.slice(0, 10).map((x) => `<tr><td><b>${esc(x.c)}</b><div class="tiny">${esc(x.n)}</div></td><td class="tiny">${(x.trig || []).map(esc).join("<br>")}</td><td class="r num">${isNum(x.lt) ? Math.round(x.lt) : "－"}</td><td><span class="chip ${esc(x.l)}">${LIGHT[x.l] || esc(x.l)}</span></td><td>${has(m, x.c) ? `<span class="tiny">已加入</span>` : `<button class="btn sm" type="button" data-addpick="${m}|${esc(x.c)}">觀察</button>`}</td></tr>`).join("")}</tbody></table></div>${rows.length > 10 ? `<div class="tiny">共 ${rows.length} 檔，列長線分前 10</div>` : ""}`;
+    `<div class="list">${rows.slice(0, 10).map((x) => `<div class="cand">
+      <div class="cn"><b>${esc(x.c)}</b><span>${esc(x.n)}</span></div>
+      <div class="cs"><small>長線分</small><span class="num">${isNum(x.lt) ? Math.round(x.lt) : "－"}</span></div>
+      <div class="ct">${(x.trig || []).map((t) => `<span class="chip">${esc(t)}</span>`).join("")}</div>
+      <div class="ca"><span class="chip ${esc(x.l)}">${LIGHT[x.l] || esc(x.l)}</span>${has(m, x.c) ? `<span class="tiny">已加入</span>` : `<button class="btn sm" type="button" data-addpick="${m}|${esc(x.c)}">觀察</button>`}</div>
+    </div>`).join("")}</div>${rows.length > 10 ? `<div class="tiny">共 ${rows.length} 檔，列長線分前 10</div>` : ""}`;
   view.innerHTML = `
   <div class="card"><h2>今日判讀<span class="r">${sm ? esc((sm.generated || "").slice(5, 16)) : ""}</span></h2>
     ${R.err ? `<div class="empty">${esc(R.err)}</div>` : sm ? `<p style="margin:0 0 8px;font-weight:700">${esc(sm.headline || "")}</p>${(sm.watch || []).length ? `<ul style="margin:0;padding-left:18px">${sm.watch.map((w) => `<li class="tiny" style="color:var(--ink)">${esc(w)}</li>`).join("")}</ul>` : ""}` : `<div class="empty">${R.loading ? "讀取中…" : "沒有資料"}</div>`}
@@ -793,6 +866,12 @@ function renderSettings() {
       <div class="btns"><button class="btn pri" type="submit">儲存並同步</button>${ghCfg() ? `<button class="btn" type="button" id="ghNow">立即同步</button><button class="btn danger" type="button" id="ghOff">這台裝置停用同步</button>` : ""}</div>
       ${syncState.s === "err" ? `<div class="tiny" style="color:var(--seal)">${esc(syncState.msg)}</div>` : ""}
       <div class="tiny">每台裝置第一次用都要填一次。資料存在 repo 的 ledger.json，金鑰不會上傳。</div>
+    </form></div>
+  <div class="card"><h2>AI 快速模式<span class="r">${L.ai && L.ai.key ? "已開啟，約 5～10 秒" : "未開啟，走 GitHub 約 1 分鐘"}</span></h2>
+    <form class="form" id="aiForm">
+      <label class="f"><span>Claude API 金鑰（sk-ant- 開頭，只存在這台裝置）</span><input id="aiKey" type="password" autocomplete="off" value="${esc((L.ai && L.ai.key) || "")}" placeholder="sk-ant-…"></label>
+      <div class="btns"><button class="btn pri" type="submit">儲存</button>${L.ai && L.ai.key ? `<button class="btn danger" type="button" id="aiOff">關閉快速模式</button>` : ""}</div>
+      <div class="tiny">開啟後，拍照記帳和「問 AI 今天怎麼買」會由這台裝置直接呼叫 Claude，不用等 GitHub 開機。金鑰會存在這台手機或電腦的瀏覽器裡，換裝置要再填一次；不想把金鑰放在裝置上就留空，照樣走 GitHub。</div>
     </form></div>
 
   <div class="card"><h2>每月收入與投資</h2><div class="form">
@@ -846,6 +925,8 @@ function renderSettings() {
     <div class="tiny" style="margin-top:6px">${S.tx.length} 筆記帳・${S.trades.length} 筆交易・${S.recs.length} 筆推薦</div>
   </div>`;
 
+  $("#aiForm").onsubmit = (e) => { e.preventDefault(); const k = $("#aiKey").value.trim(); if (k && !/^sk-ant-/.test(k)) { toast("金鑰要是 sk-ant- 開頭"); return; } L.ai = Object.assign({}, L.ai, { key: k }); saveL(); toast(k ? "快速模式已開啟" : "已關閉快速模式"); render(); };
+  if ($("#aiOff")) $("#aiOff").onclick = () => { L.ai = Object.assign({}, L.ai, { key: "" }); saveL(); toast("已關閉快速模式"); render(); };
   $("#ghForm").onsubmit = (e) => { e.preventDefault(); L.gh = { owner: $("#ghOwner").value.trim(), repo: $("#ghRepo").value.trim(), token: $("#ghToken").value.trim(), path: "ledger.json" }; saveL(); if (ghCfg()) { sync().then(loadRemote); toast("開始同步"); } else { toast("三欄都要填"); render(); } };
   if ($("#ghNow")) $("#ghNow").onclick = () => sync().then(render);
   if ($("#ghOff")) $("#ghOff").onclick = (e) => twoStep(e.target, "確定停用？", () => { L.gh = { owner: g.owner, repo: g.repo }; L.lastSync = null; saveL(); setSync("local"); render(); });
@@ -1122,7 +1203,7 @@ function tradeForm(t, pre = {}) {
     <label class="f" id="taxBox"><span>交易稅</span><input id="rTax" class="num" inputmode="decimal" value="${v(t.tax)}" placeholder="0"></label></div>
     <div class="two"><label class="f"><span>日期</span><input id="rDate" type="date" value="${esc(t.date)}"></label>
     <label class="f" id="fxBox"><span>美元匯率</span><input id="rFx" class="num" inputmode="decimal" value="${v(t.fx) || fxNow().toFixed(2)}"></label></div>
-    <label class="f"><span>平台</span><input id="rBk" list="bkList" value="${esc(t.bk || lastBk(t.m))}" autocomplete="off" placeholder="例：國泰證券、Firstrade、幣安"><datalist id="bkList">${brokers().map((b) => `<option value="${esc(b)}">`).join("")}</datalist></label>
+    <label class="f"><span>平台</span><input id="rBk" list="bkList" value="${esc(t.bk || lastBk(t.m))}" autocomplete="off" placeholder="例：永豐大戶投、OURBIT、派網"><datalist id="bkList">${brokers().map((b) => `<option value="${esc(b)}">`).join("")}</datalist></label>
     <label class="f"><span>備註</span><input id="rNote" value="${esc(t.note || "")}" placeholder="例：定期定額、看到燈號便宜加碼"></label>
     <div class="tiny" id="rTot"></div>
     <div class="btns"><button class="btn pri" type="submit" style="flex:1">${isNew ? "記下來" : "儲存"}</button>${isNew ? "" : `<button class="btn danger" type="button" id="rDel">刪除</button>`}</div>
@@ -1251,8 +1332,8 @@ async function runAI(mode, inputs) {
   const id = uid();
   await sync();
   await ghDispatch(g, "ai.yml", Object.assign({ mode, req_id: id }, inputs || {}));
-  for (let i = 0; i < 40; i++) {
-    await sleep(6000);
+  for (let i = 0; i < 70; i++) {
+    await sleep(i < 4 ? 8000 : 3000);
     const f = await ghGetFile(g, "ai.json"); const d = f.text ? JSON.parse(f.text) : null;
     const r = d && d[mode];
     if (r && r.req_id === id) { RM.ai = d; if (r.error) throw new Error(r.error); return r; }
@@ -1338,9 +1419,37 @@ async function dcaAsk() {
   const info = { 日期: today(), 每月投資目標: st.investMonthly, 本月已投入: Math.round(monthBuysTWD(mo)),
     計畫: st.plans.map((p) => ({ 市場: MK[p.m], 代號: p.sym, 名稱: p.name, 每月台幣: p.amt, 角色: p.role || "", 平台: p.bk || "", 扣款日: p.day || "", 燈號判斷: dcaSig(p) })),
     今日判讀: R.sum ? R.sum.headline : null, 戰術層: R.macro ? R.macro.tactical.on : null, 債務週期: R.macro && R.macro.stage ? R.macro.stage.name : null };
-  dcaOut = "已送出，AI 正在看今天的燈號（約 1 分鐘）…"; render();
-  try { const r = await runAI("dca", { text: JSON.stringify(info) }); dcaOut = r.text || "（沒有內容）"; } catch (e) { dcaOut = "沒辦法完成：" + e.message; }
+  dcaOut = aiFastOn() ? "AI 正在看今天的燈號…" : "已送出，AI 正在看今天的燈號（約 1 分鐘）…"; render();
+  try { if (aiFastOn()) dcaOut = (await aiDirect(dcaPrompt(info), 900)).replace(/\*\*/g, "") || "（沒有內容）"; else { const r = await runAI("dca", { text: JSON.stringify(info) }); dcaOut = (r.text || "（沒有內容）").replace(/\*\*/g, ""); } } catch (e) { dcaOut = "沒辦法完成：" + e.message; }
   dcaBusy = false; render();
+}
+
+
+/* ───────── AI 快速模式：這台裝置直接呼叫 Claude（金鑰只存在 localStorage） ───────── */
+const AI_FAST = "claude-haiku-5-5", AI_SMART = "claude-sonnet-5-5";
+async function aiDirect(content, maxTokens, model) {
+  const r = await fetch("https://api.anthropic.com/v1/messages", { method: "POST", headers: { "content-type": "application/json", "x-api-key": L.ai.key, "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" },
+    body: JSON.stringify({ model: model || AI_SMART, max_tokens: maxTokens, messages: [{ role: "user", content }] }) });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(r.status === 401 ? "Claude 金鑰無效，到設定重新填" : r.status === 400 && /credit/i.test(JSON.stringify(j)) ? "Claude 帳戶餘額不足，到 platform.claude.com 儲值" : "Claude 回應錯誤 " + r.status + (j.error && j.error.message ? "：" + j.error.message : ""));
+  return (j.content || []).filter((b) => b.type === "text").map((b) => b.text).join("").trim();
+}
+const aiFastOn = () => !!(L.ai && L.ai.key);
+function photoPrompt(h) {
+  return "這些是記帳用的照片（可能有好幾張）：發票、收據、刷卡通知、信用卡或銀行明細、轉帳截圖，或證券／加密貨幣交易所的成交、庫存畫面。"
+    + `今天是 ${h.today}。只輸出一個 JSON 物件，不要任何其他文字，格式：\n`
+    + '{"tx":[{"type":"exp或inc","amt":台幣金額數字,"cat":"分類","date":"YYYY-MM-DD","acct":"帳戶","note":"店名或品項，15 字內"}],"trades":[{"m":"TW或US或CR","side":"buy或sell或div","sym":"代號","name":"名稱","q":數量,"p":成交單價,"fee":手續費,"tax":交易稅,"amt":股利金額,"date":"YYYY-MM-DD","bk":"平台"}]}\n'
+    + `支出分類只能用：${h.expCats.join("、")}；收入分類只能用：${h.incCats.join("、")}；帳戶只能用：${h.accounts.join("、")}（刷卡用信用卡、現金收據用現金，看不出來用第一個）。平台盡量從這些挑：${h.brokers.join("、")}，看得出 App 名稱就照寫。\n`
+    + "規則：一張發票或收據只記一筆總額（不要拆品項）；信用卡、銀行明細或消費紀錄的截圖，每一筆消費各記一筆，日期照明細上的；同一筆消費出現在好幾張圖裡（例如發票加刷卡通知）只記一次；退款記成收入、分類用其他。"
+    + "交易畫面每筆成交各記一筆；台股代號用數字（ETF 可能帶 A 或 B，例如 00991A），美股用英文代號，加密貨幣用幣種（例如 BTC）且價格用 USDT；看不到日期就用今天；看不清楚的數字寧可不記。庫存或持倉畫面（只有均價、沒有單筆成交）就把每檔當作一筆買進，數量用庫存、價格用成本均價、date 用今天。";
+}
+function parsePhotoJSON(out) {
+  const m = String(out).match(/\{[\s\S]*\}/); const d = m ? JSON.parse(m[0]) : {};
+  return { tx: (d.tx || []).filter((x) => x && (x.type === "exp" || x.type === "inc")), trades: (d.trades || []).filter((x) => x && ["TW", "US", "CR"].includes(x.m) && x.sym) };
+}
+function dcaPrompt(info) {
+  return "你是謹慎、講話直接的理財教練，不是投資顧問。坤寶用定期定額長期投資，規則是：核心層（大盤 ETF）不擇時、偏貴也照常扣；燈號便宜時可以多扣一點；戰術層觸發時核心股票部位先別加碼；比特幣用現價對 200 日均線的倍數判斷貴不貴。"
+    + "下面是今天每個計畫的燈號與這個月的投入狀況（JSON）。請用繁體中文、台灣用語，200 字內：\n1. 每一檔一句話：今天照常、多買一點、還是先等，理由只能用資料裡的數字\n2. 如果本月已投入超過每月目標，提醒他這個月額度已用完，加碼要從下個月的額度挪\n不要預測漲跌，不要推薦清單以外的標的，不要用 markdown 粗體。最後一行寫「以上不是投資建議」。\n\n資料：" + JSON.stringify(info);
 }
 
 /* ───────── 拍照讓 AI 記帳：照片先放進私人資料 repo 的 inbox/，GitHub Actions 上的 Claude 讀完就刪 ───────── */
@@ -1358,35 +1467,49 @@ async function ghPutB64(g, path, b64, msg) {
   const r = await fetch(ghPath(g, path), { method: "PUT", headers: Object.assign({ "Content-Type": "application/json" }, ghHeaders(g)), body: JSON.stringify({ message: msg, content: b64 }) });
   if (!r.ok) throw new Error(r.status === 403 || r.status === 404 ? "金鑰沒有寫入權限" : "上傳照片失敗 " + r.status);
 }
-async function photoFlow(file) {
+async function photoFlow(files) {
+  files = Array.isArray(files) ? files : [files];
+  const total = files.length; files = files.slice(0, 10);
   const g = ghCfg();
-  if (!g) { toast("先到「設定」連上 GitHub，AI 才能讀照片"); return; }
-  let dataUrl;
-  try { dataUrl = await shrinkImage(file); } catch (e) { toast("讀不到這張照片"); return; }
+  if (!g && !aiFastOn()) { toast("先到「設定」連上 GitHub 或開啟 AI 快速模式，AI 才能讀照片"); return; }
+  const urls = [];
+  for (const f of files) { try { urls.push(await shrinkImage(f)); } catch (e) {} }
+  if (!urls.length) { toast("讀不到這些照片"); return; }
   let state = { busy: true, err: "", tx: [], trades: [] };
-  openSheet("拍照記帳", `<div class="form"><img class="shot" alt="要讓 AI 讀的照片" src="${dataUrl}"><div id="phOut"><div class="empty">AI 正在讀照片，大約 1 分鐘…</div></div></div>`, async (o, close) => {
+  openSheet(urls.length > 1 ? `拍照記帳（${urls.length} 張）` : "拍照記帳", `<div class="form">${urls.length > 1 ? `<div class="shots">${urls.map((u, i) => `<img alt="第 ${i + 1} 張" src="${u}">`).join("")}</div>` : `<img class="shot" alt="要讓 AI 讀的照片" src="${urls[0]}">`}<div id="phOut"><div class="empty">${urls.length > 1 ? `AI 正在讀 ${urls.length} 張照片` : "AI 正在讀照片"}，${aiFastOn() ? "大約 10 秒" : "大約 1 分鐘"}…</div></div>${total > 10 ? `<div class="tiny">一次最多 10 張，這次先讀前 10 張，其他的請再送一次</div>` : ""}</div>`, async (o, close) => {
     const paint = () => {
       const box = $("#phOut", o); if (!box) return;
       if (state.busy) return;
       if (state.err) { box.innerHTML = `<div class="empty">沒辦法完成：${esc(state.err)}</div>`; return; }
       const rows = [...state.tx.map((t, i) => ({ k: "tx", i, t })), ...state.trades.map((t, i) => ({ k: "tr", i, t }))];
       if (!rows.length) { box.innerHTML = `<div class="empty">照片裡沒看到金額或成交紀錄，換一張清楚一點的再試</div>`; return; }
-      box.innerHTML = `<div class="tiny" style="margin-bottom:4px">AI 看到 ${rows.length} 筆，勾掉不要的，點「修改」可以先改再記</div><div class="list">${rows.map((r) => {
+      const st = S.settings;
+      box.innerHTML = `<div class="tiny" style="margin-bottom:4px">AI 看到 ${rows.length} 筆。金額、分類、日期、備註都可以直接改，不要的取消勾選</div><div class="list">${rows.map((r) => {
         const t = r.t;
-        const main = r.k === "tx" ? `${t.type === "inc" ? "收入" : "支出"}・${esc(t.cat || "")}${t.note ? ` <span class="muted">${esc(t.note)}</span>` : ""}` : `${SIDE[t.side] || "買進"} <b>${esc(t.sym || "")}</b> <span class="muted">${esc(t.name || "")}</span>`;
-        const amt = r.k === "tx" ? `<span class="num">${fmt(t.amt)}</span>` : `<span class="num">${fmtQ(t.q)} × ${fmtP(t.p)}</span>`;
-        const ex = r.k === "tx" ? `${esc(t.date || "")}・${esc(t.acct || "")}` : `${esc(t.date || "")}・${MK[t.m] || ""}${t.bk ? "・" + esc(t.bk) : ""}${t.fee ? `・手續費 ${fmtP(t.fee)}` : ""}`;
-        return `<label class="pick"><input type="checkbox" checked data-k="${r.k}" data-i="${r.i}"><span>${main}</span><span>${amt}</span><span class="e">${ex} <button class="btn sm" type="button" data-ed="${r.k}:${r.i}" style="margin-left:6px">修改</button></span></label>`; }).join("")}</div>
+        if (r.k === "tx") return `<div class="pick" data-row="tx:${r.i}"><input type="checkbox" checked aria-label="記這筆">
+          <span class="pk"><span class="ty ${t.type === "inc" ? "inc" : ""}">${t.type === "inc" ? "收入" : "支出"}</span><select data-f="cat" aria-label="分類">${(t.type === "inc" ? st.incCats : st.expCats).map((c) => `<option${c === t.cat ? " selected" : ""}>${esc(c)}</option>`).join("")}</select></span>
+          <input class="num pa" data-f="amt" inputmode="decimal" value="${isNum(t.amt) ? t.amt : ""}" aria-label="金額">
+          <span class="pe"><input type="date" data-f="date" value="${esc(t.date || today())}" aria-label="日期"><input data-f="note" value="${esc(t.note || "")}" placeholder="備註" aria-label="備註"></span></div>`;
+        return `<div class="pick" data-row="tr:${r.i}"><input type="checkbox" checked aria-label="記這筆">
+          <span class="pk"><span class="ty">${SIDE[t.side] || "買進"}</span><b>${esc(t.sym || "")}</b><span class="muted">${esc(t.name || "")}</span></span>
+          <span class="num pq">${fmtQ(t.q)} × ${fmtP(t.p)}</span>
+          <span class="pe pt">${esc(t.date || "")}　${MK[t.m] || ""}${t.bk ? "　" + esc(t.bk) : ""}<button class="btn sm" type="button" data-ed="tr:${r.i}">修改</button></span></div>`; }).join("")}</div>
         <div class="btns" style="margin-top:10px"><button class="btn pri" type="button" id="phSave" style="flex:1">記下勾選的</button></div>`;
+      $$("[data-row^='tx:']", box).forEach((row) => $$("[data-f]", row).forEach((el) => el.onchange = () => {
+        const t = state.tx[+row.dataset.row.split(":")[1]], f = el.dataset.f;
+        t[f] = f === "amt" ? toNum(el.value) : el.value;
+      }));
       $$("[data-ed]", box).forEach((b) => b.onclick = (e) => {
-        e.preventDefault(); const [k, i] = b.dataset.ed.split(":"); const t = (k === "tx" ? state.tx : state.trades)[+i];
-        close(); if (k === "tx") txForm(null, t); else tradeForm(null, t);
+        e.preventDefault(); const t = state.trades[+b.dataset.ed.split(":")[1]];
+        b.closest(".pick").querySelector("input[type=checkbox]").checked = false;
+        tradeForm(null, t);
       });
       $("#phSave", box).onclick = () => {
         let n = 0;
-        $$("input[type=checkbox]", box).forEach((c) => {
-          if (!c.checked) return; const t = (c.dataset.k === "tx" ? state.tx : state.trades)[+c.dataset.i];
-          if (c.dataset.k === "tx") { if (!isNum(t.amt) || t.amt <= 0) return; S.tx.push(Object.assign({ id: uid(), ua: now(), acct: S.settings.accounts[0], date: today(), note: "" }, t, { src: "photo" })); n++; }
+        $$(".pick", box).forEach((row) => {
+          const c = $("input[type=checkbox]", row); if (!c.checked) return;
+          const [k, i] = row.dataset.row.split(":"); const t = (k === "tx" ? state.tx : state.trades)[+i];
+          if (k === "tx") { if (!isNum(t.amt) || t.amt <= 0) return; S.tx.push(Object.assign({ id: uid(), ua: now(), acct: S.settings.accounts[0], date: today(), note: "" }, t, { src: "photo" })); n++; }
           else { if (!t.sym || !(t.side === "div" ? t.amt > 0 : t.q > 0 && t.p > 0)) return; S.trades.push(Object.assign({ id: uid(), ua: now(), m: "TW", side: "buy", name: "", q: 0, p: 0, amt: 0, fee: 0, tax: 0, date: today(), note: "", bk: "" }, t, { fx: t.m === "TW" ? 1 : fxNow(), src: "photo" })); n++; }
         });
         if (!n) { toast("沒有可以記的項目"); return; }
@@ -1394,10 +1517,17 @@ async function photoFlow(file) {
       };
     };
     try {
-      const id = uid(), path = `inbox/${id}.jpg`;
-      await ghPutB64(g, path, dataUrl.split(",")[1], "拍照記帳暫存（AI 讀完會刪）");
-      const hints = { path, today: today(), expCats: S.settings.expCats, incCats: S.settings.incCats, accounts: S.settings.accounts, brokers: brokers() };
-      const r = await runAI("photo", { text: JSON.stringify(hints) });
+      const hints = { today: today(), expCats: S.settings.expCats, incCats: S.settings.incCats, accounts: S.settings.accounts, brokers: brokers() };
+      let r;
+      if (aiFastOn()) {
+        const content = urls.map((u) => ({ type: "image", source: { type: "base64", media_type: "image/jpeg", data: u.split(",")[1] } }));
+        content.push({ type: "text", text: photoPrompt(hints) });
+        r = parsePhotoJSON(await aiDirect(content, 3000, AI_SMART));
+      } else {
+        const id = uid();
+        hints.paths = await Promise.all(urls.map(async (u, i) => { const path = `inbox/${id}-${i + 1}.jpg`; await ghPutB64(g, path, u.split(",")[1], "拍照記帳暫存（AI 讀完會刪）"); return path; }));
+        r = await runAI("photo", { text: JSON.stringify(hints) });
+      }
       const norm = (x) => { const o2 = Object.assign({}, x); ["amt", "q", "p", "fee", "tax"].forEach((k) => { if (o2[k] != null) o2[k] = toNum(o2[k]); }); return o2; };
       state = { busy: false, err: "", tx: (r.tx || []).map(norm), trades: (r.trades || []).map((t) => Object.assign(norm(t), { sym: normSym(t.m, t.sym) })) };
     } catch (e) { state = { busy: false, err: e.message, tx: [], trades: [] }; }
@@ -1405,7 +1535,7 @@ async function photoFlow(file) {
   });
 }
 $("#cam").onclick = () => $("#camIn").click();
-$("#camIn").onchange = (e) => { const f = e.target.files[0]; e.target.value = ""; if (f) photoFlow(f); };
+$("#camIn").onchange = (e) => { const fs = [...e.target.files]; e.target.value = ""; if (fs.length) photoFlow(fs); };
 
 $("#fab").onclick = () => { const t = L.tab; if (t === "book") txForm(); else if (t === "invest") tradeForm(); else if (t === "recs") recForm(); };
 $("#syncChip").onclick = () => { if (ghCfg()) sync(); else { L.tab = "settings"; saveL(); render(); } };
