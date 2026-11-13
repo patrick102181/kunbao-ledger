@@ -1,0 +1,79 @@
+name: 每日更新市場資料
+
+# 自己從證交所、櫃買中心、Yahoo Finance、FRED、維基百科抓資料，算長線燈號、衛星層四道濾網、戰術層、全天候核心
+# 策略參考 market-radar 的核心／衛星／戰術三層架構；資料不讀別人算好的結果
+on:
+  schedule:
+    # GitHub 用 UTC 時間
+    - cron: "10 14 * * 1-5"   # 台灣時間 週一到週五 22:10（台股收盤、月營收公布後）
+    - cron: "30 22 * * 1-5"   # 台灣時間 隔天早上 06:30（美股收盤後）
+  workflow_dispatch:
+    inputs:
+      market:
+        description: "要更新哪一塊"
+        required: true
+        default: "all"
+        type: choice
+        options: [all, tw, us, macro, core]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: market-update
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    env:
+      # 選填：FRED 免費 API 金鑰。GitHub 的伺服器常連不上 FRED 公開網址，有金鑰就改走官方 API
+      FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: 安裝套件
+        run: pip install -r requirements.txt
+
+      - name: 判斷要跑哪一塊
+        id: pick
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "market=${{ inputs.market }}" >> "$GITHUB_OUTPUT"
+          elif [ "${{ github.event.schedule }}" = "10 14 * * 1-5" ]; then
+            echo "market=tw" >> "$GITHUB_OUTPUT"
+          else
+            echo "market=us" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: 更新市場資料
+        run: python market.py --market "${{ steps.pick.outputs.market }}"
+
+      - name: 更新總經與核心層
+        if: steps.pick.outputs.market == 'tw' || steps.pick.outputs.market == 'us'
+        continue-on-error: true
+        run: |
+          python market.py --market macro
+          if [ "${{ steps.pick.outputs.market }}" = "us" ]; then python market.py --market core; fi
+
+      - name: 存回 GitHub
+        run: |
+          git config user.name "kunbao-ledger-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data
+          if git diff --cached --quiet; then
+            echo "資料沒有變化"
+            exit 0
+          fi
+          git commit -m "更新市場資料 $(TZ=Asia/Taipei date '+%Y-%m-%d %H:%M')"
+          for i in 1 2 3; do
+            git pull --rebase origin "${GITHUB_REF_NAME}" && git push && exit 0
+            sleep 10
+          done
+          exit 1
