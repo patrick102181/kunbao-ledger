@@ -1770,6 +1770,13 @@ def us_universe():
 def run_us(limit=None):
     now = datetime.now(TPE)
     uni = us_universe()
+    # 自己持有、但不在 S&P 500／400 裡的股票（例如 SMR、RKLB）：在 GitHub 的 Actions 變數 KB_EXTRA_US 填代號，逗號分隔
+    have = {u["c"] for u in uni}
+    for sym in [x.strip().upper().replace(".", "-") for x in os.environ.get("KB_EXTRA_US", "").split(",") if x.strip()]:
+        if sym not in have:
+            uni.append({"c": sym, "n": sym, "sec": "其他"})
+            have.add(sym)
+            log("加入自選股：", sym)
     if limit:
         uni = [u for u in uni if u["c"] in ("AAPL", "MSFT", "NVDA", "INTC", "JPM")] + uni[:limit]
         uni = list({u["c"]: u for u in uni}.values())

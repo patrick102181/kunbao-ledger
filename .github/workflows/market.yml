@@ -30,6 +30,8 @@ jobs:
     env:
       # 選填：FRED 免費 API 金鑰。GitHub 的伺服器常連不上 FRED 公開網址，有金鑰就改走官方 API
       FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+      # 選填：自己持有但不在 S&P 500／400 的美股代號，逗號分隔（例如 SMR,RKLB），在 Settings → Secrets and variables → Actions → Variables 設定
+      KB_EXTRA_US: ${{ vars.KB_EXTRA_US }}
     steps:
       - uses: actions/checkout@v4
 
