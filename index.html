@@ -463,7 +463,15 @@ details.mnews .mt{font-size:12px;line-height:1;padding:calc((22px - .733em) / 2 
 details.mnews .mt.alert{background:var(--red)} details.mnews .mt.go{background:var(--blue)}
 .card.attn{border-color:var(--red)}
 .card.attn h2{color:var(--red)}
-.al{display:grid;grid-template-columns:12px minmax(0,1fr);column-gap:10px;align-items:start;width:100%;text-align:left;background:none;border:0;border-top:1px solid var(--hair);padding:10px 0;color:var(--ink)}
+.al{display:grid;grid-template-columns:12px minmax(0,1fr);column-gap:10px;align-items:start;width:100%;border-top:1px solid var(--hair);padding:10px 0;color:var(--ink)}
+.al .alc{min-width:0}
+.al .alh{display:flex;align-items:center;gap:10px;min-height:38px}
+.al .alh .alm{flex:1}
+.al .alm{display:block;width:100%;min-width:0;text-align:left;background:none;border:0;padding:0;color:inherit;font:inherit;cursor:pointer}
+.al .ack{flex:none;white-space:nowrap}
+.al > i{margin-top:14px}
+.unack{display:block;width:100%;margin-top:4px;padding:10px 0 0;border:0;border-top:1px solid var(--hair);background:none;color:var(--muted);font:inherit;font-size:12.5px;text-align:center;cursor:pointer}
+.unack.solo{margin:0 0 14px;padding:10px;border:1.5px dashed var(--hair)}
 .al:first-child{border-top:0}
 .al i{width:10px;height:10px;margin-top:5px;background:var(--red)}
 .al.warn i{background:var(--yellow)}
@@ -924,21 +932,42 @@ function holdings() {
   });
 }
 /* 投資頁的「需要注意」：持股重大事件／利空新聞、跌破出場線、單一個股太重、虧損太深、定期定額該記帳了 */
+let alertHidden = 0, curKeys = new Set();
 function attention(act, mv) {
   const st = S.settings, out = [];
+  alertHidden = 0; curKeys = new Set();
   const coreSyms = new Set(st.plans.filter((p) => p.role === "核心").map((p) => p.m + ":" + p.sym));
   for (const h of act) {
-    const why = [];
+    const why = [], keys = [];
     let lvl = 0, cls = "warn";
     const n = newsOf(h.m, h.sym);
-    if (n && (n.big || n.score <= -1) && n.score <= 0) { why.push(`新聞${NEWS_LAB[n.score]}${n.big && n.score > -2 ? "・重大事件" : ""}：${n.sum || ""}`); lvl += 2 + (n.big ? 1 : 0); cls = "alert"; }
+    if (n && (n.big || n.score <= -1) && n.score <= 0) { keys.push(["news", n.sum || String(n.score)]); why.push(`新聞${NEWS_LAB[n.score]}${n.big && n.score > -2 ? "・重大事件" : ""}：${n.sum || ""}`); lvl += 2 + (n.big ? 1 : 0); cls = "alert"; }
     const it = h.m === "CR" ? null : radarItem(h.m, h.sym);
     const isEtf = (it && it.etf) || /^00\d/.test(h.sym);
-    if (it && !isEtf && Array.isArray(it.lv) && isNum(it.lv[0]) && isNum(h.px) && h.px < it.lv[0] * 0.97) { why.push(`跌破出場線 ${fmtP(it.lv[0] * 0.97)} ${CUR[h.m]}（週 MA52 下方 3%），照規則該出場，不要往下攤平`); lvl += 3; cls = "alert"; }
+    if (it && !isEtf && Array.isArray(it.lv) && isNum(it.lv[0]) && isNum(h.px) && h.px < it.lv[0] * 0.97) { keys.push(["exit", h.px]); why.push(`跌破出場線 ${fmtP(it.lv[0] * 0.97)} ${CUR[h.m]}（週 MA52 下方 3%），照規則該出場，不要往下攤平`); lvl += 3; cls = "alert"; }
     const w = mv > 0 ? h.valT / mv : 0;
-    if (!coreSyms.has(h.k) && !isEtf && h.m !== "CR" && w > 0.04) { why.push(`占總資產 ${pctAbs(w, 0)}，超過單一個股上限 4%`); lvl += 1; }
-    if (isNum(h.unP) && h.unP <= -0.3) { why.push(`虧損 ${pctAbs(h.unP, 0)}，當初買進的理由還成立嗎？`); lvl += 1; }
-    if (why.length) out.push({ attr: `data-hold="${esc(h.k)}"`, cls, lv: lvl, t: `${h.sym} ${h.name || ""}`.trim(), d: why });
+    if (!coreSyms.has(h.k) && !isEtf && h.m !== "CR" && w > 0.04) { keys.push(["w", w]); why.push(`占總資產 ${pctAbs(w, 0)}，超過單一個股上限 4%`); lvl += 1; }
+    if (isNum(h.unP) && h.unP <= -0.3) { keys.push(["loss", h.unP]); why.push(`虧損 ${pctAbs(h.unP, 0)}，當初買進的理由還成立嗎？`); lvl += 1; }
+    if (!why.length) continue;
+    // 「知道了」：收起來，等情況變差才再出現（新的新聞、跌破出場線後再跌 5%、比重再升 5 個百分點、虧損再擴大 10 個百分點）
+    const ack = st.ack || {}, show = [], hid = [];
+    keys.forEach(([t, v], i) => {
+      curKeys.add(h.k + "|" + t);
+      const a = ack[h.k + "|" + t];
+      const still = a !== undefined && (t === "news" ? a === v : t === "exit" ? v >= a * 0.95 : t === "w" ? v <= a + 0.05 : v >= a - 0.1);
+      (still ? hid : show).push(i);
+    });
+    alertHidden += hid.length ? 1 : 0;
+    if (show.length) out.push({ attr: `data-hold="${esc(h.k)}"`, ack: h.k, keys, cls, lv: lvl, t: `${h.sym} ${h.name || ""}`.trim(), d: show.map((i) => why[i]) });
+  }
+  // 已經不成立的「知道了」清掉，之後再發生才會重新提醒
+  // 只在價格與新聞都讀到時才清，免得資料還沒載入就把收起的提醒誤刪
+  const priced = new Set(act.filter((h) => isNum(h.unP)).map((h) => h.k)), held = new Set(act.map((h) => h.k));
+  if (st.ack) for (const k of Object.keys(st.ack)) {
+    const [hk, t] = k.split("|");
+    if (!held.has(hk)) { delete st.ack[k]; continue; }
+    if (curKeys.has(k) || !priced.has(hk) || (t === "news" && !RM.news)) continue;
+    delete st.ack[k];
   }
   // 定期定額：扣款日到了、這個月還沒記
   const mo = today().slice(0, 7), day = +today().slice(8, 10);
@@ -1109,7 +1138,7 @@ function renderInvest() {
   const trades = [...S.trades].sort((a, b) => (b.date || "").localeCompare(a.date || "") || (b.ua || 0) - (a.ua || 0));
   const alerts = attention(act, mv);
   view.innerHTML = `
-  ${alerts.length ? `<div class="card attn"><h2>需要注意<span class="r">${alerts.length} 件</span></h2><div class="list">${alerts.map((a) => `<button class="al ${a.cls}" type="button" ${a.attr}><i></i><span><b>${esc(a.t)}</b>${a.d.map((x) => `<em>${esc(x)}</em>`).join("")}</span></button>`).join("")}</div></div>` : ""}
+  ${alerts.length ? `<div class="card attn"><h2>需要注意<span class="r">${alerts.length} 件</span></h2><div class="list">${alerts.map((a) => `<div class="al ${a.cls}"><i></i><div class="alc"><div class="alh"><button class="alm" type="button" ${a.attr}><b>${esc(a.t)}</b></button>${a.ack ? `<button class="btn sm ack" type="button" data-ack="${esc(a.ack)}">知道了</button>` : ""}</div><button class="alm" type="button" ${a.attr}>${a.d.map((x) => `<em>${esc(x)}</em>`).join("")}</button></div></div>`).join("")}</div>${alertHidden ? `<button class="unack" type="button" data-unack>還原已收起的 ${alertHidden} 件</button>` : ""}</div>` : alertHidden ? `<button class="unack solo" type="button" data-unack>已收起 ${alertHidden} 件提醒，點這裡還原</button>` : ""}
   <div class="tiles">
     <div class="tile"><div class="k">總市值（台幣）</div><div class="v num">${fmt(mv)}</div></div>
     <div class="tile"><div class="k">投入成本（台幣）</div><div class="v num">${fmt(cost)}</div></div>
@@ -1157,6 +1186,12 @@ ${(() => { const n = newsOf(h.m, h.sym); return n && (n.score || n.big) ? `<span
   $("#dcaAi").onclick = dcaAsk;
   $$("[data-plan]").forEach((b) => b.onclick = () => { const p = st.plans.find((x) => x.id === b.dataset.plan); const pr = priceOf(p.m, p.sym); const px = pr ? pr.p : NaN; const mu = /([\d.]+)\s*USDT/.exec(p.auto || ""); tradeForm(null, { m: p.m, sym: p.sym, name: p.name, bk: p.bk || "", note: p.auto ? "定投自動扣款" : "定期定額", p: isNum(px) ? px : "", q: mu && isNum(px) ? +(+mu[1] / px).toFixed(8) : isNum(px) ? +(p.amt / toTWD(p.m, px, fxNow())).toFixed(p.m === "CR" ? 6 : p.m === "US" ? 4 : 0) : "" }); });
   $$("[data-hold]").forEach((b) => b.onclick = () => holdSheet(H.find((h) => h.k === b.dataset.hold)));
+  $$("[data-ack]").forEach((b) => b.onclick = () => {
+    const a = alerts.find((x) => x.ack === b.dataset.ack); if (!a) return;
+    st.ack = Object.assign({}, st.ack || {}); a.keys.forEach(([t, v]) => { st.ack[a.ack + "|" + t] = v; });
+    saveSettings(); render(); toast("收起來了，情況變差會再提醒");
+  });
+  $$("[data-unack]").forEach((b) => b.onclick = () => { st.ack = {}; saveSettings(); render(); });
   $$("[data-dcapend]").forEach((b) => b.onclick = () => {
     const p = st.plans.find((x) => x.id === b.dataset.dcapend); if (!p) return;
     const pr = priceOf(p.m, p.sym), px = pr ? pr.p : NaN, mu = /([\d.]+)\s*USDT/.exec(p.auto || "");
