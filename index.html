@@ -1955,6 +1955,7 @@ function photoPrompt(h) {
     + `今天是 ${h.today}。只輸出一個 JSON 物件，不要任何其他文字，格式：\n`
     + '{"tx":[{"type":"exp或inc","amt":台幣金額數字,"cat":"分類","date":"YYYY-MM-DD","acct":"帳戶","note":"店名或品項，15 字內"}],"trades":[{"m":"TW或US或CR","side":"buy或sell或div","sym":"代號","name":"名稱","q":數量,"p":成交單價,"fee":手續費,"tax":交易稅,"amt":股利金額,"date":"YYYY-MM-DD","bk":"平台"}]}\n'
     + `支出分類只能用：${h.expCats.join("、")}；收入分類只能用：${h.incCats.join("、")}；帳戶只能用：${h.accounts.join("、")}（刷卡用信用卡、現金收據用現金，看不出來用第一個）。平台盡量從這些挑：${h.brokers.join("、")}，看得出 App 名稱就照寫。\n`
+    + "菜單或價目表（店裡的菜單、點餐看板、外送 App 的品項頁）也要記：當成一筆餐飲支出，日期用今天；有標特價就用特價；只有一個品項、或某個品項特別明顯（被框起來、照片正中間、拍得最完整）就只記那一筆，備註寫品名；好幾個品項看不出點了哪個，就把看得清楚的品項各列一筆（最多 5 筆）並加上 \"pick\":false，讓使用者自己勾。"
     + "規則：一張發票或收據只記一筆總額（不要拆品項）；信用卡、銀行明細或消費紀錄的截圖，每一筆消費各記一筆，日期照明細上的；同一筆消費出現在好幾張圖裡（例如發票加刷卡通知）只記一次；退款記成收入、分類用其他。"
     + "交易畫面每筆成交各記一筆；台股代號用數字（ETF 可能帶 A 或 B，例如 00991A），美股用英文代號，加密貨幣用幣種（例如 BTC）且價格用 USDT；看不到日期就用今天；看不清楚的數字寧可不記。庫存或持倉畫面（只有均價、沒有單筆成交）就把每檔當作一筆買進，數量用庫存、價格用成本均價、date 用今天。";
 }
@@ -1999,9 +2000,9 @@ async function photoFlow(files) {
       const rows = [...state.tx.map((t, i) => ({ k: "tx", i, t })), ...state.trades.map((t, i) => ({ k: "tr", i, t }))];
       if (!rows.length) { box.innerHTML = `<div class="empty">照片裡沒看到金額或成交紀錄，換一張清楚一點的再試</div>`; return; }
       const st = S.settings;
-      box.innerHTML = `<div class="tiny" style="margin-bottom:4px">AI 看到 ${rows.length} 筆。金額、分類、日期、備註都可以直接改，不要的取消勾選</div><div class="list">${rows.map((r) => {
+      box.innerHTML = `<div class="tiny" style="margin-bottom:4px">${state.tx.some((t) => t.pick === false) ? `這是菜單，AI 列出 ${rows.length} 個品項，勾你點的那個` : `AI 看到 ${rows.length} 筆，都可以直接改，不要的取消勾選`}</div><div class="list">${rows.map((r) => {
         const t = r.t;
-        if (r.k === "tx") return `<div class="pick" data-row="tx:${r.i}"><input type="checkbox" checked aria-label="記這筆">
+        if (r.k === "tx") return `<div class="pick" data-row="tx:${r.i}"><input type="checkbox"${t.pick === false ? "" : " checked"} aria-label="記這筆">
           <span class="pk"><span class="ty ${t.type === "inc" ? "inc" : ""}">${t.type === "inc" ? "收入" : "支出"}</span><select data-f="cat" aria-label="分類">${(t.type === "inc" ? st.incCats : st.expCats).map((c) => `<option${c === t.cat ? " selected" : ""}>${esc(c)}</option>`).join("")}</select></span>
           <input class="num pa" data-f="amt" inputmode="decimal" value="${isNum(t.amt) ? t.amt : ""}" aria-label="金額">
           <span class="pe"><input type="date" data-f="date" value="${esc(t.date || today())}" aria-label="日期"><input data-f="note" value="${esc(t.note || "")}" placeholder="備註" aria-label="備註"></span></div>`;
@@ -2024,7 +2025,7 @@ async function photoFlow(files) {
         $$(".pick", box).forEach((row) => {
           const c = $("input[type=checkbox]", row); if (!c.checked) return;
           const [k, i] = row.dataset.row.split(":"); const t = (k === "tx" ? state.tx : state.trades)[+i];
-          if (k === "tx") { if (!isNum(t.amt) || t.amt <= 0) return; S.tx.push(Object.assign({ id: uid(), ua: now(), acct: S.settings.accounts[0], date: today(), note: "" }, t, { src: "photo" })); n++; }
+          if (k === "tx") { if (!isNum(t.amt) || t.amt <= 0) return; const tt = Object.assign({}, t); delete tt.pick; S.tx.push(Object.assign({ id: uid(), ua: now(), acct: S.settings.accounts[0], date: today(), note: "" }, tt, { src: "photo" })); n++; }
           else { if (!t.sym || !(t.side === "div" ? t.amt > 0 : t.q > 0 && t.p > 0)) return; S.trades.push(Object.assign({ id: uid(), ua: now(), m: "TW", side: "buy", name: "", q: 0, p: 0, amt: 0, fee: 0, tax: 0, date: today(), note: "", bk: "" }, t, { fx: t.m === "TW" ? 1 : fxNow(), src: "photo" })); n++; }
         });
         if (!n) { toast("沒有可以記的項目"); return; }
@@ -2032,7 +2033,8 @@ async function photoFlow(files) {
       };
     };
     try {
-      const hints = { today: today(), expCats: S.settings.expCats, incCats: S.settings.incCats, accounts: S.settings.accounts, brokers: brokers() };
+      const hints = { today: today(), expCats: S.settings.expCats, incCats: S.settings.incCats, accounts: S.settings.accounts, brokers: brokers(),
+        rules: "菜單或價目表（店裡的菜單、點餐看板、外送 App 的品項頁）也要記：當成一筆餐飲支出，日期用今天；有標特價就用特價；只有一個品項、或某個品項特別明顯（被框起來、照片正中間、拍得最完整）就只記那一筆，備註寫品名；好幾個品項看不出點了哪個，就把看得清楚的品項各列一筆（最多 5 筆）並加上 \"pick\":false，讓使用者自己勾。" };
       let r;
       if (aiFastOn()) {
         const content = urls.map((u) => ({ type: "image", source: { type: "base64", media_type: "image/jpeg", data: u.split(",")[1] } }));
