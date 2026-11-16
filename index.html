@@ -196,7 +196,9 @@ details summary{cursor:pointer;color:var(--blue);font-size:14px;font-weight:700;
 .mini .t b{font-size:14px;color:var(--ink);font-weight:700}
 .mini .tiny.num{font-size:15px;color:var(--ink)}
 .lvup{text-align:center;padding:10px 0 4px}
-.lvup .big{font-family:var(--f-num);font-size:56px;font-weight:500;color:var(--red)}
+.lvup .big{font-family:var(--f-num);font-size:56px;font-weight:500;color:var(--red);line-height:1;margin:6px 0 12px}
+.lvup .ttl{font-size:17px;font-weight:700;line-height:1.5}
+.lvup p{margin:10px 0 0}
 .shot{display:block;width:100%;max-height:220px;object-fit:contain;background:var(--paper);border:1.5px solid var(--ink)}
 .pick{display:grid;grid-template-columns:22px minmax(0,1fr) auto;gap:4px 10px;align-items:center;padding:10px 0;border-top:1px solid var(--hair)}
 .pick:first-child{border-top:0}
@@ -1464,7 +1466,7 @@ function rewardCheck() {
   if (lastGame && g.xp > lastGame.xp) {
     if (g.level > lastGame.level) {
       const un = UNLOCKS.filter((u) => u.lv > lastGame.level && u.lv <= g.level);
-      openSheet("雨林箱升級", `<div class="lvup"><div class="big">Lv.${g.level}</div><div>${esc(TITLES[Math.min(g.level, TITLES.length) - 1])}</div>
+      openSheet("雨林箱升級", `<div class="lvup"><div class="big">Lv.${g.level}</div><div class="ttl">${esc(TITLES[Math.min(g.level, TITLES.length) - 1])}</div>
         ${un.length ? `<p>解鎖：<b>${un.map((u) => esc(u.name)).join("、")}</b></p>` : ""}</div>
         <div class="terra">${terraSVG(g)}</div><div class="btns" style="margin-top:10px"><button class="btn pri" type="button" data-close style="flex:1">好</button></div>`);
     } else { const gain = g.xp - lastGame.xp; setTimeout(() => toast(`雨林箱 +${gain} 露水`), 900); }
