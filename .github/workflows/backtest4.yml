@@ -29,6 +29,13 @@ jobs:
     timeout-minutes: 300
     steps:
       - uses: actions/checkout@v4
+      # Finnhub 抓回來的財報只放在 Actions 的快取，不放進公開的 repo（免費方案的資料不該再公開散布）
+      - name: 還原 Finnhub 財報快取
+        uses: actions/cache@v4
+        with:
+          path: data/cache/bt_fh_raw.json
+          key: bt-fh-raw-${{ github.run_id }}
+          restore-keys: bt-fh-raw-
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
@@ -50,6 +57,7 @@ jobs:
           path: |
             data/backtest4.json
             data/cache/bt_*.json
+            !data/cache/bt_fh_raw.json
           if-no-files-found: ignore
       - name: 存回 repo
         if: always()

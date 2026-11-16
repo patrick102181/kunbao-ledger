@@ -1,0 +1,2 @@
+# Finnhub 財報快取：只放在 Actions 快取，不進 repo
+data/cache/bt_fh_raw.json
