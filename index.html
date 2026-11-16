@@ -783,7 +783,7 @@ let LQ = { q: {}, t: 0, err: "", busy: false }, quoteMsg = null;
 const quoteUrl = () => (S.settings.quoteUrl || "").trim().replace(/\/+$/, "");
 const liveOk = () => !!(quoteUrl() && LQ.t && !LQ.err && now() - LQ.t < 10 * 60e3);
 function liveKeys() {
-  const ks = [...holdings().filter((h) => h.sh > 0).map((h) => h.m + ":" + h.sym), ...S.settings.plans.map((p) => p.m + ":" + p.sym), ...S.recs.filter((r) => r.status !== "pass").map((r) => r.m + ":" + r.sym)];
+  const ks = [...holdings().filter((h) => h.sh > 0).map((h) => h.m + ":" + h.sym), ...S.settings.plans.map((p) => p.m + ":" + p.sym)];
   return [...new Set(ks.filter((k) => /^(TW|US):[A-Z0-9.\-]{1,12}$/.test(k)))].slice(0, 40);
 }
 async function quoteGet(u, keys) {
@@ -1186,9 +1186,9 @@ const od = (k) => (L.open && L.open[k] ? " open" : "");
 function render() {
   const t = L.tab;
   $$("nav.tabs button").forEach((b) => b.setAttribute("aria-current", b.dataset.tab === t ? "page" : "false"));
-  $("#fab").style.display = t === "settings" || t === "game" ? "none" : "";
+  $("#fab").style.display = t === "book" || t === "invest" ? "" : "none";   // 推薦紀錄拿掉了，市場頁不用新增按鈕
   $("#cam").style.display = t === "book" || t === "invest" ? "" : "none";
-  $("#fab").setAttribute("aria-label", t === "book" ? "記一筆帳" : t === "invest" ? "記一筆交易" : "新增推薦");
+  $("#fab").setAttribute("aria-label", t === "book" ? "記一筆帳" : "記一筆交易");
   if (t === "book") renderBook(); else if (t === "invest") renderInvest(); else if (t === "recs") renderRecs(); else if (t === "game") renderGame(); else renderSettings();
   $$("details[data-k]").forEach((d) => d.addEventListener("toggle", () => { L.open = Object.assign({}, L.open); if (d.open) L.open[d.dataset.k] = 1; else delete L.open[d.dataset.k]; saveL(); }));
   paintSync();
@@ -1392,18 +1392,7 @@ function rebalanceHint(rows, tot) {
 
 function renderRecs() {
   const sm = R.sum;
-  const recs = S.recs.filter((r) => recFilter === "all" || r.status === recFilter).sort((a, b) => (b.date || "").localeCompare(a.date || "") || (b.ua || 0) - (a.ua || 0));
   const benches = [...(R.tw?.benchmarks || []).map((x) => ({ ...x, mk: "TW" })), ...(R.us?.benchmarks || []).map((x) => ({ ...x, mk: "US" }))].filter((x) => x.l);
-  // 點位規則（買進區、出場線、目標價）的歷史成績，來自 data/backtest4.json 的 app_rule
-  const ruleTrack = () => {
-    const rows = [["tw", "台股"], ["us", "美股"]].map(([k, n]) => [n, R.bt4 && R.bt4[k] && R.bt4[k].app_rule, R.bt4 && R.bt4[k]]).filter((x) => x[1] && isNum(x[1].win));
-    if (!rows.length) return "";
-    const pc = (x) => isNum(x) ? Math.round(x * 100) + "%" : "－", pp = (x) => !isNum(x) ? "－" : (x > 0 ? "+" : x < 0 ? "−" : "") + Math.abs(x * 100).toFixed(1);
-    return `<details class="more" data-k="trk-more"${od("trk-more")}><summary>這些點位過去準不準</summary>
-      <p class="tiny" style="color:var(--ink);margin:2px 0 8px">不準。照買進區進場、出場線停損、目標價停利去操作，多數交易是停損出場，平均輸給直接抱大盤。點位只能當參考，不是買賣訊號。</p>
-      <div class="scroll"><table class="tbl"><thead><tr><th>回測</th><th class="r">筆數</th><th class="r">賺錢</th><th class="r">停損</th><th class="r">比大盤</th></tr></thead><tbody>${rows.map(([n, r, b]) => `<tr><td>${n}<div class="tiny">約 ${Math.round(b.weeks / 52)} 年</div></td><td class="r num">${fmt(r.n)}</td><td class="r num">${pc(r.win)}</td><td class="r num">${pc(r.stop_rate)}</td><td class="r num">${pp(r.excess_vs_index)}</td></tr>`).join("")}</tbody></table></div>
-      <p class="tiny" style="margin:6px 0 0">「比大盤」是平均每筆交易跟同期大盤的差距，單位百分點。原本的「衛星層候選」名單也測過，選出來的股票跟隨便買差不多，所以已經拿掉。歷史回測不代表未來。</p></details>`;
-  };
   const tw0 = R.tw, us0 = R.us, o = tw0 && tw0.overview, ins = o && o.insti, v = tw0 && tw0.valuation, uo = us0 && us0.overview, uv = us0 && us0.valuation;
   const stk = (x) => !x || !isNum(x.streak) || x.streak === 0 ? "－" : x.streak > 0 ? `連買 ${x.streak} 天` : `連賣 ${-x.streak} 天`;
   const cell = (k, val, sub) => `<div><small>${k}</small><b class="num">${val}</b>${sub ? `<em>${sub}</em>` : ""}</div>`;
@@ -1426,18 +1415,9 @@ function renderRecs() {
     ${Object.values(autoJob).map((x) => `<p class="autoj"><i></i>${esc(x)}</p>`).join("")}
     ${autoNoKey() ? `<p class="autoj warn"><i></i>市場資料晚了，GitHub 的排程還沒跑。想讓 App 自動補跑，到「設定 → 連線與資料 → 自動抓價與 AI」看怎麼開權限</p>` : ""}
   </div>
-  <div class="card"><h2>我的推薦紀錄<span class="r">${S.recs.length} 筆</span></h2>
-    <div class="seg" role="tablist">${["watch", "bought", "pass", "all"].map((k) => `<button type="button" class="${recFilter === k ? "on" : ""}" data-rf="${k}">${k === "all" ? "全部" : STATUS[k]} <span class="n">${k === "all" ? S.recs.length : S.recs.filter((r) => r.status === k).length}</span></button>`).join("")}</div>
-    <div class="list" style="margin-top:6px">${recs.map((r) => { const pr = priceOf(r.m, r.sym); const ch = pr && isNum(r.px) && r.px > 0 ? pr.p / r.px - 1 : NaN; return `<button class="hold rc" type="button" data-rec="${esc(r.id)}">
-      <span class="rn"><b>${esc(r.sym)}</b><span>${esc(r.name || "")}</span></span>
-      <span class="amt num ${signCls(ch)}" style="text-align:right">${isNum(ch) ? pct(ch) : "－"}</span>
-      <span class="rt"><span class="chip">${MK[r.m]}</span>${r.src ? `<span class="chip">${esc(r.src)}</span>` : ""}</span>
-      <span class="rp num">${isNum(r.px) ? fmtP(r.px) : "－"} → ${pr ? fmtP(pr.p) : "－"}</span>
-      <span class="b" style="grid-column:1/-1">${esc(r.date || "")}${r.reason ? "・" + esc(r.reason) : ""}</span>${(() => { const v = r.status !== "pass" && recLv(r.m, r.sym), j = v && judge(r); return v ? `
-      <span class="lv"><span class="lt"><span class="cg"><span class="chip ${j.cls}">${j.v}</span>${newsChip(j.nw)}</span><small>點位（${CUR[r.m]}）</small></span><span><small>買進區</small><b class="num">${fmtP(v.bLo)}～${fmtP(v.bHi)}</b></span><span><small>出場線</small><b class="num">${fmtP(v.stop)}</b></span><span><small>目標</small><b class="num">${v.tg.length ? fmtP(v.tg[0]) : "－"}</b></span></span>` : ""; })()}</button>`; }).join("") || `<div class="empty">${recFilter === "watch" ? "按右下角 ＋ 新增，或用下面的「貼上別人的推薦」，之後會自動追蹤加入後的漲跌" : "沒有紀錄"}</div>`}</div>
-    ${ruleTrack()}
-    <div class="sub">AI 助手<small>${ghCfg() ? "在 GitHub Actions 上執行" : "要先到設定連上 GitHub"}</small></div>
-    <div class="btns" style="margin-top:8px"><button class="btn pri sm" type="button" id="aiCheck"${aiBusy ? " disabled" : ""}>幫我健檢記帳與持股</button><button class="btn sm" type="button" id="aiPaste">貼上別人的推薦，讓 AI 整理</button></div>
+  <div class="card"><h2>AI 健檢<span class="r">${ghCfg() ? "在 GitHub Actions 上執行" : "要先到設定連上 GitHub"}</span></h2>
+    <p class="tiny" style="color:var(--ink);margin:0">讓 AI 看一遍記帳、預算和持股，指出要注意的地方。</p>
+    <div class="btns" style="margin-top:10px"><button class="btn pri sm" type="button" id="aiCheck"${aiBusy ? " disabled" : ""}>幫我健檢記帳與持股</button></div>
     ${(() => { const rv = RM.ai && RM.ai.review; const txt = aiOut || (rv && rv.text ? rv.text : ""); return txt ? `<div class="aiout" style="margin-top:10px">${esc(txt)}</div>${!aiOut && rv ? `<div class="tiny" style="margin-top:4px">上次健檢：${esc(rv.generated || "")}</div>` : ""}` : ""; })()}
   </div>`;
   $("#reloadRadar").onclick = async () => {
@@ -1448,10 +1428,7 @@ function renderRecs() {
     const tw = hm(R.tw), us = hm(R.us);
     toast(R.err ? R.err.slice(0, 40) : `${[R.tw && R.tw.updated, R.us && R.us.updated].join() === before ? "已是最新" : "已更新"}：台股 ${tw}・美股 ${us}`);
   };
-  $$("[data-rf]").forEach((b) => b.onclick = () => { recFilter = b.dataset.rf; render(); });
-  $$("[data-rec]").forEach((b) => b.onclick = () => recForm(S.recs.find((r) => r.id === b.dataset.rec)));
   $("#aiCheck").onclick = aiCheck;
-  $("#aiPaste").onclick = aiPasteSheet;
 }
 
 function renderSettings() {
@@ -2275,7 +2252,7 @@ async function photoFlow(files) {
 $("#cam").onclick = () => $("#camIn").click();
 $("#camIn").onchange = (e) => { const fs = [...e.target.files]; e.target.value = ""; if (fs.length) photoFlow(fs); };
 
-$("#fab").onclick = () => { const t = L.tab; if (t === "book") txForm(); else if (t === "invest") tradeForm(); else if (t === "recs") recForm(); };
+$("#fab").onclick = () => { const t = L.tab; if (t === "book") txForm(); else if (t === "invest") tradeForm(); };
 $("#syncChip").onclick = () => { if (ghCfg()) { sync().then(loadRemote).then(() => autoPrices(true)); } else { L.tab = "settings"; saveL(); render(); } };
 document.addEventListener("visibilitychange", () => {
   if (document.visibilityState !== "visible") return;
