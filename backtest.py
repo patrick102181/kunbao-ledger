@@ -262,6 +262,42 @@ def dca_sim(dc, mult):
             "xirr": rnd4(xirr(flows + [(last_d, units * last_p)])), "multiple": round(units * last_p / put, 4)}
 
 
+def reserve_sim(dc, base, ks, keep=0.2):
+    """同樣每月拿出 1 元：A 全部照常扣；B 只扣 0.8、留 0.2 當子彈，到補倉點才把子彈打出去（每到一格打 1 期的量，有多少打多少）。
+    回傳 B 的期末總值（含沒打完的現金）是 A 的幾倍：大於 1 才代表「留子彈等下跌」比較好"""
+    months = dc.groupby([dc.index.year, dc.index.month]).head(1)
+    ua = ub = cash = 0.0
+    n_m = 0
+    for d, p in months.items():
+        if d not in base.index or base[d] != base[d]:
+            continue
+        p, n_m = float(p), n_m + 1
+        ua += 1 / p
+        ub += (1 - keep) / p
+        cash += keep
+        n = sum(1 for k in ks(d) if p <= k)
+        use = min(cash, float(n))
+        ub += use / p
+        cash -= use
+    if n_m < 24:
+        return None
+    last = float(dc.iloc[-1])
+    return {"ratio": round((ub * last + cash) / (ua * last), 4), "cash_left": round(cash, 1)}
+
+
+def fix_splits(dc, name):
+    """Yahoo 偶爾漏調整股票分割（例如 0050 在 2025 年 1 拆 4）：單日價格變成 1/2、1/3、1/4、1/5、1/10 左右就把之前的價格一起縮"""
+    dc = dc.dropna().copy()
+    r = dc / dc.shift(1)
+    for d in r[(r < 0.55) | (r > 1.9)].index:
+        x = float(r[d])
+        f = min((1 / 2, 1 / 3, 1 / 4, 1 / 5, 1 / 10, 2, 3, 4, 5, 10), key=lambda k: abs(math.log(x / k)))
+        if abs(math.log(x / f)) < 0.12:
+            M.log(f"  {name} {d.date()} 價格跳成 {x:.3f} 倍，當成分割沒調整，修正之前的價格")
+            dc[dc.index < d] *= f
+    return dc
+
+
 def trend_sim(dc, frac, cost):
     """一次買進抱著不動 vs「週收盤跌破週 MA52 就賣掉 frac、站回去再買回」。回傳年化報酬與最大跌幅"""
     wk = dc.resample("W-FRI").last().dropna()
@@ -301,7 +337,7 @@ def run_core():
         dc = M.col(d, "Close", t)
         if dc is None:
             continue
-        dc = dc.dropna()
+        dc = fix_splits(dc, name)
         base = dc.rolling(240).mean()
         ok = lambda dd: dd in base.index and base[dd] == base[dd]  # noqa
         plain = dca_sim(dc, lambda dd, p: 1.0 if ok(dd) else None)
@@ -309,7 +345,8 @@ def run_core():
         # 反過來：只在年線上面才多扣一期（追高），當對照組
         chase = dca_sim(dc, lambda dd, p: (2.0 if p > float(base[dd]) * 1.1 else 1.0) if ok(dd) else None)
         if plain and plus:
-            dca.append({"t": t, "name": name, "plain": plain, "plus": plus, "chase": chase})
+            dca.append({"t": t, "name": name, "plain": plain, "plus": plus, "chase": chase,
+                        "reserve": reserve_sim(dc, base, lambda dd: [float(base[dd]) * k for k in (1, 0.9, 0.8)])})
         for frac, key in ((0.1, "trim10"), (1.0, "all_out")):
             x = trend_sim(dc, frac, cost)
             if x:
@@ -334,6 +371,7 @@ def run_core():
              "plus": dca_sim(dc, lambda dd, p: lv_new(dd, p) if ok(dd) else None),
              "plus_half": dca_sim(dc, lambda dd, p: (0.5 if p > float(ma[dd]) * 2.4 else lv_new(dd, p)) if ok(dd) else None),
              "half_only": dca_sim(dc, lambda dd, p: (0.5 if p > float(ma[dd]) * 2.4 else 1.0) if ok(dd) else None)}
+        r["reserve"] = reserve_sim(dc, ma, lambda dd: [float(ma[dd]), float(ma[dd]) * 0.8, float(wma[dd]) if wma[dd] == wma[dd] else float(ma[dd]) * 0.6])
         if plain:
             dca.append(r)
         for frac, key in ((0.1, "trim10"), (1.0, "all_out")):
