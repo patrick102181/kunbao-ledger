@@ -39,6 +39,8 @@ jobs:
         env:
           MARKET: ${{ inputs.market }}
           YEARS: ${{ inputs.years }}
+          # 選填：Finnhub 免費金鑰。美股 10 年財報從這裡抓（SEC 會擋 GitHub 的機房、Yahoo 只給最近 5 季）
+          FINNHUB_API_KEY: ${{ secrets.FINNHUB_API_KEY }}
         run: python backtest4.py --market "$MARKET" --years "$YEARS"
       - name: 結果先存成 artifact（推不上去也不會不見）
         if: always()
