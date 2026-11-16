@@ -129,86 +129,125 @@ def yahoo_ts_fund(tickers, cache, path):
 
 
 FH_REV = ["Revenues", "RevenueFromContractWithCustomerExcludingAssessedTax", "SalesRevenueNet",
-          "RevenueFromContractWithCustomerIncludingAssessedTax", "RevenuesNetOfInterestExpense", "SalesRevenueGoodsNet"]
-FH_COST = ["CostOfRevenue", "CostOfGoodsAndServicesSold", "CostOfGoodsSold"]
+          "RevenueFromContractWithCustomerIncludingAssessedTax", "RevenuesNetOfInterestExpense", "SalesRevenueGoodsNet",
+          "RegulatedAndUnregulatedOperatingRevenue", "ElectricUtilityRevenue", "RealEstateRevenueNet", "OperatingLeasesIncomeStatementLeaseRevenue",
+          "SalesRevenueServicesNet", "HealthCareOrganizationRevenue", "OilAndGasRevenue", "InterestAndDividendIncomeOperating"]
+FH_COST = ["CostOfRevenue", "CostOfGoodsAndServicesSold", "CostOfGoodsSold", "CostOfGoodsAndServiceExcludingDepreciationDepletionAndAmortization"]
+FH_NI = ["NetIncomeLoss", "NetIncomeLossAvailableToCommonStockholdersBasic", "ProfitLoss"]
 FH_EPS = ["EarningsPerShareDiluted", "EarningsPerShareBasic", "EarningsPerShareBasicAndDiluted"]
+FH_KEEP = set(FH_REV + FH_COST + FH_NI + FH_EPS + ["GrossProfit", "OperatingIncomeLoss", "WeightedAverageNumberOfDilutedSharesOutstanding"])
 
 
-def _fh_rows(reports):
-    """Finnhub「照申報原樣」的報表 → [[季末, 申報日, 營收, 毛利, EPS], ...]
-    10-Q 的數字有兩種寫法：只含當季 3 個月，或從年初累計到當季。用期間長度分辨，累計的再減掉前一期變回單季；
-    第 4 季＝年報全年－前三季。接不起來的季別（中間缺一期）寧可空著，不硬算。"""
-    recs = {}
+def _fh_slim(reports):
+    """Finnhub 的原始報表只留回測用得到的科目：[[表單, 期間起, 期間迄, 申報日, {科目: [值, …]}], …]"""
+    out = []
     for r in reports or []:
         form = str(r.get("form") or "").upper()
         if not (form.startswith("10-Q") or form.startswith("10-K")):
             continue
-        try:
-            s, e, f = pd.Timestamp(str(r["startDate"])[:10]), pd.Timestamp(str(r["endDate"])[:10]), pd.Timestamp(str(r["filedDate"])[:10])
-        except Exception:  # noqa
-            continue
         ic = (r.get("report") or {}).get("ic") or {}
-        vals = {}
         items = ic.items() if isinstance(ic, dict) else [(x.get("concept"), x.get("value")) for x in ic if isinstance(x, dict)]
+        vals = {}
         for k, v in items:
             k = re.sub(r"^us-gaap[_:]", "", str(k or ""))
+            if k not in FH_KEEP:
+                continue
             try:
                 v = float(v)
             except Exception:  # noqa
                 continue
-            if v == v:
-                vals.setdefault(k, v)   # 同一科目出現多次時取第一個（合併報表的總數排在前面）
-        first = lambda tags: next((vals[t] for t in tags if t in vals), None)  # noqa
-        rev, eps, gp = first(FH_REV), first(FH_EPS), vals.get("GrossProfit")
-        if gp is None and rev is not None and first(FH_COST) is not None:
-            gp = rev - first(FH_COST)
-        if rev is None and eps is None:
+            if v == v and len(vals.setdefault(k, [])) < 4 and v not in vals[k]:
+                vals[k].append(v)
+        if vals:
+            out.append([form, str(r.get("startDate"))[:10], str(r.get("endDate"))[:10], str(r.get("filedDate"))[:10], vals])
+    return out
+
+
+def _fh_rows(slim):
+    """精簡後的報表 → [[季末, 申報日, 營收, 毛利, 淨利], ...]
+    第 5 欄放「淨利」不是 EPS：Finnhub 早年的 EPS 被四捨五入成整數，股票分割前後也接不起來；淨利沒有這兩個問題，
+    拿來算年增率跟 EPS 年增率幾乎一樣（只差庫藏股的影響）。
+    10-Q 的數字有兩種寫法：只含當季，或從年初累計到當季。用期間長度分辨，累計的減掉前一期變回單季；
+    第 4 季＝年報全年－前三季。相減時兩期一定用同一個科目；接不起來的季別寧可空著，不硬算。"""
+    recs = {}
+    for form, s, e, f, vals in slim or []:
+        try:
+            s, e, f = pd.Timestamp(s), pd.Timestamp(e), pd.Timestamp(f)
+        except Exception:  # noqa
             continue
         old = recs.get((s, e))
         if old is None or f < old["f"]:   # 更正申報（10-Q/A）不算，用最早那份的申報日
-            recs[(s, e)] = {"s": s, "e": e, "f": f, "d": (e - s).days, "v": [rev, gp, eps]}
+            recs[(s, e)] = {"s": s, "e": e, "f": f, "d": (e - s).days, "v": vals}
     rs = sorted(recs.values(), key=lambda x: (x["e"], x["d"]))
-    out = {}   # 季末 → (申報日, [營收, 毛利, EPS])
+
+    def one(r, tags, big=True):
+        """單一報表裡某類科目的值：照科目優先順序，同科目多筆時取絕對值最大的（合計數）"""
+        for t in tags:
+            if t in r["v"]:
+                return max(r["v"][t], key=abs) if big else r["v"][t][0]
+        return None
+
+    def diff(r, p, tags):
+        """累計數相減：兩期都有的同一個科目才減"""
+        for t in tags:
+            if t in r["v"] and t in p["v"]:
+                return max(r["v"][t], key=abs) - max(p["v"][t], key=abs)
+        return None
+
+    def trio(r, p=None):
+        if p is None:
+            rev, ni, gp, cost = one(r, FH_REV), one(r, FH_NI, big=False), one(r, ["GrossProfit"]), one(r, FH_COST)
+        else:
+            rev, ni, gp, cost = diff(r, p, FH_REV), diff(r, p, FH_NI), diff(r, p, ["GrossProfit"]), diff(r, p, FH_COST)
+        if gp is None and rev is not None and cost is not None:
+            gp = rev - cost
+        return [rev, gp, ni]
+
+    def prev_of(r):
+        """同一個會計年度起點、剛好早一季的那份累計報表"""
+        c = [x for x in rs if abs((x["s"] - r["s"]).days) <= 10 and 70 <= r["d"] - x["d"] <= 125]
+        return c[-1] if c else None
+
+    out = {}   # 季末 → (申報日, [營收, 毛利, 淨利])
     for r in rs:
-        if 75 <= r["d"] <= 100:
-            out.setdefault(r["e"], (r["f"], r["v"]))
-    sub = lambda a, b: [None if x is None or y is None else x - y for x, y in zip(a, b)]  # noqa
-    # 期間寫成「年初到當季」的報表（半年 170～195 天、九個月 260～285 天）：找同一個會計年度起點、往前一期的來比
-    long_ = []
-    for r in rs:
-        if not (170 <= r["d"] <= 195 or 260 <= r["d"] <= 285) or r["e"] in out:
-            continue
-        want = r["d"] - 91
-        prev = [x for x in rs if abs((x["s"] - r["s"]).days) <= 10 and abs(x["d"] - want) <= 12]
-        long_.append((r, prev[-1] if prev else None))
-    # 有些報表期間寫的是累計、數字卻是單季：看半年報營收是第 1 季的幾倍，累計的會接近 2 倍、單季的接近 1 倍
-    ratios = sorted(r["v"][0] / p["v"][0] for r, p in long_ if p and r["d"] <= 195 and r["v"][0] and p["v"][0] and p["v"][0] > 0)
+        if 70 <= r["d"] <= 125:   # 單季（含 12 週、16 週制的公司）
+            out.setdefault(r["e"], (r["f"], trio(r)))
+    long_ = [(r, prev_of(r)) for r in rs if 125 < r["d"] < 340 and r["e"] not in out]
+    # 有些報表期間寫的是累計、數字卻是單季：看半年報營收是第 1 季的幾倍，累計的接近 2 倍、單季的接近 1 倍
+    ratios = sorted(a / b for a, b in ((one(r, FH_REV), one(p, FH_REV)) for r, p in long_ if p is not None and r["d"] <= 200) if a and b and b > 0)
     cum = not ratios or ratios[len(ratios) // 2] >= 1.5
     for r, p in long_:
         if not cum:
-            out[r["e"]] = (r["f"], r["v"])
-        elif p:
-            out[r["e"]] = (r["f"], sub(r["v"], p["v"]))
-    # 年報 → 第 4 季
-    for r in rs:
-        if not 350 <= r["d"] <= 380 or any(abs((r["e"] - k).days) <= 10 for k in out):
+            out[r["e"]] = (r["f"], trio(r))
+        elif p is not None:
+            out[r["e"]] = (r["f"], trio(r, p))
+    for r in rs:   # 年報 → 第 4 季
+        if not 340 <= r["d"] <= 380 or any(abs((r["e"] - k).days) <= 10 for k in out):
             continue
-        nine = [x for x in rs if cum and abs((x["s"] - r["s"]).days) <= 10 and 260 <= x["d"] <= 285]
-        if nine:
-            out[r["e"]] = (r["f"], sub(r["v"], nine[-1]["v"]))
+        p = prev_of(r) if cum else None
+        if p is not None:
+            out[r["e"]] = (r["f"], trio(r, p))
             continue
         parts = [out[k][1] for k in out if r["s"] < k < r["e"] - pd.Timedelta(days=20)]
         if len(parts) == 3:
-            tot = [None if any(p[i] is None for p in parts) else sum(p[i] for p in parts) for i in range(3)]
-            out[r["e"]] = (r["f"], sub(r["v"], tot))
-    return [[e.strftime("%Y-%m-%d"), f.strftime("%Y-%m-%d"), v[0], v[1], v[2]] for e, (f, v) in sorted(out.items())]
+            fy = trio(r)
+            out[r["e"]] = (r["f"], [None if fy[i] is None or any(q[i] is None for q in parts) else fy[i] - sum(q[i] for q in parts) for i in range(3)])
+    rows = []
+    for e, (f, v) in sorted(out.items()):
+        if v[0] is not None and v[0] <= 0:   # 營收算出負的或 0：一定是資料接錯，整季不要
+            continue
+        if v[0] is None and v[2] is None:
+            continue
+        rows.append([e.strftime("%Y-%m-%d"), f.strftime("%Y-%m-%d"), v[0], v[1], v[2]])
+    return rows
 
 
 def finnhub_fund(tickers, key):
     """美股 10 年財報：Finnhub 免費金鑰的「Financials As Reported」（資料來自 SEC 申報，帶申報日）。
-    免費額度每分鐘 60 次，一檔要抓季報、年報兩次，900 檔約 35 分鐘；快取在 cache/bt_fh.json，中斷了下次接著抓。
+    免費額度每分鐘 60 次，一檔要抓季報、年報兩次，900 檔約 35 分鐘。
+    快取 cache/bt_fh_raw.json 存的是精簡後的原始報表，之後改算法不用重抓；中斷了下次接著抓。
     抓不到（金鑰無效、這個端點不給免費用）就回傳 None，由呼叫端改用別的來源。"""
-    path = os.path.join(CACHE, "bt_fh.json")
+    path = os.path.join(CACHE, "bt_fh_raw.json")
     cache = M.load_json(path, {})
     todo = [t for t in tickers if t not in cache]
     log(f"Finnhub 財報：快取 {len(cache)}，這次抓 {len(todo)}")
@@ -232,7 +271,6 @@ def finnhub_fund(tickers, key):
             return r.json().get("data") or []
         return None
 
-    got = 0
     for i, t in enumerate(todo):
         try:
             sym = t.replace("-", ".")
@@ -244,19 +282,19 @@ def finnhub_fund(tickers, key):
             break
         if q is None and a is None:
             continue
-        rows = _fh_rows((q or []) + (a or []))
-        cache[t] = rows
-        got += 1 if rows else 0
+        cache[t] = _fh_slim((q or []) + (a or []))
         if i % 50 == 49:
             log(f"  Finnhub {i + 1}/{len(todo)}")
             M.save_json(path, cache)
-    M.save_json(path, cache)
-    have = [v for v in cache.values() if v]
-    if have:
-        ns = sorted(len(v) for v in have)
-        ys = sorted(int(v[0][0][:4]) for v in have)
-        log(f"Finnhub 財報：這次抓到 {got} 檔；有資料的 {len(have)} 檔，每檔季數中位數 {ns[len(ns) // 2]}，最早年份中位數 {ys[len(ys) // 2]}")
-    return {t: cache[t] for t in tickers if cache.get(t)}
+    if todo:
+        M.save_json(path, cache)
+    out = {t: _fh_rows(cache[t]) for t in tickers if cache.get(t)}
+    out = {t: v for t, v in out.items() if v}
+    if out:
+        ns = sorted(len(v) for v in out.values())
+        ys = sorted(int(v[0][0][:4]) for v in out.values())
+        log(f"Finnhub 財報：有資料的 {len(out)} 檔，每檔季數中位數 {ns[len(ns) // 2]}，最早年份中位數 {ys[len(ys) // 2]}")
+    return out
 
 
 def sec_fund(tickers):
