@@ -754,6 +754,17 @@ def run(mk, years, limit=None):
             "forward": fw, "app_rule": rule, "app_rule_open": still, "recent_picks": recent}
 
 
+def _clean(o):
+    """NaN、無限大換成 null：瀏覽器的 JSON 不認得 NaN，整個檔會讀不進去"""
+    if isinstance(o, dict):
+        return {k: _clean(v) for k, v in o.items()}
+    if isinstance(o, (list, tuple)):
+        return [_clean(v) for v in o]
+    if isinstance(o, float) and (o != o or o in (float("inf"), float("-inf"))):
+        return None
+    return o
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--market", default="all", choices=["all", "tw", "us"])
@@ -771,7 +782,7 @@ def main():
             import traceback
             traceback.print_exc()
             out[mk] = {"error": repr(e)}
-        M.save_json(path, out)
+        M.save_json(path, _clean(out))
     print(json.dumps({k: v for k, v in out.items() if k != "rules"}, ensure_ascii=False)[:60000])
 
 

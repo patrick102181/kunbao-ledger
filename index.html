@@ -222,21 +222,7 @@ details summary{cursor:pointer;color:var(--blue);font-size:14px;font-weight:700;
 @media (max-width:360px){.hero .big{font-size:54px}}
 
 /* 衛星層候選：手機上用兩欄卡片列，代號與分數對齊、觸發條件各自成一個標籤 */
-.cand{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px 12px;padding:12px 0;border-top:1px solid var(--hair)}
-.cand:first-child{border-top:0}
-.cand .cn{display:flex;align-items:baseline;gap:8px;min-width:0}
-.cand .cn b{font-family:var(--f-num);font-weight:600;font-size:17px;flex:none}
-.cand .cn span{font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
-.cand .cs{display:flex;align-items:baseline;gap:6px;justify-self:end}
-.cand .cs small{font-size:11px;color:var(--muted)}
-.cand .cs .num{font-size:22px;line-height:1;min-width:2ch;text-align:right}
-.cand .ct{display:flex;flex-wrap:wrap;gap:6px;align-content:center;min-width:0}
-.cand .ct .chip{background:var(--paper);border-color:var(--hair)}
-.cand .ca{display:flex;align-items:center;gap:8px;justify-self:end}
-.cand .ct,.cand .ca{align-self:start}
 
-.cand .ca .chip{min-width:68px;justify-content:center}
-.cand .ca .btn.sm{min-width:64px}
 
 /* iPhone Safari：日期欄有內建最小寬度會撐出格子、下拉選單有自己的箭頭——全部統一成同高同寬的方框 */
 .two>*{min-width:0}
@@ -334,8 +320,6 @@ input[type=checkbox]:focus-visible{outline:2px solid var(--blue);outline-offset:
 .sync::before{position:absolute;left:10px;top:50%;transform:translateY(-50%);margin:0;vertical-align:0}
 .toast{padding:calc((38px - .733em) / 2 + var(--ko)) 18px calc((38px - .733em) / 2 - var(--ko))}
 .pick .ty{padding:calc((22px - .733em) / 2 + var(--ko)) 6px calc((22px - .733em) / 2 - var(--ko));line-height:1}
-.cand .chip,.cand .btn.sm{height:auto;padding-top:calc((30px - .733em) / 2 + var(--ko));padding-bottom:calc((30px - .733em) / 2 - var(--ko))}
-.cand .ca .chip{display:inline-block;text-align:center}
 nav.tabs button{gap:6px;padding:9px 0}
 nav.tabs .lb{display:block}
 .hero .mrow b{--ko:.022em;line-height:1;padding:calc((34px - .733em) / 2 + var(--ko)) 10px calc((34px - .733em) / 2 - var(--ko)) calc(10px + .08em)}
@@ -583,7 +567,7 @@ ul.rules li b{display:block;color:var(--ink);font-size:13px}
 <nav class="tabs" aria-label="分頁"><div class="in">
   <button type="button" data-tab="book"><svg class="g" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="miter"><rect class="f" x="5" y="5" width="14" height="14"/></svg><span class="lb">記帳</span></button>
   <button type="button" data-tab="invest"><svg class="g" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="miter"><path class="f" d="M12 4.5 20 19H4z"/></svg><span class="lb">投資</span></button>
-  <button type="button" data-tab="recs"><svg class="g" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="miter"><circle class="f" cx="12" cy="12" r="7.5"/></svg><span class="lb">推薦</span></button>
+  <button type="button" data-tab="recs"><svg class="g" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="miter"><circle class="f" cx="12" cy="12" r="7.5"/></svg><span class="lb">市場</span></button>
   <button type="button" data-tab="game"><svg class="g" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="miter"><path class="f" d="M4.5 19.5h15v-6a7.5 7.5 0 0 0-15 0z"/></svg><span class="lb">雨林箱</span></button>
   <button type="button" data-tab="settings"><svg class="g" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="miter"><path d="M4 8h16M4 16h16"/><rect class="f" x="13" y="5.5" width="5" height="5"/><circle class="f" cx="8.5" cy="16" r="2.6"/></svg><span class="lb">設定</span></button>
 </div></nav>
@@ -901,6 +885,7 @@ async function loadRadar() {
   const res = await Promise.allSettled(["tw", "us", "core", "summary", "macro"].map(get));
   const [tw, us, core, sm, mc] = res;
   get("backtest").then((x) => { R.bt = x; render(); }).catch(() => {});
+  get("backtest4").then((x) => { R.bt4 = x; render(); }).catch(() => {});
   R.macro = mc.status === "fulfilled" ? mc.value : R.macro;
   R.tw = tw.status === "fulfilled" ? tw.value : R.tw;
   R.us = us.status === "fulfilled" ? us.value : R.us;
@@ -968,7 +953,7 @@ function judge(r) {
     `${it.rym ? it.rym.slice(0, 4) + " 年 " + (+it.rym.slice(4)) + " 月" : "最新"}營收比去年同月${it.ryoy >= 0 ? "成長" : "衰退"} ${(Math.abs(it.ryoy) * 100).toFixed(0)}%${it.fin === "up" ? "，季報轉強" : it.fin === "down" ? "，季報轉弱" : ""}`);
   else if (it && it.fin) add(it.fin === "up" ? "ok" : it.fin === "down" ? "bad" : "", "財報", it.fin === "up" ? "轉強" : it.fin === "down" ? "轉弱" : "持平", "營收、毛利率、EPS 跟去年同期比");
   add(nw ? (nw.score > 0 ? "ok" : nw.score < 0 ? "bad" : "") : "", "新聞", nw ? (NEWS_LAB[nw.score] || "中性") + (nw.big && Math.abs(nw.score) < 2 ? "・重大" : "") : "沒資料", nw ? nw.sum || "沒有重要新聞" : "還沒有新聞資料");
-  add(tac ? "bad" : "ok", "大盤", tac ? "轉弱" : "正常", tac ? "總經、財報、資金流三個訊號都轉弱（戰術層觸發），衛星層先不加碼" : "戰術層未觸發");
+  add(tac ? "bad" : "ok", "大盤", tac ? "偏弱" : "正常", tac ? "總經、大盤週線、資金風向都轉弱，個股先不加碼" : "大盤訊號正常");
   let v, cls, because;
   const held = r.status === "bought";
   if (!lv) { v = "資料不足"; cls = ""; because = "還沒有這檔的點位資料"; }
@@ -1279,14 +1264,11 @@ function renderInvest() {
   const planDone = (p) => sum(S.trades.filter((t) => t.side === "buy" && !t.open && t.m === p.m && t.sym === p.sym && (t.date || "").startsWith(mo)), (t) => toTWD(t.m, t.q * t.p + (t.fee || 0), t.fx));
   const trades = [...S.trades].sort((a, b) => (b.date || "").localeCompare(a.date || "") || (b.ua || 0) - (a.ua || 0));
   const alerts = attention(act, mv);
-  // 「今天要做什麼」：把需要注意、市場轉弱、配置跑掉、定期定額燈號（便宜可多買／過熱減半）合在一張
-  const tm = R.macro && R.macro.tactical && R.macro.tactical.markets;
-  const tacOn = tm ? ["tw", "us"].filter((k) => tm[k] && tm[k].on).map((k) => tm[k]) : [];
+  // 「今天要做什麼」：需要注意、配置跑掉、定期定額跌到補倉點。市場偏弱只在市場頁當參考，不叫人減碼（回測沒有效果）
   const sigs = st.plans.map((p) => ({ p, g: dcaSig(p), d: planDone(p) }));
   const todo = [...alerts,
-    ...tacOn.map((x) => ({ cls: "alert", lv: 5, t: `市場轉弱：${x.name}核心股票部位減 ${x.step} 個百分點`, d: ["總經、財報、資金流三個訊號都轉弱才會觸發；訊號解除再買回。定期定額先照最低額扣，不加碼"] })),
     ...(needReb ? [{ cls: "warn", lv: 1, t: "配置偏離目標超過 5 個百分點", d: [rebalanceHint(allocRows, tot)] }] : []),
-    ...sigs.filter((x) => (x.g.cls === "go" || x.g.cls === "alert") && x.d < x.p.amt * 0.9).map((x) => ({ attr: `data-plan="${esc(x.p.id)}"`, cls: x.g.cls === "go" ? "info" : "warn", lv: 0, t: `${x.p.sym} 今天：${x.g.label}`, d: [x.g.why] }))];
+    ...sigs.filter((x) => x.g.cls === "go").map((x) => ({ attr: `data-plan="${esc(x.p.id)}"`, cls: "info", lv: 0, t: `${x.p.sym} 跌到補倉點，可多扣 ${x.g.n} 期`, d: ["有閒錢再補，沒有就照常扣；別為了等補倉而少扣。"] }))];
   const sat = act.filter(isSatStock).map((h) => ({ h, e: addEval(h, mv) }));
   const alHtml = (a) => `<div class="al ${a.cls}"><i></i><div class="alc"><div class="alh">${a.attr ? `<button class="alm" type="button" ${a.attr}><b>${esc(a.t)}</b></button>` : `<b class="alm">${esc(a.t)}</b>`}${a.ack ? `<button class="btn sm ack" type="button" data-ack="${esc(a.ack)}">知道了</button>` : ""}</div>${a.attr ? `<button class="alm" type="button" ${a.attr}>${a.d.map((x) => `<em>${esc(x)}</em>`).join("")}</button>` : `<div class="alm">${a.d.map((x) => `<em>${esc(x)}</em>`).join("")}</div>`}</div></div>`;
   const mkPct = (m) => allocRows.find((r) => r.m === m);
@@ -1305,14 +1287,15 @@ function renderInvest() {
     ${needReb ? (() => { const sp = nextMonthSplit(allocRows, tot); return sp ? `<div class="nm"><div class="nmh">下個月 ${fmt(sp.M)} 台幣這樣分<small>不用賣，用新錢慢慢補回目標</small></div>${sp.rows.map((r) => `<div class="nmr"><span>${esc(r.p.sym)} <em>${esc(r.p.name)}</em></span><b class="num">${fmt(r.amt)}</b><small>${r.fixed ? "平台自動扣，照常" : r.amt === 0 ? `這個月先停（平常 ${fmt(r.p.amt)}）` : r.amt === r.p.amt ? "照平常" : (r.amt > r.p.amt ? "比平常多 " : "比平常少 ") + fmt(Math.abs(r.amt - r.p.amt))}</small></div>`).join("")}</div>` : ""; })() : ""}` : `<div class="empty">記下第一筆買進後，這裡會顯示台股、美股、加密貨幣的比例</div>`}
   </div>
   <div class="card"><h2>本月定期定額<span class="r num">${fmt(monthBuysTWD(mo))} / ${fmt(st.investMonthly)}</span></h2>
-    ${monthFull ? `<div class="tiny" style="margin:-4px 0 4px">這個月額度用完了，燈號給下個月參考</div>` : ""}
+    ${monthFull ? `<div class="tiny" style="margin:-4px 0 4px">這個月額度用完了，下面的提示給下個月參考</div>` : ""}
     <div class="list">${sigs.map(({ p, g, d }) => { const a = addLv(p); return `<details class="pl" data-k="pl-${esc(p.id)}"${od("pl-" + p.id)}><summary><span class="pn"><b>${esc(p.sym)}</b><span>${esc(p.name)}</span></span><span class="pa num">${fmt(d)}<small>/ ${fmt(p.amt)}</small></span><span class="pg"><span class="chip ${d >= p.amt * 0.9 ? "okc" : g.cls}">${d >= p.amt * 0.9 ? "已扣" : esc(g.label)}</span></span><span class="pact"><button class="btn sm" type="button" data-plan="${esc(p.id)}">記這筆</button></span></summary>
       <div class="pld"><p>${MK[p.m]}${p.day ? `，每月 ${p.day} 號` : ""}${p.bk ? `，${esc(p.bk)}` : ""}${p.role ? `，${esc(p.role)}` : ""}${p.auto ? `，${esc(p.auto)}` : ""}</p>${d >= p.amt * 0.9 ? `<p>今天的燈號：${esc(g.label)}</p>` : ""}${g.why ? `<p>${esc(g.why).replace(/（[^（）]{1,14}）/g, (x) => `<span style="white-space:nowrap">${x}</span>`)}</p>` : ""}${a ? `<span class="lv add">${a.lv.map((x) => `<span class="${x.hit ? "hit" : ""}"><small>${x.k}</small><b class="num">${fmtP(x.p)}</b></span>`).join("")}<em>${a.note}</em></span>` : ""}</div></details>`; }).join("") || `<div class="empty">到設定加入定期定額計畫</div>`}</div>
     <div class="btns" style="margin-top:10px"><button class="btn sm" type="button" id="dcaAi"${dcaBusy ? " disabled" : ""}>問 AI 今天怎麼買</button>${ghCfg() ? "" : `<span class="tiny" style="align-self:center">要先到設定連上 GitHub</span>`}</div>
     ${dcaOut ? `<div class="aiout" style="margin-top:10px">${esc(dcaOut)}</div>` : ""}
     <details class="more" data-k="etf-sell"${od("etf-sell")}><summary>ETF 什麼時候賣</summary>
-      <p class="tiny" style="color:var(--ink)">核心 ETF 原則上不賣，偏貴也照常扣。只有三種情況才動，前兩種觸發時會出現在最上面「今天要做什麼」：</p>
-      <ul class="rules"><li><b>配置跑掉</b>某一類偏離目標超過 5 個百分點，賣多的補少的；不想賣就把新錢先投到少的那邊</li><li><b>市場轉弱</b>總經、財報、資金流三個訊號都轉弱：核心股票部位減 5 個百分點，大盤週線再跌破 MA52 就減到 10；訊號解除再買回</li><li><b>要用錢</b>3 年內要用的錢不該放在 ETF，提早分批賣到現金</li></ul>
+      <p class="tiny" style="color:var(--ink)">核心 ETF 原則上不賣，偏貴也照常扣。只有兩種情況才動：</p>
+      <ul class="rules"><li><b>配置跑掉</b>某一類偏離目標超過 5 個百分點，賣多的補少的；不想賣就把新錢先投到少的那邊。觸發時會出現在最上面「今天要做什麼」</li><li><b>要用錢</b>3 年內要用的錢不該放在 ETF，提早分批賣到現金</li></ul>
+      <p class="tiny" style="color:var(--ink)">市場轉弱不用賣。回測：跌破年線賣 10% 幾乎擋不到跌幅；全部賣掉、站回再買，大盤型 ETF 每年少賺 2～5 個百分點。</p>
       <p class="tiny">以上是策略規則算出的提醒，不是投資建議，我也不是持牌投資顧問；要不要賣由你決定。</p></details>
   </div>
   <div class="card"><h2>持股<span class="r">${R.loading ? "讀取市場資料中…" : `匯率 ${fmt(fxNow(), 2)}`}</span></h2>
@@ -1357,19 +1340,19 @@ function rebalanceHint(rows, tot) {
 }
 
 function renderRecs() {
-  const sm = R.sum, tw = radarPicks("TW"), us = radarPicks("US");
+  const sm = R.sum;
   const recs = S.recs.filter((r) => recFilter === "all" || r.status === recFilter).sort((a, b) => (b.date || "").localeCompare(a.date || "") || (b.ua || 0) - (a.ua || 0));
-  const has = (m, c) => S.recs.some((r) => r.m === m && r.sym === String(c));
   const benches = [...(R.tw?.benchmarks || []).map((x) => ({ ...x, mk: "TW" })), ...(R.us?.benchmarks || []).map((x) => ({ ...x, mk: "US" }))].filter((x) => x.l);
-  const pm = L.pickMk === "US" ? "US" : "TW", rows = pm === "US" ? us : tw;
-  const candRow = (m, x) => `<div class="cand">
-      <div class="cn"><b>${esc(x.c)}</b><span>${esc(x.n)}</span></div>
-      <div class="cs"><small>長線分</small><span class="num">${isNum(x.lt) ? Math.round(x.lt) : "－"}</span></div>
-      <div class="ct">${(x.trig || []).map((t) => `<span class="chip">${esc(t)}</span>`).join("")}</div>
-      <div class="ca"><span class="chip ${esc(x.l)}">${LIGHT[x.l] || esc(x.l)}</span>${has(m, x.c) ? `<span class="tiny">已加入</span>` : `<button class="btn sm" type="button" data-addpick="${m}|${esc(x.c)}">觀察</button>`}</div>
-    </div>`;
-  const pickTable = (m, rows) => !rows ? `<div class="empty">${R.loading ? "讀取中…" : "沒有資料"}</div>` : !rows.length ? `<div class="empty">今天沒有股票同時通過四道濾網</div>` :
-    `<div class="list">${rows.slice(0, 5).map((x) => candRow(m, x)).join("")}</div>${rows.length > 5 ? `<details class="more" data-k="pick-more"${od("pick-more")}><summary>再看 ${Math.min(rows.length, 10) - 5} 檔${rows.length > 10 ? `（共 ${rows.length} 檔，列長線分前 10）` : ""}</summary><div class="list">${rows.slice(5, 10).map((x) => candRow(m, x)).join("")}</div></details>` : ""}`;
+  // 點位規則（買進區、出場線、目標價）的歷史成績，來自 data/backtest4.json 的 app_rule
+  const ruleTrack = () => {
+    const rows = [["tw", "台股"], ["us", "美股"]].map(([k, n]) => [n, R.bt4 && R.bt4[k] && R.bt4[k].app_rule, R.bt4 && R.bt4[k]]).filter((x) => x[1] && isNum(x[1].win));
+    if (!rows.length) return "";
+    const pc = (x) => isNum(x) ? Math.round(x * 100) + "%" : "－", pp = (x) => !isNum(x) ? "－" : (x > 0 ? "+" : x < 0 ? "−" : "") + Math.abs(x * 100).toFixed(1);
+    return `<details class="more" data-k="trk-more"${od("trk-more")}><summary>這些點位過去準不準</summary>
+      <p class="tiny" style="color:var(--ink);margin:2px 0 8px">不準。照買進區進場、出場線停損、目標價停利去操作，多數交易是停損出場，平均輸給直接抱大盤。點位只能當參考，不是買賣訊號。</p>
+      <div class="scroll"><table class="tbl"><thead><tr><th>回測</th><th class="r">筆數</th><th class="r">賺錢</th><th class="r">停損</th><th class="r">比大盤</th></tr></thead><tbody>${rows.map(([n, r, b]) => `<tr><td>${n}<div class="tiny">約 ${Math.round(b.weeks / 52)} 年</div></td><td class="r num">${fmt(r.n)}</td><td class="r num">${pc(r.win)}</td><td class="r num">${pc(r.stop_rate)}</td><td class="r num">${pp(r.excess_vs_index)}</td></tr>`).join("")}</tbody></table></div>
+      <p class="tiny" style="margin:6px 0 0">「比大盤」是平均每筆交易跟同期大盤的差距，單位百分點。原本的「衛星層候選」名單也測過，選出來的股票跟隨便買差不多，所以已經拿掉。歷史回測不代表未來。</p></details>`;
+  };
   const tw0 = R.tw, us0 = R.us, o = tw0 && tw0.overview, ins = o && o.insti, v = tw0 && tw0.valuation, uo = us0 && us0.overview, uv = us0 && us0.valuation;
   const stk = (x) => !x || !isNum(x.streak) || x.streak === 0 ? "－" : x.streak > 0 ? `連買 ${x.streak} 天` : `連賣 ${-x.streak} 天`;
   const cell = (k, val, sub) => `<div><small>${k}</small><b class="num">${val}</b>${sub ? `<em>${sub}</em>` : ""}</div>`;
@@ -1378,11 +1361,11 @@ function renderRecs() {
   view.innerHTML = `
   <div class="card"><h2>市場現況<span class="r">${sm ? esc((sm.generated || "").slice(5, 16)) : ""}</span></h2>
     ${R.err ? `<div class="empty">${esc(R.err)}</div>` : sm ? `<p style="margin:0 0 8px;font-weight:700">${esc(sm.headline || "")}</p>${(sm.watch || []).length ? `<ul style="margin:0;padding-left:18px">${sm.watch.map((w) => `<li class="tiny" style="color:var(--ink)">${esc(w)}</li>`).join("")}</ul>` : ""}` : `<div class="empty">${R.loading ? "讀取中…" : "沒有資料"}</div>`}
-    ${R.macro ? `<div class="btns" style="margin-top:8px">${R.macro.stage && R.macro.stage.name ? `<span class="chip">債務週期 ${esc(R.macro.stage.name)}</span>` : ""}<span class="chip">資金風向 ${esc(R.macro.risk.label)}</span><span class="chip ${R.macro.tactical.on ? "alert" : "okc"}">戰術層${R.macro.tactical.on ? "觸發" : "未觸發"}</span>${(R.macro.idx || []).map((i) => `<span class="chip ${i.below ? "alert" : ""}">${esc(i.n)} ${i.below ? "跌破" : "站上"}週MA52</span>`).join("")}</div>` : ""}
-    ${o || uo ? `<div class="mx" style="margin-top:10px">${cell("加權指數", o && o.index && isNum(o.index.px) ? fmt(o.index.px, 0) : "－", o && o.index ? pct(o.index.ch) : "")}${cell("S&P 500", uo && uo.spx && isNum(uo.spx.px) ? fmt(uo.spx.px, 0) : "－", uo && uo.spx ? pct(uo.spx.ch) : "")}${cell("VIX 恐慌指數", uo && uo.vix && isNum(uo.vix.px) ? fmt(uo.vix.px, 1) : "－", uo && uo.vix ? pct(uo.vix.ch) : "")}${cell("外資", stk(ins && ins.foreign))}${cell("S&P 本益比", uv && isNum(uv.pe_spx) ? fmt(uv.pe_spx, 1) : "－")}${cell("股債利差", uv && isNum(uv.erp) ? pct(uv.erp, 1) : "－", "負的＝股票相對貴")}</div>` : ""}
+    ${R.macro ? `<div class="btns" style="margin-top:8px">${R.macro.stage && R.macro.stage.name ? `<span class="chip">債務週期 ${esc(R.macro.stage.name)}</span>` : ""}<span class="chip">資金風向 ${esc(R.macro.risk.label)}</span><span class="chip">大盤訊號 ${R.macro.tactical.on ? "偏弱" : "正常"}</span>${(R.macro.idx || []).map((i) => `<span class="chip">${esc(i.n)} ${i.below ? "跌破" : "站上"}週MA52</span>`).join("")}</div>` : ""}
+    ${o || uo ? `<div class="mx" style="margin-top:10px">${cell("加權指數", o && o.index && isNum(o.index.px) ? fmt(o.index.px, 0) : "－", o && o.index ? pct(o.index.ch) : "")}${cell("S&P 500", uo && uo.spx && isNum(uo.spx.px) ? fmt(uo.spx.px, 0) : "－", uo && uo.spx ? pct(uo.spx.ch) : "")}${cell("VIX 恐慌指數", uo && uo.vix && isNum(uo.vix.px) ? fmt(uo.vix.px, 1) : "－", uo && uo.vix ? pct(uo.vix.ch) : "")}${cell("外資", stk(ins && ins.foreign))}${cell("S&P 本益比", uv && isNum(uv.pe_spx) ? fmt(uv.pe_spx, 1) : "－")}${cell("股債利差", uv && isNum(uv.erp) ? pct(uv.erp, 1) : "－", "負＝股票偏貴")}</div>` : ""}
     ${o || uo || benches.length ? `<details class="more" data-k="mkt-more"${od("mkt-more")}><summary>資金、族群、ETF 燈號細節</summary>
       ${o ? `<div class="mx">${cell("加權指數", o.index && isNum(o.index.px) ? fmt(o.index.px, 0) : "－", o.index ? pct(o.index.ch) : "")}${cell("成交額（台幣）", isNum(o.turnover) ? fmt(o.turnover / 1e8, 0) + " 億" : "－")}${cell("外資", stk(ins && ins.foreign))}${cell("投信", stk(ins && ins.trust))}${cell("自營商", stk(ins && ins.dealer))}${cell("本益比中位數", v && isNum(v.pe_med) ? fmt(v.pe_med, 1) : "－", v && isNum(v.pe_0050) ? "0050 " + fmt(v.pe_0050, 1) : "")}</div>` : ""}
-      ${uo ? `<div class="mx">${cell("S&P 500", uo.spx && isNum(uo.spx.px) ? fmt(uo.spx.px, 0) : "－", uo.spx ? pct(uo.spx.ch) : "")}${cell("那斯達克", uo.ixic && isNum(uo.ixic.px) ? fmt(uo.ixic.px, 0) : "－", uo.ixic ? pct(uo.ixic.ch) : "")}${cell("VIX 恐慌指數", uo.vix && isNum(uo.vix.px) ? fmt(uo.vix.px, 1) : "－", uo.vix ? pct(uo.vix.ch) : "")}${cell("10 年期殖利率", uo.tnx && isNum(uo.tnx.px) ? fmt(uo.tnx.px, 2) + "%" : "－")}${cell("S&P 本益比", uv && isNum(uv.pe_spx) ? fmt(uv.pe_spx, 1) : "－", uv && isNum(uv.pe_spx) && uv.pe_src ? (uv.pe_src.startsWith("成分股") ? "成分股自算" : uv.pe_src) : "")}${cell("股債利差", uv && isNum(uv.erp) ? pct(uv.erp, 1) : "－", "負的＝股票相對貴")}</div>` : ""}
+      ${uo ? `<div class="mx">${cell("S&P 500", uo.spx && isNum(uo.spx.px) ? fmt(uo.spx.px, 0) : "－", uo.spx ? pct(uo.spx.ch) : "")}${cell("那斯達克", uo.ixic && isNum(uo.ixic.px) ? fmt(uo.ixic.px, 0) : "－", uo.ixic ? pct(uo.ixic.ch) : "")}${cell("VIX 恐慌指數", uo.vix && isNum(uo.vix.px) ? fmt(uo.vix.px, 1) : "－", uo.vix ? pct(uo.vix.ch) : "")}${cell("10 年期殖利率", uo.tnx && isNum(uo.tnx.px) ? fmt(uo.tnx.px, 2) + "%" : "－")}${cell("S&P 本益比", uv && isNum(uv.pe_spx) ? fmt(uv.pe_spx, 1) : "－", uv && isNum(uv.pe_spx) && uv.pe_src ? (uv.pe_src.startsWith("成分股") ? "成分股自算" : uv.pe_src) : "")}${cell("股債利差", uv && isNum(uv.erp) ? pct(uv.erp, 1) : "－", "負＝股票偏貴")}</div>` : ""}
       ${[[tw0, "台股"], [us0, "美股"]].filter(([d]) => hot(d).length).map(([d, n]) => `<div class="mh"><b>${n}族群</b><span>${hot(d).map((x) => `<i>${esc(x.name)} <u class="${x.rs4 >= 0 ? "up" : "dn"}">${pct(x.rs4, 1)}</u></i>`).join("")}</span></div>`).join("")}
       ${sig.length ? `<div class="mh"><b>法人連買</b><span>${sig.map((x) => `<i>${esc(x.c)} ${esc(x.n)}<u>${esc(x.who)} ${x.days} 天</u></i>`).join("")}</span></div>` : ""}
       ${benches.length ? `<div class="scroll" style="margin-top:10px"><table class="tbl"><thead><tr><th>大盤與 ETF</th><th class="r">年線乖離</th><th class="r">5 年位置</th><th>燈號</th></tr></thead><tbody>${benches.map((x) => `<tr><td>${esc(x.n)}<div class="tiny">${esc(x.c)}</div></td><td class="r num">${pct(x.b, 0)}</td><td class="r num">${isNum(x.pos) ? Math.round(x.pos * 100) + "%" : "－"}</td><td><span class="chip ${esc(x.l)}">${LIGHT[x.l] || esc(x.l)}</span></td></tr>`).join("")}</tbody></table></div>` : ""}
@@ -1392,10 +1375,6 @@ function renderRecs() {
     ${Object.values(autoJob).map((x) => `<p class="autoj"><i></i>${esc(x)}</p>`).join("")}
     ${autoNoKey() ? `<p class="autoj warn"><i></i>市場資料晚了，GitHub 的排程還沒跑。想讓 App 自動補跑，到「設定 → 連線與資料 → 自動抓價與 AI」看怎麼開權限</p>` : ""}
   </div>
-  <div class="card"><h2>衛星層候選<span class="r">四道濾網</span></h2>
-    <div class="seg" role="tablist">${[["TW", "台股", tw], ["US", "美股", us]].map(([k, n, r]) => `<button type="button" class="${pm === k ? "on" : ""}" data-pmk="${k}">${n} <span class="n">${r ? r.length : 0}</span></button>`).join("")}</div>
-    <div style="margin-top:6px">${pickTable(pm, rows)}</div>
-    <p class="tiny" style="margin:8px 0 0">熱門族群＋資金流＋財報轉強＋長線買點觸發才會列出。這套濾網回測沒有證明有優勢，名單不是買進建議；單股不超過衛星層 10%。</p></div>
   <div class="card"><h2>我的推薦紀錄<span class="r">${S.recs.length} 筆</span></h2>
     <div class="seg" role="tablist">${["watch", "bought", "pass", "all"].map((k) => `<button type="button" class="${recFilter === k ? "on" : ""}" data-rf="${k}">${k === "all" ? "全部" : STATUS[k]} <span class="n">${k === "all" ? S.recs.length : S.recs.filter((r) => r.status === k).length}</span></button>`).join("")}</div>
     <div class="list" style="margin-top:6px">${recs.map((r) => { const pr = priceOf(r.m, r.sym); const ch = pr && isNum(r.px) && r.px > 0 ? pr.p / r.px - 1 : NaN; return `<button class="hold rc" type="button" data-rec="${esc(r.id)}">
@@ -1404,12 +1383,12 @@ function renderRecs() {
       <span class="rt"><span class="chip">${MK[r.m]}</span>${r.src ? `<span class="chip">${esc(r.src)}</span>` : ""}</span>
       <span class="rp num">${isNum(r.px) ? fmtP(r.px) : "－"} → ${pr ? fmtP(pr.p) : "－"}</span>
       <span class="b" style="grid-column:1/-1">${esc(r.date || "")}${r.reason ? "・" + esc(r.reason) : ""}</span>${(() => { const v = r.status !== "pass" && recLv(r.m, r.sym), j = v && judge(r); return v ? `
-      <span class="lv"><span class="lt"><span class="cg"><span class="chip ${j.cls}">${j.v}</span>${newsChip(j.nw)}</span><small>點位（${CUR[r.m]}）</small></span><span><small>買進區</small><b class="num">${fmtP(v.bLo)}～${fmtP(v.bHi)}</b></span><span><small>出場線</small><b class="num">${fmtP(v.stop)}</b></span><span><small>目標</small><b class="num">${v.tg.length ? fmtP(v.tg[0]) : "－"}</b></span></span>` : ""; })()}</button>`; }).join("") || `<div class="empty">${recFilter === "watch" ? "按候選名單的「觀察」或右下角 ＋ 新增，之後會自動追蹤推薦後漲跌" : "沒有紀錄"}</div>`}</div>
+      <span class="lv"><span class="lt"><span class="cg"><span class="chip ${j.cls}">${j.v}</span>${newsChip(j.nw)}</span><small>點位（${CUR[r.m]}）</small></span><span><small>買進區</small><b class="num">${fmtP(v.bLo)}～${fmtP(v.bHi)}</b></span><span><small>出場線</small><b class="num">${fmtP(v.stop)}</b></span><span><small>目標</small><b class="num">${v.tg.length ? fmtP(v.tg[0]) : "－"}</b></span></span>` : ""; })()}</button>`; }).join("") || `<div class="empty">${recFilter === "watch" ? "按右下角 ＋ 新增，或用下面的「貼上別人的推薦」，之後會自動追蹤加入後的漲跌" : "沒有紀錄"}</div>`}</div>
+    ${ruleTrack()}
     <div class="sub">AI 助手<small>${ghCfg() ? "在 GitHub Actions 上執行" : "要先到設定連上 GitHub"}</small></div>
     <div class="btns" style="margin-top:8px"><button class="btn pri sm" type="button" id="aiCheck"${aiBusy ? " disabled" : ""}>幫我健檢記帳與持股</button><button class="btn sm" type="button" id="aiPaste">貼上別人的推薦，讓 AI 整理</button></div>
     ${(() => { const rv = RM.ai && RM.ai.review; const txt = aiOut || (rv && rv.text ? rv.text : ""); return txt ? `<div class="aiout" style="margin-top:10px">${esc(txt)}</div>${!aiOut && rv ? `<div class="tiny" style="margin-top:4px">上次健檢：${esc(rv.generated || "")}</div>` : ""}` : ""; })()}
   </div>`;
-  $$("[data-pmk]").forEach((b) => b.onclick = () => { L.pickMk = b.dataset.pmk; saveL(); render(); });
   $("#reloadRadar").onclick = async () => {
     toast("重新讀取中");
     const before = [R.tw && R.tw.updated, R.us && R.us.updated].join();
@@ -1419,11 +1398,6 @@ function renderRecs() {
     toast(R.err ? R.err.slice(0, 40) : `${[R.tw && R.tw.updated, R.us && R.us.updated].join() === before ? "已是最新" : "已更新"}：台股 ${tw}・美股 ${us}`);
   };
   $$("[data-rf]").forEach((b) => b.onclick = () => { recFilter = b.dataset.rf; render(); });
-  $$("[data-addpick]").forEach((b) => b.onclick = () => {
-    const [m, c] = b.dataset.addpick.split("|"); const x = radarPicks(m).find((s) => String(s.c) === c); if (!x) return;
-    upsert("recs", { id: uid(), m, sym: String(x.c), name: x.n, src: "四道濾網", date: today(), px: x.px, status: "watch", reason: `${(x.trig || []).join("、")}・長線分 ${isNum(x.lt) ? Math.round(x.lt) : "－"}・${LIGHT[x.l] || x.l}` });
-    toast(`${x.n} 加入觀察`);
-  });
   $$("[data-rec]").forEach((b) => b.onclick = () => recForm(S.recs.find((r) => r.id === b.dataset.rec)));
   $("#aiCheck").onclick = aiCheck;
   $("#aiPaste").onclick = aiPasteSheet;
@@ -1491,7 +1465,7 @@ function renderSettings() {
 
   <div class="card"><h2>自動抓價與 AI<span class="r">資料 repo 的 GitHub Actions</span></h2>
     <div class="list">
-      <div class="item" style="cursor:default"><span class="a">市場資料</span><span class="amt tiny">${R.tw ? "台股 " + esc(R.tw.updated || "") : "還沒有"}</span><span class="b">App repo 的「每日更新市場資料」：台股 19:07 和 22:13、美股隔天 05:37 和 07:43，自己從證交所、櫃買、Yahoo、FRED 抓，算燈號、四道濾網、戰術層</span></div>
+      <div class="item" style="cursor:default"><span class="a">市場資料</span><span class="amt tiny">${R.tw ? "台股 " + esc(R.tw.updated || "") : "還沒有"}</span><span class="b">App repo 的「每日更新市場資料」：台股 19:07 和 22:13、美股隔天 05:37 和 07:43，自己從證交所、櫃買、Yahoo、FRED 抓，算燈號、四道濾網、大盤訊號</span></div>
       <div class="item" style="cursor:default"><span class="a">持股現價</span><span class="amt tiny">${RM.prices ? "上次 " + esc(RM.prices.updated || "") : "還沒抓過"}</span><span class="b">每個交易日 22:15 抓台股、隔天 06:35 抓美股與加密貨幣；台股用證交所與櫃買中心收盤價，其他用 Yahoo Finance</span></div>
       <div class="item" style="cursor:default"><span class="a">AI 助手</span><span class="amt tiny">${RM.ai && RM.ai.review ? "上次 " + esc(RM.ai.review.generated || "") : "還沒用過"}</span><span class="b">Claude 金鑰放在資料 repo 的 Settings → Secrets → Actions，名稱 ANTHROPIC_API_KEY，不經過這台裝置</span></div>
     </div>
@@ -1880,7 +1854,7 @@ function addEval(h, mv) {
   if (nw && nw.big && nw.score <= -1) hard.push("有重大利空新聞，等消息明朗再說");
   else if (nw && nw.score < 0) soft.push("新聞偏空");
   add(tac ? "bad" : "ok", "大盤", tac ? "轉弱" : "正常");
-  if (tac) hard.push("大盤轉弱（戰術層觸發），衛星層先不加碼");
+  if (tac) hard.push("大盤訊號偏弱，個股先不加碼");
   if (isNum(h.unP)) add(h.unP <= -0.3 ? "bad" : "", "目前損益", pct(h.unP, 0));
   let v, cls, because;
   if (hard.length) { v = "不要攤平"; cls = "alert"; because = hard[0]; }
@@ -2035,7 +2009,7 @@ function toast(msg) { let t = $(".toast"); if (!t) { t = document.createElement(
 /* ───────── 啟動 ───────── */
 $$("nav.tabs button").forEach((b) => b.onclick = () => { L.tab = b.dataset.tab; saveL(); window.scrollTo(0, 0); render(); });
 
-/* ───────── 定期定額：今天適合買嗎（規則照市場雷達核心層：偏貴照扣不停、便宜可加碼、戰術層觸發先別加碼） ───────── */
+/* ───────── 定期定額：平常一律照常扣，跌到補倉點才提示（依核心層回測結果） ───────── */
 let BTCM = null, dcaOut = "", dcaBusy = false;
 async function loadBtcMayer() {
   if (BTCM && Date.now() - BTCM.t < 30 * 60e3) return;
@@ -2052,7 +2026,7 @@ async function loadBtcMayer() {
   } catch (e) {}
 }
 /* 核心 ETF／比特幣的補倉點：只在跌到便宜區時多扣，不追高、不攤平個股。
-   ETF：回到年線、年線 -10%、年線 -20% 各多扣一期；比特幣：回到 200 日線、200 日線 ×0.8（便宜區）各多扣一期。戰術層觸發時不補 */
+   ETF：回到年線、年線 -10%、年線 -20% 各多扣一期；比特幣：回到 200 日線、200 日線 ×0.8（便宜區）各多扣一期（有閒錢才補） */
 // 句尾幣別跟最後幾個字黏在一起，避免窄螢幕把「（USDT）」單獨擠到下一行
 const lvTail = (t, c) => esc(t.slice(0, -3)) + `<span style="white-space:nowrap">${esc(t.slice(-3))}（${esc(c)}）</span>`;
 function addLv(p) {
@@ -2066,41 +2040,35 @@ function addLv(p) {
     return { lv, note: lvTail((n ? `現價已到第 ${n} 個補倉點，有閒錢可以多扣 ${n} 期；沒有就照常扣。` : "補倉點：有閒錢、又跌到哪一格才多扣一期；別為了等補倉而少扣。"), CUR[p.m]) };
   }
   else { const it = radarItem(p.m, p.sym); if (!it || !Array.isArray(it.lv) || !isNum(it.lv[2])) return null; base = it.lv[2]; px = priceOf(p.m, p.sym)?.p ?? it.px; ks = [["回到年線", 1], ["年線 -10%", 0.9], ["年線 -20%", 0.8]]; }
-  const tm = R.macro && R.macro.tactical && R.macro.tactical.markets, tac = p.m !== "CR" && tm && tm[p.m === "TW" ? "tw" : "us"] && tm[p.m === "TW" ? "tw" : "us"].on;
   const lv = ks.map(([k, f]) => ({ k, p: base * f, hit: isNum(px) && px <= base * f }));
   const n = lv.filter((x) => x.hit).length;
-  return { lv, note: lvTail((tac ? "戰術層觸發中，先不補倉。" : n ? `現價已到第 ${n} 個補倉點，有閒錢可以多扣 ${n} 期；沒有就照常扣。` : "補倉點：有閒錢、又跌到哪一格才多扣一期；別為了等補倉而少扣。"), CUR[p.m]) };
+  return { lv, note: lvTail((n ? `現價已到第 ${n} 個補倉點，有閒錢可以多扣 ${n} 期；沒有就照常扣。` : "補倉點：有閒錢、又跌到哪一格才多扣一期；別為了等補倉而少扣。"), CUR[p.m]) };
 }
 function dcaSig(p) {
   const out = (label, cls, why) => ({ label, cls, why });
+  let why;
   if (p.m === "CR") {
     if (p.sym !== "BTC") return out("沒有燈號資料", "", "目前只對比特幣算 200 日均線");
     if (!BTCM) return out("讀取中", "", "");
-    const m = BTCM.m, d = BTCM.ch <= -0.03 ? `，今天跌 ${pctAbs(BTCM.ch)}` : BTCM.ch >= 0.04 ? `，今天漲 ${pctAbs(BTCM.ch)}` : "";
-    const wk = BTCM.wm ? (BTCM.wm < 1 ? `；跌破 200 週均線（${fmtP(BTCM.wma)}），歷史上這是少見的長期底部區，但可能在下面待好幾個月` : `；200 週均線在 ${fmtP(BTCM.wma)}，現價高出 ${pctAbs(BTCM.wm - 1)}`) : "";
-    const base = `現價是 200 日均線的 ${m.toFixed(2)} 倍`;
-    if (m < 0.8) return out("便宜，可以多買一點", "go", base + "（低於 0.8 倍算便宜）" + wk + d);
-    if (BTCM.wm && BTCM.wm < 1 && m < 1.5) return out("便宜，可以多買一點", "go", base + wk + d);
-    if (m < 1.5) return out("照常扣", "okc", base + "（0.8～1.5 倍算合理）" + wk + d);
-    if (m < 2.4) return out("偏貴，照常扣不加碼", "", base + "（1.5～2.4 倍偏貴）" + wk + d);
-    return out("過熱，這期先減半", "alert", base + "（超過 2.4 倍歷史上多半是高點）" + wk + d);
+    const m = BTCM.m;
+    why = `現價是 200 日均線的 ${m.toFixed(2)} 倍` + (BTCM.wm ? (BTCM.wm < 1 ? `，跌破 200 週均線（${fmtP(BTCM.wma)}），歷史上這是少見的長期底部區，但可能在下面待好幾個月` : `，200 週均線在 ${fmtP(BTCM.wma)}，現價高出 ${pctAbs(BTCM.wm - 1)}`) : "")
+      + (m >= 2.4 ? "。漲很多了，但回測顯示這時減半扣沒有差別，照常扣就好" : "");
+  } else {
+    const it = radarItem(p.m, p.sym);
+    if (!it) return out("沒有燈號資料", "", R.tw || R.us ? "這檔不在每日掃描的清單裡" : "市場資料還沒讀到");
+    why = [isNum(it.b) ? `年線乖離 ${pct(it.b, 0)}` : "", isNum(it.pos) ? `在 5 年區間的 ${Math.round(it.pos * 100)}% 位置` : ""].filter(Boolean).join("，")
+      + (it.l === "exp" ? "。價格偏高，但回測顯示偏高之後的報酬沒有比較差，照常扣" : "");
   }
-  const it = radarItem(p.m, p.sym);
-  if (!it) return out("沒有燈號資料", "", R.tw || R.us ? "這檔不在每日掃描的清單裡" : "市場資料還沒讀到");
-  const tac = R.macro && R.macro.tactical && R.macro.tactical.markets && R.macro.tactical.markets[p.m === "TW" ? "tw" : "us"];
-  const why = [isNum(it.b) ? `年線乖離 ${pct(it.b, 0)}` : "", isNum(it.pos) ? `在 5 年區間的 ${Math.round(it.pos * 100)}% 位置` : ""].filter(Boolean).join("，")
-    + (isNum(it.ch) && it.ch <= -0.015 ? `，今天跌 ${pctAbs(it.ch)}，今天買比平常划算一點` : isNum(it.ch) && it.ch >= 0.02 ? `，今天漲 ${pctAbs(it.ch)}，不急的話等扣款日就好` : "");
-  if (tac && tac.on) return out("照最低額扣，先別加碼", "alert", "戰術層觸發，核心層要減碼。" + why);
-  if (it.l === "cheap") return out("便宜，可以多買一點", "go", why);
-  if (it.l === "exp") return out("偏貴，照常扣不加碼", "", why);
-  return out("照常扣", "okc", why);
+  // 回測結論：ETF 的便宜／偏貴燈號、過熱減半、市場轉弱減碼都沒有明顯幫助，所以平常一律照常扣，只有跌到補倉點才提示
+  const a = addLv(p), n = a ? a.lv.filter((x) => x.hit).length : 0;
+  return n ? Object.assign(out(`可多扣 ${n} 期`, "go", why), { n }) : out("照常扣", "okc", why);
 }
 async function dcaAsk() {
   if (dcaBusy) return; dcaBusy = true;
   const st = S.settings, mo = today().slice(0, 7);
   const info = { 日期: today(), 每月投資目標: st.investMonthly, 本月已投入: Math.round(monthBuysTWD(mo)),
     計畫: st.plans.map((p) => ({ 市場: MK[p.m], 代號: p.sym, 名稱: p.name, 每月台幣: p.amt, 角色: p.role || "", 平台: p.bk || "", 扣款日: p.day || "", 燈號判斷: dcaSig(p) })),
-    今日判讀: R.sum ? R.sum.headline : null, 戰術層: R.macro ? R.macro.tactical.on : null, 債務週期: R.macro && R.macro.stage ? R.macro.stage.name : null };
+    今日判讀: R.sum ? R.sum.headline : null, 大盤訊號偏弱: R.macro ? R.macro.tactical.on : null, 債務週期: R.macro && R.macro.stage ? R.macro.stage.name : null };
   dcaOut = aiFastOn() ? "AI 正在看今天的燈號…" : "已送出，AI 正在看今天的燈號（約 1 分鐘）…"; render();
   try { if (aiFastOn()) dcaOut = (await aiDirect(dcaPrompt(info), 900)).replace(/\*\*/g, "") || "（沒有內容）"; else { const r = await runAI("dca", { text: JSON.stringify(info) }); dcaOut = (r.text || "（沒有內容）").replace(/\*\*/g, ""); } } catch (e) { dcaOut = "沒辦法完成：" + e.message; }
   dcaBusy = false; render();
@@ -2131,8 +2099,8 @@ function parsePhotoJSON(out) {
   return { tx: (d.tx || []).filter((x) => x && (x.type === "exp" || x.type === "inc")), trades: (d.trades || []).filter((x) => x && ["TW", "US", "CR"].includes(x.m) && x.sym) };
 }
 function dcaPrompt(info) {
-  return "你是謹慎、講話直接的理財教練，不是投資顧問。坤寶用定期定額長期投資，規則是：核心層（大盤 ETF）不擇時、偏貴也照常扣；燈號便宜時可以多扣一點；戰術層觸發時核心股票部位先別加碼；比特幣用現價對 200 日均線的倍數判斷貴不貴。"
-    + "下面是今天每個計畫的燈號與這個月的投入狀況（JSON）。請用繁體中文、台灣用語，200 字內：\n1. 每一檔一句話：今天照常、多買一點、還是先等，理由只能用資料裡的數字\n2. 如果本月已投入超過每月目標，提醒他這個月額度已用完，加碼要從下個月的額度挪\n不要預測漲跌，不要推薦清單以外的標的，不要用 markdown 粗體。最後一行寫「以上不是投資建議」。\n\n資料：" + JSON.stringify(info);
+  return "你是謹慎、講話直接的理財教練，不是投資顧問。坤寶用定期定額長期投資，規則是：核心層（大盤 ETF、比特幣）每月照常扣、不擇時，偏貴也照常扣；跌到補倉點（ETF 的年線、年線 -10%、-20%；比特幣的 200 日線、200 日線 ×0.8、200 週線）而且手上有閒錢才多扣，不要為了等補倉而少扣；大盤訊號偏弱只當參考，不因此減碼（回測顯示減碼沒有幫助）。"
+    + "下面是今天每個計畫的燈號與這個月的投入狀況（JSON）。請用繁體中文、台灣用語，200 字內：\n1. 每一檔一句話：今天照常扣，還是跌到補倉點可以多扣，理由只能用資料裡的數字\n2. 如果本月已投入超過每月目標，提醒他這個月額度已用完，加碼要從下個月的額度挪\n不要預測漲跌，不要推薦清單以外的標的，不要用 markdown 粗體。最後一行寫「以上不是投資建議」。\n\n資料：" + JSON.stringify(info);
 }
 
 /* ───────── 拍照讓 AI 記帳：照片先放進私人資料 repo 的 inbox/，GitHub Actions 上的 Claude 讀完就刪 ───────── */

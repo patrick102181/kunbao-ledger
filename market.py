@@ -2283,7 +2283,7 @@ def run_summary():
     t, s = bl(tw, "^TWII"), bl(us, "^GSPC")
     parts, watch = [], []
     if mc:
-        parts.append("戰術層" + ("觸發，核心層股票要減碼" if mc["tactical"]["on"] else "未觸發"))
+        parts.append("大盤訊號" + ("偏弱（當參考，定期定額照常扣）" if mc["tactical"]["on"] else "正常"))
     if t or s:
         parts.append(f"台股燈號{zh.get(t and t['l'])}、美股燈號{zh.get(s and s['l'])}")
     if mc:
@@ -2291,11 +2291,9 @@ def run_summary():
     if mc and mc["stage"]["name"]:
         watch.append(f"債務週期判斷：{mc['stage']['name']}（{'；'.join(mc['stage']['why'][:2])}）")
     if mc:
-        watch.append("戰術層未觸發，核心層照原規則每月定投，不因新聞或情緒擇時" if not mc["tactical"]["on"]
-                     else "戰術層觸發：" + "、".join(f"{v['name']}減 {v['step']} 個百分點" for v in mc["tactical"]["markets"].values() if v["on"]))
-    for d, name in ((tw, "台股"), (us, "美股")):
-        if d:
-            watch.append(f"{name}衛星層四道濾網全過 {len(d['picks'])} 檔；單股不超過衛星層 10%")
+        # 回測結論：跌破年線減碼 10% 幾乎沒有保護效果，所以訊號偏弱只當參考，不再叫人減碼
+        watch.append("核心層每月照常扣，不因新聞或情緒擇時" if not mc["tactical"]["on"]
+                     else "大盤訊號偏弱（" + "、".join(v["name"] for v in mc["tactical"]["markets"].values() if v["on"]) + "）：只當參考，核心層照常扣、不用減碼")
     out = {"headline": "，".join(parts) or "資料還沒產生", "watch": watch,
            "generated": datetime.now(TPE).strftime("%Y-%m-%d %H:%M"), "source": "rules"}
     save_json(os.path.join(DATA, "summary.json"), out)
