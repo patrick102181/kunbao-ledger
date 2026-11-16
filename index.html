@@ -1572,8 +1572,17 @@ function renderSettings() {
   $("#planAdd").onclick = () => { st.plans.push({ id: "p-" + uid(), m: "TW", sym: "", name: "", amt: 1000 }); saveSettings(); };
   $("#radarBase").onchange = (e) => { st.radarBase = e.target.value.trim(); saveSettings(); loadRadar(); };
   if ($("#pxNow")) $("#pxNow").onclick = refreshPrices;
-  $("#quoteUrl").onchange = (e) => { const v = e.target.value.trim(); if (v && !/^https:\/\/[^\s/]+\.[^\s/]+/.test(v)) { toast("網址要是 https:// 開頭"); return; } st.quoteUrl = v.replace(/\/+$/, ""); LQ = { q: {}, t: 0, err: "", busy: false }; quoteMsg = null; saveSettings(); };
+  const saveQuoteUrl = () => {
+    const v = $("#quoteUrl").value.trim().replace(/\/+$/, "");
+    if (v && !/^https:\/\/[^\s/]+\.[^\s/]+/.test(v)) { toast("網址要是 https:// 開頭"); return false; }
+    if (v === quoteUrl()) return true;
+    st.quoteUrl = v; LQ = { q: {}, t: 0, err: "", busy: false }; quoteMsg = null;
+    S.settings.ua = now(); LS.set("kb-state", S); scheduleSync();   // 不重畫畫面，免得吃掉接著按的「測試」
+    return true;
+  };
+  $("#quoteUrl").onchange = saveQuoteUrl;
   $("#quoteTest").onclick = async () => {
+    if (!saveQuoteUrl()) return;
     const u = quoteUrl();
     if (!u) { toast("先貼上 Worker 網址"); return; }
     quoteMsg = { cls: "", text: "測試中…" }; render();
