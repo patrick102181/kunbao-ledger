@@ -534,6 +534,12 @@ details.grp[open]>summary::after{content:"－"}
 details.grp[open]>summary{border-bottom:1.5px solid var(--ink)}
 details.grp>.card{border:0;border-top:1.5px solid var(--ink)}
 details.grp>summary+.card{border-top:0}
+.rc{row-gap:6px;align-items:center}
+.rc .rn{display:flex;align-items:baseline;gap:8px;min-width:0}
+.rc .rn b{font-family:var(--f-num);font-weight:600;font-size:17px;line-height:1.2;flex:none}
+.rc .rn span{font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.rc .rt{display:flex;flex-wrap:wrap;gap:6px;min-width:0}
+.rc .rp{font-family:var(--f-body);font-size:12.5px;font-weight:400;color:var(--muted);white-space:nowrap;text-align:right}
 ul.rules{list-style:none;margin:6px 0;padding:0}
 ul.rules li{padding:6px 0 6px 10px;border-left:3px solid var(--hair);margin-bottom:6px;font-size:12.5px;line-height:1.5;color:var(--muted)}
 ul.rules li b{display:block;color:var(--ink);font-size:13px}
@@ -1247,7 +1253,7 @@ function renderInvest() {
       <span class="hv num">${fmt(h.valT)}<i class="cur">台幣</i></span>
       <span class="hm"><i class="mk ${h.m.toLowerCase()}"></i>${MK[h.m]}${h.bks.length ? `<em>${esc(h.bks.join("、"))}</em>` : ""}</span>
       <span class="hp num ${signCls(h.unT)}">${isNum(h.unT) ? `${h.unT > 0 ? "+" : h.unT < 0 ? "−" : ""}${fmt(Math.abs(h.unT))}<i class="cur">台幣</i><small>${h.unT > 0 ? "+" : h.unT < 0 ? "−" : ""}${isNum(h.unP) ? (Math.abs(h.unP) * 100).toFixed(1) + "%" : ""}</small>` : `<u>點這裡填現價</u>`}</span></button>`).join("") : `<div class="empty">還沒有持股，按右下角 ＋ 記第一筆買進</div>`}</div>
-    <p class="tiny" style="margin:6px 0 0">點一檔看股數、均價、新聞和點位</p>
+    ${act.length ? `<p class="tiny" style="margin:6px 0 0">點一檔看股數、均價、新聞和點位</p>` : ""}
     ${H.some((h) => h.sh === 0) ? `<details class="more" data-k="closed"${od("closed")}><summary>已出清的標的（${H.filter((h) => h.sh === 0).length}）</summary>${H.filter((h) => h.sh === 0).map((h) => `<div class="item" style="cursor:default"><span class="a">${esc(h.sym)} <span class="muted">${esc(h.name)}</span></span><span class="amt num ${signCls(h.realT + h.divT)}">${fmt(h.realT + h.divT)}</span></div>`).join("")}</details>` : ""}
     <details class="more" data-k="trades"${od("trades")}><summary>交易紀錄（${trades.length} 筆）</summary>
     <div class="scroll"><table class="tbl"><thead><tr><th>日期</th><th>標的</th><th>動作</th><th class="r">數量</th><th class="r">價格/金額</th></tr></thead><tbody>
@@ -1321,11 +1327,12 @@ function renderRecs() {
     <p class="tiny" style="margin:8px 0 0">熱門族群＋資金流＋財報轉強＋長線買點觸發才會列出。這套濾網回測沒有證明有優勢，名單不是買進建議；單股不超過衛星層 10%。</p></div>
   <div class="card"><h2>我的推薦紀錄<span class="r">${S.recs.length} 筆</span></h2>
     <div class="seg" role="tablist">${["watch", "bought", "pass", "all"].map((k) => `<button type="button" class="${recFilter === k ? "on" : ""}" data-rf="${k}">${k === "all" ? "全部" : STATUS[k]} <span class="n">${k === "all" ? S.recs.length : S.recs.filter((r) => r.status === k).length}</span></button>`).join("")}</div>
-    <div class="list" style="margin-top:6px">${recs.map((r) => { const pr = priceOf(r.m, r.sym); const ch = pr && isNum(r.px) && r.px > 0 ? pr.p / r.px - 1 : NaN; return `<button class="hold" type="button" data-rec="${esc(r.id)}">
-      <span class="a"><b>${esc(r.sym)}</b> <span class="muted">${esc(r.name || "")}</span> <span class="chip">${MK[r.m]}</span> <span class="chip">${esc(r.src || "")}</span></span>
+    <div class="list" style="margin-top:6px">${recs.map((r) => { const pr = priceOf(r.m, r.sym); const ch = pr && isNum(r.px) && r.px > 0 ? pr.p / r.px - 1 : NaN; return `<button class="hold rc" type="button" data-rec="${esc(r.id)}">
+      <span class="rn"><b>${esc(r.sym)}</b><span>${esc(r.name || "")}</span></span>
       <span class="amt num ${signCls(ch)}" style="text-align:right">${isNum(ch) ? pct(ch) : "－"}</span>
-      <span class="b">${esc(r.date || "")}${r.reason ? "・" + esc(r.reason) : ""}</span>
-      <span class="b num" style="text-align:right">${isNum(r.px) ? fmtP(r.px) : "－"} → ${pr ? fmtP(pr.p) : "－"}</span>${(() => { const v = r.status !== "pass" && recLv(r.m, r.sym), j = v && judge(r); return v ? `
+      <span class="rt"><span class="chip">${MK[r.m]}</span>${r.src ? `<span class="chip">${esc(r.src)}</span>` : ""}</span>
+      <span class="rp num">${isNum(r.px) ? fmtP(r.px) : "－"} → ${pr ? fmtP(pr.p) : "－"}</span>
+      <span class="b" style="grid-column:1/-1">${esc(r.date || "")}${r.reason ? "・" + esc(r.reason) : ""}</span>${(() => { const v = r.status !== "pass" && recLv(r.m, r.sym), j = v && judge(r); return v ? `
       <span class="lv"><span class="lt"><span class="cg"><span class="chip ${j.cls}">${j.v}</span>${newsChip(j.nw)}</span><small>點位（${CUR[r.m]}）</small></span><span><small>買進區</small><b class="num">${fmtP(v.bLo)}～${fmtP(v.bHi)}</b></span><span><small>出場線</small><b class="num">${fmtP(v.stop)}</b></span><span><small>目標</small><b class="num">${v.tg.length ? fmtP(v.tg[0]) : "－"}</b></span></span>` : ""; })()}</button>`; }).join("") || `<div class="empty">${recFilter === "watch" ? "按候選名單的「觀察」或右下角 ＋ 新增，之後會自動追蹤推薦後漲跌" : "沒有紀錄"}</div>`}</div>
     <div class="sub">AI 助手<small>${ghCfg() ? "在 GitHub Actions 上執行" : "要先到設定連上 GitHub"}</small></div>
     <div class="btns" style="margin-top:8px"><button class="btn pri sm" type="button" id="aiCheck"${aiBusy ? " disabled" : ""}>幫我健檢記帳與持股</button><button class="btn sm" type="button" id="aiPaste">貼上別人的推薦，讓 AI 整理</button></div>
