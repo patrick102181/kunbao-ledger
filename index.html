@@ -2063,13 +2063,13 @@ function addLv(p) {
     const lv = [{ k: "200 日線", p: BTCM.ma }, { k: "便宜區", p: BTCM.ma * 0.8 }, BTCM.wma ? { k: "200 週線", p: BTCM.wma } : { k: "深跌", p: BTCM.ma * 0.6 }]
       .sort((a, b) => b.p - a.p).map((x) => ({ ...x, hit: isNum(px) && px <= x.p }));
     const n = lv.filter((x) => x.hit).length;
-    return { lv, note: lvTail((n ? `現價已到第 ${n} 個補倉點，這期可以多扣 ${n} 期。` : "補倉點：跌到哪一格就多扣一期，沒到就照常扣。"), CUR[p.m]) };
+    return { lv, note: lvTail((n ? `現價已到第 ${n} 個補倉點，有閒錢可以多扣 ${n} 期；沒有就照常扣。` : "補倉點：有閒錢、又跌到哪一格才多扣一期；別為了等補倉而少扣。"), CUR[p.m]) };
   }
   else { const it = radarItem(p.m, p.sym); if (!it || !Array.isArray(it.lv) || !isNum(it.lv[2])) return null; base = it.lv[2]; px = priceOf(p.m, p.sym)?.p ?? it.px; ks = [["回到年線", 1], ["年線 -10%", 0.9], ["年線 -20%", 0.8]]; }
   const tm = R.macro && R.macro.tactical && R.macro.tactical.markets, tac = p.m !== "CR" && tm && tm[p.m === "TW" ? "tw" : "us"] && tm[p.m === "TW" ? "tw" : "us"].on;
   const lv = ks.map(([k, f]) => ({ k, p: base * f, hit: isNum(px) && px <= base * f }));
   const n = lv.filter((x) => x.hit).length;
-  return { lv, note: lvTail((tac ? "戰術層觸發中，先不補倉。" : n ? `現價已到第 ${n} 個補倉點，這期可以多扣 ${n} 期。` : "補倉點：跌到哪一格就多扣一期，沒到就照常扣。"), CUR[p.m]) };
+  return { lv, note: lvTail((tac ? "戰術層觸發中，先不補倉。" : n ? `現價已到第 ${n} 個補倉點，有閒錢可以多扣 ${n} 期；沒有就照常扣。` : "補倉點：有閒錢、又跌到哪一格才多扣一期；別為了等補倉而少扣。"), CUR[p.m]) };
 }
 function dcaSig(p) {
   const out = (label, cls, why) => ({ label, cls, why });
