@@ -1,0 +1,28 @@
+name: 暫時測試資料來源（測完會刪）
+on: workflow_dispatch
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - run: pip install -q yfinance requests
+      - name: probe
+        shell: python
+        run: |
+          import requests, yfinance as yf, traceback
+          def p(name, f):
+              try: print(name, "=>", f())
+              except Exception as e: print(name, "FAIL", repr(e)[:200])
+          p("yf info AAPL", lambda: len(yf.Ticker("AAPL").info or {}))
+          p("yf qtr income AAPL", lambda: yf.Ticker("AAPL").quarterly_income_stmt.shape)
+          p("yf qtr income RKLB", lambda: list(yf.Ticker("RKLB").quarterly_income_stmt.columns[:2]))
+          p("yf qtr balance AAPL", lambda: yf.Ticker("AAPL").quarterly_balance_sheet.shape)
+          ua={"User-Agent":"kunbao-ledger research patrick102181@users.noreply.github.com"}
+          p("sec companyfacts", lambda: requests.get("https://data.sec.gov/api/xbrl/companyfacts/CIK0000320193.json",headers=ua,timeout=30).status_code)
+          p("sec tickers", lambda: requests.get("https://www.sec.gov/files/company_tickers.json",headers=ua,timeout=30).status_code)
+          p("sec submissions", lambda: requests.get("https://data.sec.gov/submissions/CIK0000320193.json",headers=ua,timeout=30).status_code)
+          hdr={"User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124 Safari/537.36","Accept":"application/json"}
+          p("nasdaq financials", lambda: (lambda r:(r.status_code,r.text[:120]))(requests.get("https://api.nasdaq.com/api/company/AAPL/financials?frequency=2",headers=hdr,timeout=30)))
+          p("yahoo timeseries raw", lambda: requests.get("https://query2.finance.yahoo.com/ws/fundamentals-timeseries/v1/finance/timeseries/AAPL?type=quarterlyTotalRevenue&period1=1600000000&period2=1800000000",headers=hdr,timeout=30).status_code)
