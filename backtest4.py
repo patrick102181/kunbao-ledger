@@ -73,6 +73,61 @@ def _quarters_from_facts(units, kind):
     return out
 
 
+def yahoo_ts_fund(tickers, cache, path):
+    """SEC 擋 GitHub 機房時的備援：Yahoo 財報時間序列（季營收、季毛利、季 EPS）。
+    Yahoo 沒有申報日，用「季末＋45 天」當作市場看得到的日子（10-Q 最晚 40～45 天內要交），避免偷看未來。"""
+    from concurrent.futures import ThreadPoolExecutor
+    p1, p2 = 1262304000, int(time.time())
+    types = "quarterlyTotalRevenue,quarterlyGrossProfit,quarterlyDilutedEPS,quarterlyBasicEPS"
+
+    def one(t):
+        for k in range(2):
+            try:
+                r = requests.get(f"https://query2.finance.yahoo.com/ws/fundamentals-timeseries/v1/finance/timeseries/{t}",
+                                 params={"symbol": t, "type": types, "period1": p1, "period2": p2}, headers=UA, timeout=30)
+                if r.status_code != 200:
+                    time.sleep(2)
+                    continue
+                ser = {}
+                for res in (r.json().get("timeseries") or {}).get("result") or []:
+                    nm = ((res.get("meta") or {}).get("type") or [None])[0]
+                    for x in res.get(nm) or []:
+                        if x and x.get("asOfDate") and (x.get("reportedValue") or {}).get("raw") is not None:
+                            ser.setdefault(nm, {})[x["asOfDate"]] = float(x["reportedValue"]["raw"])
+                rev, gp = ser.get("quarterlyTotalRevenue", {}), ser.get("quarterlyGrossProfit", {})
+                eps = ser.get("quarterlyDilutedEPS") or ser.get("quarterlyBasicEPS") or {}
+                rows = []
+                for e in sorted(set(rev) | set(eps)):
+                    f = (pd.Timestamp(e) + pd.Timedelta(days=45)).strftime("%Y-%m-%d")
+                    rows.append([e, f, rev.get(e), gp.get(e), eps.get(e)])
+                return t, rows
+            except Exception:  # noqa
+                time.sleep(2)
+        return t, None
+
+    todo = [t for t in tickers if t not in cache]
+    log(f"Yahoo 財報歷史：快取 {len(cache)}，這次抓 {len(todo)}")
+    got = fails = 0
+    with ThreadPoolExecutor(max_workers=3) as ex:
+        for i in range(0, len(todo), 30):
+            for t, rows in ex.map(one, todo[i:i + 30]):
+                if rows:
+                    cache[t] = rows
+                    got += 1
+                    fails = 0
+                else:
+                    fails += 1
+            if fails >= 60:
+                log("Yahoo 財報歷史一直失敗，先停")
+                break
+            M.save_json(path, cache)
+            time.sleep(1)
+    lens = sorted(len(v) for v in cache.values()) or [0]
+    log(f"Yahoo 財報歷史：抓到 {got} 檔，每檔季數中位數 {lens[len(lens) // 2]}")
+    M.save_json(path, cache)
+    return {t: cache[t] for t in tickers if t in cache}
+
+
 def sec_fund(tickers):
     """美股：{ticker: [[季末, 申報日, 營收, 毛利, EPS], ...]}，快取在 cache/bt_sec.json"""
     path = os.path.join(CACHE, "bt_sec.json")
@@ -83,8 +138,8 @@ def sec_fund(tickers):
             raise RuntimeError(f"HTTP {rr.status_code} {rr.text[:120]}")
         cik = {v["ticker"].upper().replace(".", "-"): v["cik_str"] for v in rr.json().values()}
     except Exception as e:  # noqa
-        log("SEC 代號表失敗：", e)
-        return {t: cache[t] for t in tickers if t in cache}
+        log("SEC 代號表失敗，改用 Yahoo 財報歷史：", e)
+        return yahoo_ts_fund(tickers, cache, path)
     todo = [t for t in tickers if t not in cache and t in cik]
     log(f"SEC 財報：快取 {len(cache)}，這次抓 {len(todo)}")
     fails = 0
@@ -94,8 +149,8 @@ def sec_fund(tickers):
             if r.status_code != 200:
                 fails += 1
                 if fails >= 30 and i < 40:
-                    log("SEC 一直拒絕：", r.status_code, r.text[:200])
-                    break
+                    log("SEC 一直拒絕，改用 Yahoo 財報歷史：", r.status_code, r.text[:200])
+                    return yahoo_ts_fund(tickers, cache, path)
                 continue
             g = r.json().get("facts", {}).get("us-gaap", {})
 
