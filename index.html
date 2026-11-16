@@ -178,7 +178,7 @@ details summary{cursor:pointer;color:var(--blue);font-size:14px;font-weight:700;
 .terra{overflow:hidden;background:#fff;border:1.5px solid var(--ink)}
 .terra svg{display:block;width:100%;height:auto}
 .lvl{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
-.lvl b{font-family:var(--f-num);font-size:34px;font-weight:500}
+.lvl b{font-family:var(--f-num);font-size:34px;font-weight:500;line-height:1.15}  /* 大字要自己設行高，不然會沿用內文的 px 行高、往上凸出去 */
 .badges{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));border-top:1.5px solid var(--ink);border-left:1.5px solid var(--ink)}
 .badge{border-right:1.5px solid var(--ink);border-bottom:1.5px solid var(--ink);padding:10px 6px;text-align:center;font-size:12px;background:var(--card)}
 .badge .m{display:block;text-align:center;width:34px;height:34px;margin:0 auto 6px;border:1.5px dashed var(--faint);color:var(--faint);font-weight:700;font-size:14px;border-radius:50%}
@@ -1172,7 +1172,7 @@ function renderInvest() {
   <div class="card"><h2>本月定期定額（台幣）<span class="r num">${fmt(monthBuysTWD(mo))} / ${fmt(st.investMonthly)}</span></h2>
     ${monthFull ? `<div class="tiny" style="margin:-4px 0 4px">這個月已投入 ${fmt(monthBuysTWD(mo))}，額度用完了，下面的燈號給下個月參考</div>` : ""}
     <div class="list">${st.plans.map((p) => { const d = planDone(p), g = dcaSig(p); return `<div class="item pl" style="cursor:default"><span class="a">${esc(p.sym)} <span class="muted">${esc(p.name)}</span>${p.role ? ` <span class="chip">${esc(p.role)}</span>` : ""}${d >= p.amt * 0.9 ? ` <span class="chip okc">已扣</span>` : ""}</span><span class="amt num">${fmt(d)} <span class="tiny">/ ${fmt(p.amt)}</span></span><span class="b">${MK[p.m]}${p.day ? `，每月 ${p.day} 號` : ""}${p.bk ? `，${esc(p.bk)}` : ""}${p.auto ? `<br>${esc(p.auto)}` : ""}</span><span class="pact"><button class="btn sm" type="button" data-plan="${esc(p.id)}">記這筆</button></span>
-      <span class="dca" style="grid-column:1/3"><span class="chip ${g.cls}">今天：${esc(g.label)}</span>${g.why ? `<span class="why">${esc(g.why)}</span>` : ""}</span>${(() => { const a = addLv(p); return a ? `
+      <span class="dca" style="grid-column:1/3"><span class="chip ${g.cls}">今天：${esc(g.label)}</span>${g.why ? `<span class="why">${esc(g.why).replace(/（[^（）]{1,14}）/g, (x) => `<span style="white-space:nowrap">${x}</span>`)}</span>` : ""}</span>${(() => { const a = addLv(p); return a ? `
       <span class="lv add" style="grid-column:1/3">${a.lv.map((x) => `<span class="${x.hit ? "hit" : ""}"><small>${x.k}</small><b class="num">${fmtP(x.p)}</b></span>`).join("")}<em>${a.note}</em></span>` : ""; })()}</div>`; }).join("") || `<div class="empty">到設定加入定期定額計畫</div>`}</div>
     <div class="btns" style="margin-top:10px"><button class="btn sm" type="button" id="dcaAi"${dcaBusy ? " disabled" : ""}>問 AI 今天怎麼買</button>${ghCfg() ? "" : `<span class="tiny" style="align-self:center">要先到設定連上 GitHub</span>`}</div>
     ${dcaOut ? `<div class="aiout" style="margin-top:10px">${esc(dcaOut)}</div>` : ""}
@@ -1889,36 +1889,50 @@ let BTCM = null, dcaOut = "", dcaBusy = false;
 async function loadBtcMayer() {
   if (BTCM && Date.now() - BTCM.t < 30 * 60e3) return;
   try {
-    const [k, t] = await Promise.all([
+    const [k, t, w] = await Promise.all([
       fetch("https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1d&limit=200", { cache: "no-store" }).then((r) => r.json()),
-      fetch("https://api.binance.com/api/v3/ticker/24hr?symbol=BTCUSDT", { cache: "no-store" }).then((r) => r.json())]);
+      fetch("https://api.binance.com/api/v3/ticker/24hr?symbol=BTCUSDT", { cache: "no-store" }).then((r) => r.json()),
+      fetch("https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1w&limit=200", { cache: "no-store" }).then((r) => r.json()).catch(() => [])]);
     const closes = k.map((x) => +x[4]).filter(isNum); if (closes.length < 150) return;
-    const ma = closes.reduce((a, b) => a + b, 0) / closes.length, px = +t.lastPrice;
-    BTCM = { t: Date.now(), px, ma, m: px / ma, ch: +t.priceChangePercent / 100 };
+    const avg = (a) => a.reduce((x, y) => x + y, 0) / a.length;
+    const ma = avg(closes), px = +t.lastPrice, wc = Array.isArray(w) ? w.map((x) => +x[4]).filter(isNum) : [], wma = wc.length >= 200 ? avg(wc) : null;
+    BTCM = { t: Date.now(), px, ma, m: px / ma, wma, wm: wma ? px / wma : null, ch: +t.priceChangePercent / 100 };
     render();
   } catch (e) {}
 }
 /* 核心 ETF／比特幣的補倉點：只在跌到便宜區時多扣，不追高、不攤平個股。
    ETF：回到年線、年線 -10%、年線 -20% 各多扣一期；比特幣：回到 200 日線、200 日線 ×0.8（便宜區）各多扣一期。戰術層觸發時不補 */
+// 句尾幣別跟最後幾個字黏在一起，避免窄螢幕把「（USDT）」單獨擠到下一行
+const lvTail = (t, c) => esc(t.slice(0, -3)) + `<span style="white-space:nowrap">${esc(t.slice(-3))}（${esc(c)}）</span>`;
 function addLv(p) {
   let base, ks, px;
-  if (p.m === "CR") { if (p.sym !== "BTC" || !BTCM) return null; base = BTCM.ma; px = BTCM.px; ks = [["200 日線", 1], ["便宜區", 0.8], ["深跌", 0.6]]; }
+  if (p.m === "CR") {
+    if (p.sym !== "BTC" || !BTCM) return null; px = BTCM.px;
+    // 比特幣：200 日線、200 日線 ×0.8（便宜區）、200 週線（歷史上的長期底部區）；照價位由高到低排
+    const lv = [{ k: "200 日線", p: BTCM.ma }, { k: "便宜區", p: BTCM.ma * 0.8 }, BTCM.wma ? { k: "200 週線", p: BTCM.wma } : { k: "深跌", p: BTCM.ma * 0.6 }]
+      .sort((a, b) => b.p - a.p).map((x) => ({ ...x, hit: isNum(px) && px <= x.p }));
+    const n = lv.filter((x) => x.hit).length;
+    return { lv, note: lvTail((n ? `現價已到第 ${n} 個補倉點，這期可以多扣 ${n} 期。` : "補倉點：跌到哪一格就多扣一期，沒到就照常扣。"), CUR[p.m]) };
+  }
   else { const it = radarItem(p.m, p.sym); if (!it || !Array.isArray(it.lv) || !isNum(it.lv[2])) return null; base = it.lv[2]; px = priceOf(p.m, p.sym)?.p ?? it.px; ks = [["回到年線", 1], ["年線 -10%", 0.9], ["年線 -20%", 0.8]]; }
   const tm = R.macro && R.macro.tactical && R.macro.tactical.markets, tac = p.m !== "CR" && tm && tm[p.m === "TW" ? "tw" : "us"] && tm[p.m === "TW" ? "tw" : "us"].on;
   const lv = ks.map(([k, f]) => ({ k, p: base * f, hit: isNum(px) && px <= base * f }));
   const n = lv.filter((x) => x.hit).length;
-  return { lv, note: (tac ? "戰術層觸發中，先不補倉。" : n ? `現價已到第 ${n} 個補倉點，這期可以多扣 ${n} 期。` : "補倉點：跌到哪一格就多扣一期，沒到就照常扣。") + `（${CUR[p.m]}）` };
+  return { lv, note: lvTail((tac ? "戰術層觸發中，先不補倉。" : n ? `現價已到第 ${n} 個補倉點，這期可以多扣 ${n} 期。` : "補倉點：跌到哪一格就多扣一期，沒到就照常扣。"), CUR[p.m]) };
 }
 function dcaSig(p) {
   const out = (label, cls, why) => ({ label, cls, why });
   if (p.m === "CR") {
     if (p.sym !== "BTC") return out("沒有燈號資料", "", "目前只對比特幣算 200 日均線");
     if (!BTCM) return out("讀取中", "", "");
-    const m = BTCM.m, base = `現價是 200 日均線的 ${m.toFixed(2)} 倍`, d = BTCM.ch <= -0.03 ? `，今天跌 ${pctAbs(BTCM.ch)}` : BTCM.ch >= 0.04 ? `，今天漲 ${pctAbs(BTCM.ch)}` : "";
-    if (m < 0.8) return out("便宜，可以多買一點", "go", base + "（低於 0.8 倍算便宜）" + d);
-    if (m < 1.5) return out("照常扣", "okc", base + "（0.8～1.5 倍算合理）" + d);
-    if (m < 2.4) return out("偏貴，照常扣不加碼", "", base + "（1.5～2.4 倍偏貴）" + d);
-    return out("過熱，這期先減半", "alert", base + "（超過 2.4 倍歷史上多半是高點）" + d);
+    const m = BTCM.m, d = BTCM.ch <= -0.03 ? `，今天跌 ${pctAbs(BTCM.ch)}` : BTCM.ch >= 0.04 ? `，今天漲 ${pctAbs(BTCM.ch)}` : "";
+    const wk = BTCM.wm ? (BTCM.wm < 1 ? `；跌破 200 週均線（${fmtP(BTCM.wma)}），歷史上這是少見的長期底部區，但可能在下面待好幾個月` : `；200 週均線在 ${fmtP(BTCM.wma)}，現價高出 ${pctAbs(BTCM.wm - 1)}`) : "";
+    const base = `現價是 200 日均線的 ${m.toFixed(2)} 倍`;
+    if (m < 0.8) return out("便宜，可以多買一點", "go", base + "（低於 0.8 倍算便宜）" + wk + d);
+    if (BTCM.wm && BTCM.wm < 1 && m < 1.5) return out("便宜，可以多買一點", "go", base + wk + d);
+    if (m < 1.5) return out("照常扣", "okc", base + "（0.8～1.5 倍算合理）" + wk + d);
+    if (m < 2.4) return out("偏貴，照常扣不加碼", "", base + "（1.5～2.4 倍偏貴）" + wk + d);
+    return out("過熱，這期先減半", "alert", base + "（超過 2.4 倍歷史上多半是高點）" + wk + d);
   }
   const it = radarItem(p.m, p.sym);
   if (!it) return out("沒有燈號資料", "", R.tw || R.us ? "這檔不在每日掃描的清單裡" : "市場資料還沒讀到");
