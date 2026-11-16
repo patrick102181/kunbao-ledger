@@ -100,6 +100,7 @@ main{display:grid;gap:14px;padding-top:14px}
 .chip.exp::before,.chip.alert::before{background:var(--red);border-radius:50%}
 .chip.trap::before{width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-bottom:9px solid var(--yellow);background:none}
 .btn{border:1.5px solid var(--ink);background:var(--card);border-radius:0;font-weight:700}
+a.btn,a.btn:visited{color:var(--ink)}
 .btn.pri{background:var(--red);border-color:var(--red);color:#fff}
 .btn.danger{color:var(--red);border-color:var(--red)}
 .btn.sm{font-size:13px;font-weight:500}
@@ -540,6 +541,12 @@ details.grp>summary+.card{border-top:0}
 .rc .rn span{font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .rc .rt{display:flex;flex-wrap:wrap;gap:6px;min-width:0}
 .rc .rp{font-family:var(--f-body);font-size:12.5px;font-weight:400;color:var(--muted);white-space:nowrap;text-align:right}
+.autoj{display:grid;grid-template-columns:8px minmax(0,1fr);column-gap:8px;align-items:start;margin:8px 0 0;font-size:12.5px;line-height:1.5;color:var(--ink)}
+.autoj>i{width:8px;height:8px;margin-top:5px;background:var(--blue)}
+.autoj.warn>i{background:var(--yellow)}
+.autoj.warn[style]{border-left:3px solid var(--yellow);padding-left:10px}
+.autoj ol{margin:4px 0;padding-left:18px}
+.autoj li{margin:2px 0}
 ul.rules{list-style:none;margin:6px 0;padding:0}
 ul.rules li{padding:6px 0 6px 10px;border-left:3px solid var(--hair);margin-bottom:6px;font-size:12.5px;line-height:1.5;color:var(--muted)}
 ul.rules li b{display:block;color:var(--ink);font-size:13px}
@@ -781,6 +788,68 @@ function autoPrices(manual) {
   }
   L.pxAsk = now(); saveL(); refreshPrices();
 }
+/* GitHub 的排程常常晚好幾個小時才跑。打開 App 時如果「該到的資料還沒到」，就自己請 GitHub 補跑一次：
+   市場資料（App repo 的 market.yml）與每日新聞（資料 repo 的 news.yml）。現價另外由 autoPrices 處理 */
+const twTime = (x) => { const m = /^(\d{4})-(\d\d)-(\d\d) (\d\d):(\d\d)/.exec(x || ""); return m ? Date.UTC(+m[1], m[2] - 1, +m[3], m[4] - 8, +m[5]) : 0; };
+// 最近一個已經過了寬限時間的排程時間點。slots：[[台灣時間星期幾, 時, 分]]
+function lastSlot(slots, graceMin) {
+  const n = now();
+  for (let back = 0; back < 8; back++) {
+    const d = new Date(n + 8 * 3600e3 - back * 86400e3), wd = d.getUTCDay(); let best = 0;
+    for (const [days, h, mi] of slots) {
+      if (!days.includes(wd)) continue;
+      const t = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), h - 8, mi);
+      if (t + graceMin * 60e3 <= n && t > best) best = t;
+    }
+    if (best) return best;
+  }
+  return 0;
+}
+const WK = [1, 2, 3, 4, 5];
+const AUTO = {
+  tw: { name: "台股資料", slots: [[WK, 19, 7]], grace: 40, at: () => twTime(R.tw && R.tw.updated) },
+  us: { name: "美股資料", slots: [[[2, 3, 4, 5, 6], 5, 37]], grace: 40, at: () => twTime(R.us && R.us.updated) },
+  news: { name: "新聞", slots: [[WK, 7, 40], [WK, 21, 0]], grace: 25, at: () => twTime(RM.news && RM.news.generated) },
+};
+const autoStale = (k) => { const c = AUTO[k], at = c.at(); return at > 0 && at < lastSlot(c.slots, c.grace); };
+function appRepo() { const m = /^https:\/\/([^./]+)\.github\.io\/([^/]+)\//.exec(S.settings.appUrl || location.href); return m ? { owner: m[1], repo: m[2] } : null; }
+let autoJob = {};   // 正在等 GitHub 補跑的項目：{ tw: "說明文字", … }
+async function autoWait(k, tries, gapMs, reload) {
+  const before = AUTO[k].at();
+  for (let i = 0; i < tries; i++) {
+    await sleep(gapMs);
+    if (document.visibilityState !== "visible") continue;
+    try { await reload(); } catch (e) {}
+    if (AUTO[k].at() > before) { delete autoJob[k]; render(); toast(AUTO[k].name + "已更新"); return; }
+  }
+  delete autoJob[k]; render();
+}
+async function autoData() {
+  const g = ghCfg(); if (!g) return;
+  L.auto = L.auto || {};
+  const cool = (k, min) => (now() - (L.auto[k] || 0)) / 60e3 < min;
+  const repo = appRepo(), mkOk = repo && /^\.\/?data\/?$/.test(S.settings.radarBase || "") && !cool("mkNo", 720);
+  for (const k of ["tw", "us"]) {
+    if (!mkOk || autoJob[k] || !autoStale(k) || cool(k, 180)) continue;
+    L.auto[k] = now(); saveL();
+    try {
+      await ghDispatch(Object.assign({}, g, repo, { branch: "main" }), "market.yml", { market: k });
+      delete L.auto.mkNo; saveL();
+      autoJob[k] = `${AUTO[k].name}晚了，已請 GitHub 補跑，大約 5～15 分鐘`; render();
+      autoWait(k, 20, 60e3, loadRadar);
+    } catch (e) { L.auto.mkNo = now(); delete L.auto[k]; saveL(); render(); break; }   // 金鑰沒有 App repo 的權限：12 小時內不再試，畫面上提示怎麼開
+  }
+  if (RM.news && !RM.err && !autoJob.news && autoStale("news") && !cool("news", 180)) {
+    L.auto.news = now(); saveL();
+    try {
+      await ghDispatch(g, "news.yml", { auto: "1" });
+      autoJob.news = "新聞晚了，已請 GitHub 補跑，大約 1 分鐘"; render();
+      autoWait("news", 12, 20e3, async () => { const f = await ghGetFile(g, "news.json"); if (f.text) RM.news = JSON.parse(f.text); });
+    } catch (e) {}
+  }
+}
+// 金鑰沒有 App repo 的 Actions 權限、資料又真的晚了：顯示怎麼開
+const autoNoKey = () => !!(ghCfg() && L.auto && L.auto.mkNo && (autoStale("tw") || autoStale("us")));
 async function ghPut(g, data, sha) {
   const body = { message: "坤寶存摺同步 " + new Date().toISOString(), content: utf8ToB64(JSON.stringify(data)) };
   if (sha) body.sha = sha;
@@ -839,7 +908,7 @@ async function loadRadar() {
   R.sum = sm.status === "fulfilled" ? sm.value : R.sum;
   const bad = res.filter((x) => x.status === "rejected");
   R.err = bad.length === res.length ? "還讀不到市場資料（" + (bad[0].reason?.message || "網路錯誤") + "）。第一次架好後，到 App repo 的 Actions 跑一次「每日更新市場資料」" : "";
-  R.loading = false; render();
+  R.loading = false; R.t = now(); render();
 }
 const CG = { BTC: "bitcoin", ETH: "ethereum", SOL: "solana", BNB: "binancecoin", XRP: "ripple", DOGE: "dogecoin", ADA: "cardano", ARB: "arbitrum", TON: "the-open-network", LINK: "chainlink", AVAX: "avalanche-2", DOT: "polkadot", TRX: "tron", SUI: "sui", PEPE: "pepe" };
 async function loadCrypto() {
@@ -1320,6 +1389,8 @@ function renderRecs() {
       <p class="tiny" style="margin:6px 0 0">每天從證交所、櫃買中心、Yahoo、FRED 自己抓；族群後面是近 4 週相對大盤的強弱。ETF 燈號只看價格位置，偏貴不代表要停扣，核心 ETF 照常定期定額。</p></details>` : ""}
     ${RM.news && RM.news.market ? `<details class="mnews"><summary><b>大盤新聞</b>${["tw", "us"].filter((k) => RM.news.market[k]).map((k) => { const n = RM.news.market[k]; return `<span class="mt ${newsCls(n)}">${k === "tw" ? "台股" : "美股"} ${NEWS_LAB[n.score] || "中性"}</span>`; }).join("")}</summary>${["tw", "us"].filter((k) => RM.news.market[k]).map((k) => `<div class="mn"><div class="mnh"><b>${k === "tw" ? "台股" : "美股"}</b></div>${newsList(RM.news.market[k])}</div>`).join("")}<div class="tiny" style="margin-top:6px">${esc(RM.news.generated || "")} 抓取。大盤新聞只是讓你知道市場在關心什麼，價格早就反應了，不要拿來買賣。</div></details>` : ""}
     <div class="btns" style="margin-top:8px;align-items:center"><button class="btn sm" type="button" id="reloadRadar">重新讀取</button><span class="tiny">台股 ${esc(R.tw ? R.tw.updated || "" : "－")}・美股 ${esc(R.us ? R.us.updated || "" : "－")}</span></div>
+    ${Object.values(autoJob).map((x) => `<p class="autoj"><i></i>${esc(x)}</p>`).join("")}
+    ${autoNoKey() ? `<p class="autoj warn"><i></i>市場資料晚了，GitHub 的排程還沒跑。想讓 App 自動補跑，到「設定 → 連線與資料 → 自動抓價與 AI」看怎麼開權限</p>` : ""}
   </div>
   <div class="card"><h2>衛星層候選<span class="r">四道濾網</span></h2>
     <div class="seg" role="tablist">${[["TW", "台股", tw], ["US", "美股", us]].map(([k, n, r]) => `<button type="button" class="${pm === k ? "on" : ""}" data-pmk="${k}">${n} <span class="n">${r ? r.length : 0}</span></button>`).join("")}</div>
@@ -1420,10 +1491,12 @@ function renderSettings() {
 
   <div class="card"><h2>自動抓價與 AI<span class="r">資料 repo 的 GitHub Actions</span></h2>
     <div class="list">
-      <div class="item" style="cursor:default"><span class="a">市場資料</span><span class="amt tiny">${R.tw ? "台股 " + esc(R.tw.updated || "") : "還沒有"}</span><span class="b">App repo 的「每日更新市場資料」：台股 22:10、美股 06:30 自己從證交所、櫃買、Yahoo、FRED 抓，算燈號、四道濾網、戰術層</span></div>
+      <div class="item" style="cursor:default"><span class="a">市場資料</span><span class="amt tiny">${R.tw ? "台股 " + esc(R.tw.updated || "") : "還沒有"}</span><span class="b">App repo 的「每日更新市場資料」：台股 19:07 和 22:13、美股隔天 05:37 和 07:43，自己從證交所、櫃買、Yahoo、FRED 抓，算燈號、四道濾網、戰術層</span></div>
       <div class="item" style="cursor:default"><span class="a">持股現價</span><span class="amt tiny">${RM.prices ? "上次 " + esc(RM.prices.updated || "") : "還沒抓過"}</span><span class="b">每個交易日 22:15 抓台股、隔天 06:35 抓美股與加密貨幣；台股用證交所與櫃買中心收盤價，其他用 Yahoo Finance</span></div>
       <div class="item" style="cursor:default"><span class="a">AI 助手</span><span class="amt tiny">${RM.ai && RM.ai.review ? "上次 " + esc(RM.ai.review.generated || "") : "還沒用過"}</span><span class="b">Claude 金鑰放在資料 repo 的 Settings → Secrets → Actions，名稱 ANTHROPIC_API_KEY，不經過這台裝置</span></div>
     </div>
+    <p class="tiny" style="margin:8px 0 0">GitHub 的排程常常晚幾個小時。打開 App 時，市場資料、新聞、現價如果該到還沒到，App 會自己請 GitHub 補跑一次。</p>
+    ${L.auto && L.auto.mkNo ? `<div class="autoj warn" style="display:block"><b>市場資料還不能自動補跑：金鑰沒有 App repo 的權限</b><ol><li>打開 github.com/settings/personal-access-tokens，點進這把金鑰，按 Edit</li><li>Repository access 加選 ${esc((appRepo() || {}).repo || "kunbao-ledger")}</li><li>Permissions 的 Actions 設成 Read and write，按 Update</li></ol>新聞和現價不受影響，已經會自動補跑。</div>` : ""}
     ${RM.err ? `<div class="tiny" style="color:var(--seal)">${esc(RM.err)}</div>` : ""}
     ${priceJob ? `<div class="tiny">${esc(priceJob)}</div>` : ""}
     <div class="btns" style="margin-top:8px">${ghCfg() ? `<button class="btn sm" type="button" id="pxNow">立即更新現價</button><a class="btn sm" style="text-decoration:none" target="_blank" rel="noopener" href="https://github.com/${encodeURIComponent(g.owner)}/${encodeURIComponent(g.repo)}/actions">打開 Actions</a><a class="btn sm" style="text-decoration:none" target="_blank" rel="noopener" href="https://github.com/${encodeURIComponent(g.owner)}/${encodeURIComponent(g.repo)}/settings/secrets/actions">設定 Claude 金鑰</a>` : `<span class="tiny">先在上面連上 GitHub</span>`}</div>
@@ -2150,13 +2223,17 @@ $("#camIn").onchange = (e) => { const fs = [...e.target.files]; e.target.value =
 
 $("#fab").onclick = () => { const t = L.tab; if (t === "book") txForm(); else if (t === "invest") tradeForm(); else if (t === "recs") recForm(); };
 $("#syncChip").onclick = () => { if (ghCfg()) { sync().then(loadRemote).then(() => autoPrices(true)); } else { L.tab = "settings"; saveL(); render(); } };
-document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && ghCfg()) sync().then(loadRemote).then(() => autoPrices(false)); });
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState !== "visible") return;
+  const rd = now() - (R.t || 0) > 10 * 60e3 ? loadRadar() : Promise.resolve();   // 放超過 10 分鐘才重讀市場資料
+  if (ghCfg()) Promise.all([rd, sync().then(loadRemote)]).then(() => { autoPrices(false); autoData(); });
+});
 if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js").catch(() => {});
 if (location.protocol === "https:") { const here = location.origin + location.pathname.replace(/[^/]*$/, ""); if (S.settings.appUrl !== here) { S.settings.appUrl = here; S.settings.ua = now(); LS.set("kb-state", S); } }
 render();
 lastGame = game();
-loadRadar().then(loadCrypto);
-if (ghCfg()) sync().then(loadRemote);
+{ const rd = loadRadar(); rd.then(loadCrypto);
+  if (ghCfg()) Promise.all([rd, sync().then(loadRemote)]).then(() => { autoPrices(false); autoData(); }); }
 </script>
 </body>
 </html>
