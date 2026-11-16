@@ -245,17 +245,102 @@ def rnd4(x):
     return round(x, 4) if x is not None and x == x else None
 
 
+def dca_sim(dc, mult):
+    """每月第一個交易日扣款。mult(日期, 價格) 回傳這個月扣幾期（1＝照常、2＝多扣一期、0.5＝減半）。
+    回傳 XIRR、總投入、期末市值、每 1 元投入最後變幾元"""
+    months = dc.groupby([dc.index.year, dc.index.month]).head(1)
+    last_d, last_p = dc.index[-1], float(dc.iloc[-1])
+    flows, units, put, hits = [], 0.0, 0.0, 0
+    for d, p in months.items():
+        m = mult(d, float(p))
+        if m is None:
+            continue
+        flows.append((d, -m)); units += m / float(p); put += m; hits += m != 1
+    if len(flows) < 24:
+        return None
+    return {"from": str(flows[0][0].date()), "months": len(flows), "changed": int(hits), "put": round(put, 1),
+            "xirr": rnd4(xirr(flows + [(last_d, units * last_p)])), "multiple": round(units * last_p / put, 4)}
+
+
+def trend_sim(dc, frac, cost):
+    """一次買進抱著不動 vs「週收盤跌破週 MA52 就賣掉 frac、站回去再買回」。回傳年化報酬與最大跌幅"""
+    wk = dc.resample("W-FRI").last().dropna()
+    ma = wk.rolling(52).mean()
+    wk, ma = wk[ma.notna()], ma[ma.notna()]
+    if len(wk) < 156:
+        return None
+    units, cash, out, trades = 1.0 / float(wk.iloc[0]), 0.0, False, 0
+    hold_v, rule_v = [], []
+    for d, p in wk.items():
+        p = float(p)
+        if not out and p < float(ma[d]):
+            sell = units * frac
+            cash += sell * p * (1 - cost); units -= sell; out = True; trades += 1
+        elif out and p > float(ma[d]):
+            units += cash * (1 - cost) / p; cash = 0.0; out = False; trades += 1
+        rule_v.append(units * p + cash); hold_v.append(p / float(wk.iloc[0]))
+    yrs = (wk.index[-1] - wk.index[0]).days / 365.25
+
+    def mdd(v):
+        a = np.array(v); return float((a / np.maximum.accumulate(a) - 1).min())
+    return {"from": str(wk.index[0].date()), "years": round(yrs, 1), "trades": trades,
+            "hold_cagr": rnd4(hold_v[-1] ** (1 / yrs) - 1), "rule_cagr": rnd4(rule_v[-1] ** (1 / yrs) - 1),
+            "hold_mdd": rnd4(mdd(hold_v)), "rule_mdd": rnd4(mdd(rule_v))}
+
+
+CORE_ETF = [("0050.TW", "0050 元大台灣50", 0.003), ("006208.TW", "006208 富邦台50", 0.003), ("0056.TW", "0056 元大高股息", 0.003),
+            ("VT", "VT 全球股市", 0.001), ("VOO", "VOO 標普500", 0.001), ("SPY", "SPY 標普500（1993 起，含 2000、2008）", 0.001),
+            ("QQQ", "QQQ 那斯達克100", 0.001)]
+
+
 def run_core():
-    d = M.yf_download(["0050.TW", "VT", "BTC-USD"], "max", "1d", chunk=3)
-    out = []
-    for t, name, n, ks in (("0050.TW", "0050 元大台灣50", 240, (1, 0.9, 0.8)), ("VT", "VT 全球股市", 240, (1, 0.9, 0.8)),
-                           ("BTC-USD", "比特幣", 200, (1, 0.8, 0.6))):
+    """核心層：定期定額的各種扣法比一比（價格用含息還原價）"""
+    d = M.yf_download([t for t, _, _ in CORE_ETF] + ["BTC-USD"], "max", "1d", chunk=10)
+    dca, trend = [], []
+    for t, name, cost in CORE_ETF:
         dc = M.col(d, "Close", t)
-        if dc is not None:
-            x = dca_test(name, dc, n, ks)
+        if dc is None:
+            continue
+        dc = dc.dropna()
+        base = dc.rolling(240).mean()
+        ok = lambda dd: dd in base.index and base[dd] == base[dd]  # noqa
+        plain = dca_sim(dc, lambda dd, p: 1.0 if ok(dd) else None)
+        plus = dca_sim(dc, lambda dd, p: (1.0 + sum(1 for k in (1, 0.9, 0.8) if p <= float(base[dd]) * k)) if ok(dd) else None)
+        # 反過來：只在年線上面才多扣一期（追高），當對照組
+        chase = dca_sim(dc, lambda dd, p: (2.0 if p > float(base[dd]) * 1.1 else 1.0) if ok(dd) else None)
+        if plain and plus:
+            dca.append({"t": t, "name": name, "plain": plain, "plus": plus, "chase": chase})
+        for frac, key in ((0.1, "trim10"), (1.0, "all_out")):
+            x = trend_sim(dc, frac, cost)
             if x:
-                out.append(x)
-    return out
+                trend.append(dict(x, t=t, name=name, rule=key))
+    dc = M.col(d, "Close", "BTC-USD")
+    if dc is not None:
+        dc = dc.dropna()
+        ma = dc.rolling(200).mean()
+        wk = dc.resample("W-SUN").last().dropna()
+        wma = wk.rolling(200).mean().shift(1).reindex(dc.index, method="ffill")   # 只用已經收完的週
+        ok = lambda dd: ma[dd] == ma[dd]  # noqa
+
+        def lv_old(dd, p):
+            return 1.0 + sum(1 for k in (1, 0.8, 0.6) if p <= float(ma[dd]) * k)
+
+        def lv_new(dd, p):
+            lv = [float(ma[dd]), float(ma[dd]) * 0.8, float(wma[dd]) if wma[dd] == wma[dd] else float(ma[dd]) * 0.6]
+            return 1.0 + sum(1 for x in lv if p <= x)
+        plain = dca_sim(dc, lambda dd, p: 1.0 if ok(dd) else None)
+        r = {"t": "BTC-USD", "name": "比特幣", "plain": plain,
+             "plus_old": dca_sim(dc, lambda dd, p: lv_old(dd, p) if ok(dd) else None),
+             "plus": dca_sim(dc, lambda dd, p: lv_new(dd, p) if ok(dd) else None),
+             "plus_half": dca_sim(dc, lambda dd, p: (0.5 if p > float(ma[dd]) * 2.4 else lv_new(dd, p)) if ok(dd) else None),
+             "half_only": dca_sim(dc, lambda dd, p: (0.5 if p > float(ma[dd]) * 2.4 else 1.0) if ok(dd) else None)}
+        if plain:
+            dca.append(r)
+        for frac, key in ((0.1, "trim10"), (1.0, "all_out")):
+            x = trend_sim(dc, frac, 0.002)
+            if x:
+                trend.append(dict(x, t="BTC-USD", name="比特幣", rule=key))
+    return {"dca": dca, "trend": trend}
 
 
 def main():
