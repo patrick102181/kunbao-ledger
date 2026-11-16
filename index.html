@@ -531,6 +531,10 @@ details.grp>summary+.card{border-top:0}
 .autoj.warn[style]{border-left:3px solid var(--yellow);padding-left:10px}
 .autoj ol{margin:4px 0;padding-left:18px}
 .autoj li{margin:2px 0}
+#quoteRes.ok{color:var(--blue)} #quoteRes.bad{color:var(--seal)}
+ol.steps{margin:6px 0 0;padding-left:20px}
+ol.steps .nw{white-space:nowrap}
+ol.steps li{margin:0 0 6px;font-size:12.5px;line-height:1.55;color:var(--ink)}
 ul.rules{list-style:none;margin:6px 0;padding:0}
 ul.rules li{padding:6px 0 6px 10px;border-left:3px solid var(--hair);margin-bottom:6px;font-size:12.5px;line-height:1.5;color:var(--muted)}
 ul.rules li b{display:block;color:var(--ink);font-size:13px}
@@ -766,12 +770,57 @@ function autoPrices(manual) {
   const twClose = new Date(now() - (mm - 815) * 60e3).getTime();   // 今天台灣 13:35
   const needClose = wd >= 1 && wd <= 5 && mm >= 815 && last < twClose;   // 台股收盤後還沒抓到今天收盤價
   if (asked < 10) return;
+  if (!needClose && !manual && liveOk()) return;
   if (!needClose) {
     if (!marketLive()) { if (manual) toast("台股、美股（含盤前盤後）都休市中，現在顯示的是最後成交價"); return; }
     if (age < (manual ? 10 : 30)) return;
   }
   L.pxAsk = now(); saveL(); refreshPrices();
 }
+/* 盤中報價：經自己的 Cloudflare Worker（worker/quote.js）直接抓，幾秒就回來；沒設定或連不上時改走 GitHub 抓價（1～2 分鐘）。
+   只放在記憶體，不存檔；App 開著時盤中每 3 分鐘自動更新一次 */
+let LQ = { q: {}, t: 0, err: "", busy: false }, quoteMsg = null;
+const quoteUrl = () => (S.settings.quoteUrl || "").trim().replace(/\/+$/, "");
+const liveOk = () => !!(quoteUrl() && LQ.t && !LQ.err && now() - LQ.t < 10 * 60e3);
+function liveKeys() {
+  const ks = [...holdings().filter((h) => h.sh > 0).map((h) => h.m + ":" + h.sym), ...S.settings.plans.map((p) => p.m + ":" + p.sym), ...S.recs.filter((r) => r.status !== "pass").map((r) => r.m + ":" + r.sym)];
+  return [...new Set(ks.filter((k) => /^(TW|US):[A-Z0-9.\-]{1,12}$/.test(k)))].slice(0, 40);
+}
+async function quoteGet(u, keys) {
+  const ac = new AbortController(), tm = setTimeout(() => ac.abort(), 10000);
+  try {
+    const r = await fetch(`${u}/quote?s=${encodeURIComponent(keys.join(","))}`, { cache: "no-store", signal: ac.signal });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(j.error || "HTTP " + r.status);
+    return j;
+  } catch (e) { throw new Error(e.name === "AbortError" ? "等超過 10 秒沒回應" : /Failed to fetch|Load failed|NetworkError/.test(e.message) ? "連不上（網址打錯，或 Worker 還沒部署）" : e.message); }
+  finally { clearTimeout(tm); }
+}
+async function liveQuotes(manual) {
+  const u = quoteUrl();
+  if (!u) { if (manual) refreshPrices(); return; }
+  if (LQ.busy) return;
+  const keys = liveKeys();
+  if (!keys.length) { if (manual) toast("還沒有台股、美股持股"); return; }
+  LQ.busy = true; render();
+  try {
+    const j = await quoteGet(u, keys);
+    for (const [k, v] of Object.entries(j.q || {})) if (v && isNum(v.p)) LQ.q[k] = v;
+    LQ.t = now(); LQ.err = "";
+    if (manual) toast(`現價已更新：${Object.keys(j.q || {}).length} 檔${(j.miss || []).length ? `，${j.miss.length} 檔抓不到` : ""}`);
+  } catch (e) {
+    LQ.err = e.message;
+    if (manual) { toast("盤中報價" + e.message.slice(0, 20) + "，改請 GitHub 抓價"); if (ghCfg()) refreshPrices(); }
+  }
+  LQ.busy = false;
+  if (manual) loadCrypto(); else render();
+}
+function autoLive() {
+  if (!quoteUrl() || LQ.busy || document.visibilityState !== "visible") return;
+  if (!LQ.t || (marketLive() && now() - LQ.t > 3 * 60e3)) liveQuotes(false);
+}
+setInterval(autoLive, 60e3);
+const pxBtn = () => quoteUrl() ? liveQuotes(true) : refreshPrices();
 /* GitHub 的排程常常晚好幾個小時才跑。打開 App 時如果「該到的資料還沒到」，就自己請 GitHub 補跑一次：
    市場資料（App repo 的 market.yml）與每日新聞（資料 repo 的 news.yml）。現價另外由 autoPrices 處理 */
 const twTime = (x) => { const m = /^(\d{4})-(\d\d)-(\d\d) (\d\d):(\d\d)/.exec(x || ""); return m ? Date.UTC(+m[1], m[2] - 1, +m[3], m[4] - 8, +m[5]) : 0; };
@@ -987,6 +1036,8 @@ function priceOf(m, sym) {
   const ov = S.prices[m + ":" + sym];
   if (ov && isNum(ov.p)) return { p: ov.p, src: "手動 " + (ov.d || "") };
   if (m === "CR" && CR[sym]) return { p: CR[sym].p, src: CR[sym].src };
+  const lq = LQ.q[m + ":" + sym];
+  if (lq && isNum(lq.p)) return { p: lq.p, src: `${lq.src} ${(lq.t || "").slice(5)}`, live: true, ch: lq.ch };
   const rp = RM.prices && RM.prices.prices && RM.prices.prices[m + ":" + sym];
   if (rp && isNum(rp.p)) return { p: rp.p, src: (rp.src || "自動") + " " + (rp.t || rp.d || "") };
   if (m === "CR") return null;
@@ -1299,7 +1350,7 @@ function renderInvest() {
       <p class="tiny">以上是策略規則算出的提醒，不是投資建議，我也不是持牌投資顧問；要不要賣由你決定。</p></details>
   </div>
   <div class="card"><h2>持股<span class="r">${R.loading ? "讀取市場資料中…" : `匯率 ${fmt(fxNow(), 2)}`}</span></h2>
-    ${ghCfg() ? `<div class="btns" style="margin:-4px 0 4px;align-items:center"><button class="btn sm" type="button" id="pxRefresh">更新現價</button><span class="tiny">${esc(priceJob || (RM.prices ? "自動抓價：" + (RM.prices.updated || "") : "還沒抓過價，按一下更新"))}</span></div>` : ""}
+    ${ghCfg() || quoteUrl() ? `<div class="btns" style="margin:-4px 0 4px;align-items:center"><button class="btn sm" type="button" id="pxRefresh"${LQ.busy ? " disabled" : ""}>更新現價</button><span class="tiny">${esc(LQ.busy ? "抓盤中價中…" : priceJob || (quoteUrl() && LQ.t && !LQ.err ? `盤中報價 ${new Date(LQ.t).toTimeString().slice(0, 5)}${marketLive() ? "，開著時每 3 分鐘更新" : ""}` : quoteUrl() && LQ.err ? "盤中報價" + LQ.err : RM.prices ? "自動抓價：" + (RM.prices.updated || "") : "還沒抓過價，按一下更新"))}</span></div>` : ""}
     <div class="list">${act.length ? act.sort((a, b) => b.valT - a.valT).map((h) => `<button class="hold hx" type="button" data-hold="${esc(h.k)}">
       <span class="hn"><b>${esc(h.sym)}</b><span>${esc(h.name)}</span></span>
       <span class="hv num">${fmt(h.valT)}<i class="cur">台幣</i></span>
@@ -1328,7 +1379,7 @@ function renderInvest() {
     const q = mu && isNum(px) ? +(+mu[1] / px).toFixed(8) : isNum(px) ? +(p.amt / toTWD(p.m, px, fxNow())).toFixed(p.m === "CR" ? 6 : p.m === "US" ? 4 : 0) : "";
     tradeForm(null, { m: p.m, sym: p.sym, name: p.name, bk: p.bk || "", note: p.auto ? "定投自動扣款" : "定期定額", p: isNum(px) ? px : "", q, date: today().slice(0, 8) + String(p.day).padStart(2, "0") });
   });
-  if ($("#pxRefresh")) $("#pxRefresh").onclick = refreshPrices;
+  if ($("#pxRefresh")) $("#pxRefresh").onclick = pxBtn;
   $$("[data-trade]").forEach((r) => r.onclick = () => tradeForm(S.trades.find((x) => x.id === r.dataset.trade)));
 }
 function rebalanceHint(rows, tot) {
@@ -1476,6 +1527,16 @@ function renderSettings() {
     <div class="btns" style="margin-top:8px">${ghCfg() ? `<button class="btn sm" type="button" id="pxNow">立即更新現價</button><a class="btn sm" style="text-decoration:none" target="_blank" rel="noopener" href="https://github.com/${encodeURIComponent(g.owner)}/${encodeURIComponent(g.repo)}/actions">打開 Actions</a><a class="btn sm" style="text-decoration:none" target="_blank" rel="noopener" href="https://github.com/${encodeURIComponent(g.owner)}/${encodeURIComponent(g.repo)}/settings/secrets/actions">設定 Claude 金鑰</a>` : `<span class="tiny">先在上面連上 GitHub</span>`}</div>
   </div>
 
+  <div class="card"><h2>盤中報價<span class="r">選填・免費</span></h2>
+    <p class="tiny" style="color:var(--ink);margin:0 0 8px">按「更新現價」幾秒就拿到盤中價，不用等 GitHub 跑 1～2 分鐘。台股先抓證交所即時，抓不到改 Yahoo（延遲約 20 分）；美股含盤前、盤後。要先在 Cloudflare 架一支自己的轉接程式。</p>
+    <div class="form"><label class="f"><span>Worker 網址</span><input id="quoteUrl" type="url" inputmode="url" autocapitalize="off" autocomplete="off" spellcheck="false" placeholder="https://kunbao-quote.你的帳號.workers.dev" value="${esc(st.quoteUrl || "")}"></label></div>
+    <div class="btns" style="margin-top:8px"><button class="btn sm" type="button" id="quoteTest">測試</button><button class="btn sm" type="button" id="quoteCopy">複製程式碼</button><a class="btn sm" style="text-decoration:none" target="_blank" rel="noopener" href="./worker/quote.js">看程式碼</a></div>
+    <p id="quoteRes" class="tiny${quoteMsg ? " " + quoteMsg.cls : LQ.err ? " bad" : ""}" style="margin:6px 0 0">${quoteMsg ? esc(quoteMsg.text) : quoteUrl() ? esc(LQ.err ? "上次連不上：" + LQ.err : LQ.t ? "上次抓到 " + new Date(LQ.t).toTimeString().slice(0, 5) : "") : ""}</p>
+    <details class="more" data-k="quote-help"${od("quote-help")}><summary>怎麼架（約 5 分鐘）</summary>
+      <ol class="steps"><li>到 <span class="nw">dash.cloudflare.com</span> 註冊，免費方案就夠（每天 10 萬次）</li><li>左邊選 <span class="nw">Workers &amp; Pages</span>，按 Create，選 <span class="nw">Start with Hello World!</span>，名稱填 <span class="nw">kunbao-quote</span>，按 Deploy</li><li>按 <span class="nw">Edit code</span>，把編輯器裡原本的內容全部刪掉，貼上程式碼（上面按「複製程式碼」），再按 Deploy</li><li>複製頁面上的網址（結尾是 <span class="nw">workers.dev</span>），貼到上面「Worker 網址」，按「測試」</li></ol>
+      <p class="tiny" style="margin:6px 0 0">這支程式只接受坤寶存摺的網址呼叫，別人拿到網址也不能用；不需要任何金鑰。</p></details>
+  </div>
+
   <div class="card"><h2>備份</h2>
     <div class="btns"><button class="btn sm" type="button" id="expJson">下載完整備份 JSON</button><button class="btn sm" type="button" id="expTx">下載記帳 CSV</button><button class="btn sm" type="button" id="expTr">下載交易 CSV</button><button class="btn sm" type="button" id="impJson">匯入備份</button></div>
     <div class="tiny" style="margin-top:6px">${S.tx.length} 筆記帳・${S.trades.length} 筆交易・${S.recs.length} 筆推薦</div>
@@ -1511,6 +1572,22 @@ function renderSettings() {
   $("#planAdd").onclick = () => { st.plans.push({ id: "p-" + uid(), m: "TW", sym: "", name: "", amt: 1000 }); saveSettings(); };
   $("#radarBase").onchange = (e) => { st.radarBase = e.target.value.trim(); saveSettings(); loadRadar(); };
   if ($("#pxNow")) $("#pxNow").onclick = refreshPrices;
+  $("#quoteUrl").onchange = (e) => { const v = e.target.value.trim(); if (v && !/^https:\/\/[^\s/]+\.[^\s/]+/.test(v)) { toast("網址要是 https:// 開頭"); return; } st.quoteUrl = v.replace(/\/+$/, ""); LQ = { q: {}, t: 0, err: "", busy: false }; quoteMsg = null; saveSettings(); };
+  $("#quoteTest").onclick = async () => {
+    const u = quoteUrl();
+    if (!u) { toast("先貼上 Worker 網址"); return; }
+    quoteMsg = { cls: "", text: "測試中…" }; render();
+    try {
+      const j = await quoteGet(u, ["TW:0050", "US:SPY"]), a = j.q && j.q["TW:0050"], b = j.q && j.q["US:SPY"];
+      quoteMsg = { cls: "ok", text: `連上了。0050 ${a ? fmtP(a.p) + "（" + a.src + " " + (a.t || "").slice(11) + "）" : "抓不到"}，SPY ${b ? fmtP(b.p) + "（" + b.src + "）" : "抓不到"}` };
+      LQ.err = ""; liveQuotes(false);
+    } catch (e) { quoteMsg = { cls: "bad", text: "連不上：" + e.message }; }
+    render();
+  };
+  $("#quoteCopy").onclick = async () => {
+    try { const t = await (await fetch("./worker/quote.js", { cache: "no-store" })).text(); if (!/export default/.test(t)) throw new Error(); await navigator.clipboard.writeText(t); toast("程式碼已複製，貼到 Cloudflare 的編輯器"); }
+    catch (e) { toast("複製失敗，改用「看程式碼」手動複製"); }
+  };
   $("#expJson").onclick = () => download(`坤寶存摺備份-${today()}.json`, JSON.stringify(S, null, 1), "application/json");
   $("#expTx").onclick = () => download(`記帳-${today()}.csv`, csv([["日期", "收支", "分類", "金額", "帳戶", "備註"], ...[...S.tx].sort((a, b) => a.date.localeCompare(b.date)).map((t) => [t.date, t.type === "inc" ? "收入" : "支出", t.cat, t.amt, t.acct, t.note])]), "text/csv");
   $("#expTr").onclick = () => download(`交易-${today()}.csv`, csv([["日期", "市場", "代號", "名稱", "動作", "數量", "價格", "股利金額", "手續費", "交易稅", "匯率", "平台", "備註"], ...[...S.trades].sort((a, b) => a.date.localeCompare(b.date)).map((t) => [t.date, MK[t.m], t.sym, t.name, SIDE[t.side], t.q, t.p, t.amt, t.fee, t.tax, t.fx, t.bk || "", t.note])]), "text/csv");
@@ -2195,13 +2272,15 @@ document.addEventListener("visibilitychange", () => {
   if (document.visibilityState !== "visible") return;
   const rd = now() - (R.t || 0) > 10 * 60e3 ? loadRadar() : Promise.resolve();   // 放超過 10 分鐘才重讀市場資料
   if (ghCfg()) Promise.all([rd, sync().then(loadRemote)]).then(() => { autoPrices(false); autoData(); });
+  autoLive();
 });
 if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js").catch(() => {});
 if (location.protocol === "https:") { const here = location.origin + location.pathname.replace(/[^/]*$/, ""); if (S.settings.appUrl !== here) { S.settings.appUrl = here; S.settings.ua = now(); LS.set("kb-state", S); } }
 render();
 lastGame = game();
 { const rd = loadRadar(); rd.then(loadCrypto);
-  if (ghCfg()) Promise.all([rd, sync().then(loadRemote)]).then(() => { autoPrices(false); autoData(); }); }
+  if (ghCfg()) Promise.all([rd, sync().then(loadRemote)]).then(() => { autoPrices(false); autoData(); });
+  autoLive(); }
 </script>
 </body>
 </html>
