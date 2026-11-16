@@ -535,6 +535,22 @@ details.grp>summary+.card{border-top:0}
 ol.steps{margin:6px 0 0;padding-left:20px}
 ol.steps .nw{white-space:nowrap}
 ol.steps li{margin:0 0 6px;font-size:12.5px;line-height:1.55;color:var(--ink)}
+.vs{display:grid;grid-template-columns:1fr 1fr;column-gap:12px;margin-top:6px}
+.vs small{display:block;font-size:12px;color:var(--muted);line-height:1.4}
+.vs b{display:block;font-family:var(--f-num);font-weight:500;font-size:22px;line-height:1.25}
+p.vsl{margin:6px 0 0;font-size:13px;line-height:1.55}
+p.vsl b.up{color:var(--up)} p.vsl b.down{color:var(--down)}
+.cc{padding:12px 0;border-top:1px solid var(--hair)}
+.cc:first-child{border-top:0}
+.cch{display:flex;align-items:baseline;gap:10px;margin-bottom:6px}
+.ccn{display:flex;align-items:baseline;gap:8px;min-width:0;flex:1}
+.ccn b{font-family:var(--f-num);font-weight:600;font-size:17px;flex:none}
+.ccn span{font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.ccw{font-family:var(--f-num);font-weight:500;font-size:20px;color:var(--red);white-space:nowrap}
+.ccr{display:flex;align-items:baseline;justify-content:space-between;gap:10px;font-size:13px;line-height:1.7}
+.ccr span{color:var(--muted)} .ccr b{font-weight:700;white-space:nowrap}
+.ccr.sub2 span{padding-left:12px}
+.ccb{display:flex;align-items:center;gap:10px;margin-top:8px;flex-wrap:wrap}
 ul.rules{list-style:none;margin:6px 0;padding:0}
 ul.rules li{padding:6px 0 6px 10px;border-left:3px solid var(--hair);margin-bottom:6px;font-size:12.5px;line-height:1.5;color:var(--muted)}
 ul.rules li b{display:block;color:var(--ink);font-size:13px}
@@ -935,6 +951,7 @@ async function loadRadar() {
   const [tw, us, core, sm, mc] = res;
   get("backtest").then((x) => { R.bt = x; render(); }).catch(() => {});
   get("backtest4").then((x) => { R.bt4 = x; render(); }).catch(() => {});
+  get("bench").then((x) => { R.bench = x; render(); }).catch(() => {});
   R.macro = mc.status === "fulfilled" ? mc.value : R.macro;
   R.tw = tw.status === "fulfilled" ? tw.value : R.tw;
   R.us = us.status === "fulfilled" ? us.value : R.us;
@@ -1106,6 +1123,58 @@ function holdings() {
     return h;
   });
 }
+/* 跟全買 ETF 比：每筆台股買賣假設改成同一天、同金額的 0050，美股改成 VT（資料：data/bench.json 的含息還原價）。
+   賣出也照同金額賣掉 ETF，所以兩邊拿回的現金一樣，只要比「現在還有的市值＋領到的股利」。加密貨幣不比 */
+const BENCH_OF = { TW: "0050", US: "VT" };
+function benchAt(k, date) {
+  const b = R.bench && R.bench.px && R.bench.px[k]; if (!b || !date) return null;
+  let lo = 0, hi = b.d.length - 1, ans = -1;
+  while (lo <= hi) { const mid = (lo + hi) >> 1; if (b.d[mid] <= date) { ans = mid; lo = mid + 1; } else hi = mid - 1; }
+  return ans >= 0 && b.d[0] <= date ? b.c[ans] : null;
+}
+function benchNow(k) { const pr = priceOf(k === "VT" ? "US" : "TW", k); if (pr && isNum(pr.p)) return pr.p; const b = R.bench && R.bench.px && R.bench.px[k]; return b ? b.c[b.c.length - 1] : null; }
+function vsEtf() {
+  if (!R.bench || !R.bench.px) return null;
+  const rows = {}, fx = fxNow();
+  for (const t of [...S.trades].filter((t) => BENCH_OF[t.m]).sort((a, b) => (a.date || "").localeCompare(b.date || "") || (a.ua || 0) - (b.ua || 0))) {
+    const k = t.m + ":" + t.sym, bk = BENCH_OF[t.m];
+    const r = rows[k] || (rows[k] = { k, m: t.m, sym: t.sym, name: "", bk, u: 0, div: 0, buy: 0, bad: false });
+    if (t.name) r.name = t.name;
+    if (t.side === "div") { r.div += t.amt || 0; continue; }
+    const bp = benchAt(bk, t.date);
+    if (!bp) { r.bad = true; continue; }
+    if (t.side === "buy") { const c = t.q * t.p + (t.fee || 0); r.u += c / bp; r.buy += c; }
+    else if (t.side === "sell") r.u -= (t.q * t.p - (t.fee || 0) - (t.tax || 0)) / bp;
+  }
+  const H = Object.fromEntries(holdings().map((h) => [h.k, h])), out = [];
+  for (const r of Object.values(rows)) {
+    if (r.bad || !r.buy || r.sym === r.bk) continue;   // 本來就是買 0050／VT 的不用比
+    const h = H[r.k], now = benchNow(r.bk), f = r.m === "US" ? fx : 1;
+    if (!h || !isNum(now) || (h.sh > 0 && !isNum(h.mv))) continue;
+    const act = ((h.sh > 0 ? h.mv : 0) + r.div) * f, etf = r.u * now * f;
+    out.push({ ...r, act, etf, diff: act - etf, buyT: r.buy * f });
+  }
+  if (!out.length) return null;
+  out.sort((a, b) => a.diff - b.diff);
+  const sum = (k) => out.reduce((x, r) => x + r[k], 0);
+  return { rows: out, act: sum("act"), etf: sum("etf"), diff: sum("diff"), buyT: sum("buyT"), asof: R.bench.updated };
+}
+/* 太集中的個股：單一個股超過總資產 4%。算兩條路給使用者選：只用新錢稀釋要幾個月、直接降到 4% 要賣多少（假設價格不變） */
+const CAP1 = 0.04;
+const isEtfH = (h) => { const it = h.m === "CR" ? null : radarItem(h.m, h.sym); return !!((it && it.etf) || /^00\d/.test(h.sym)); };
+const noBuy = (k) => !!(S.settings.noBuy && S.settings.noBuy[k]);
+function concentration(act, mv) {
+  const st = S.settings, M = st.investMonthly || 0, fx = fxNow();
+  const coreSyms = new Set(st.plans.filter((p) => p.role === "核心").map((p) => p.m + ":" + p.sym));
+  return act.filter((h) => mv > 0 && h.m !== "CR" && !coreSyms.has(h.k) && !isEtfH(h) && h.valT / mv > CAP1).map((h) => {
+    const f = h.m === "US" ? fx : 1, w = h.valT / mv;
+    const months = M > 0 ? Math.max(1, Math.ceil((h.valT / CAP1 - mv) / M)) : null;
+    const sellT = h.valT - CAP1 * mv;
+    const q = isNum(h.px) && h.px > 0 ? Math.min(h.sh, Math.ceil(sellT / (h.px * f))) : null;
+    const realT = q && isNum(h.avg) ? q * (h.px - h.avg) * f : null;
+    return { h, w, months, q, sellT, realT };
+  }).sort((a, b) => b.w - a.w);
+}
 /* 投資頁的「需要注意」：持股重大事件／利空新聞、跌破出場線、單一個股太重、虧損太深、定期定額該記帳了 */
 let alertHidden = 0, curKeys = new Set();
 function attention(act, mv) {
@@ -1121,8 +1190,9 @@ function attention(act, mv) {
     const isEtf = (it && it.etf) || /^00\d/.test(h.sym);
     if (it && !isEtf && Array.isArray(it.lv) && isNum(it.lv[0]) && isNum(h.px) && h.px < it.lv[0] * 0.97) { keys.push(["exit", h.px]); why.push(`跌破出場線 ${fmtP(it.lv[0] * 0.97)} ${CUR[h.m]}（週 MA52 下方 3%），照規則該出場，不要往下攤平`); lvl += 3; cls = "alert"; }
     const w = mv > 0 ? h.valT / mv : 0;
-    if (!coreSyms.has(h.k) && !isEtf && h.m !== "CR" && w > 0.04) { keys.push(["w", w]); why.push(`占總資產 ${pctAbs(w, 0)}，超過單一個股上限 4%`); lvl += 1; }
-    if (isNum(h.unP) && h.unP <= -0.3) { keys.push(["loss", h.unP]); why.push(`虧損 ${pctAbs(h.unP, 0)}，當初買進的理由還成立嗎？`); lvl += 1; }
+    const nb = noBuy(h.k);
+    if (!nb && !coreSyms.has(h.k) && !isEtf && h.m !== "CR" && w > 0.04) { keys.push(["w", w]); why.push(`占總資產 ${pctAbs(w, 0)}，超過單一個股上限 4%`); lvl += 1; }
+    if (!nb && isNum(h.unP) && h.unP <= -0.3) { keys.push(["loss", h.unP]); why.push(`虧損 ${pctAbs(h.unP, 0)}，當初買進的理由還成立嗎？`); lvl += 1; }
     if (!why.length) continue;
     // 「知道了」：收起來，等情況變差才再出現（新的新聞、跌破出場線後再跌 5%、比重再升 5 個百分點、虧損再擴大 10 個百分點）
     const ack = st.ack || {}, show = [], hid = [];
@@ -1320,7 +1390,8 @@ function renderInvest() {
   const todo = [...alerts,
     ...(needReb ? [{ cls: "warn", lv: 1, t: "配置偏離目標超過 5 個百分點", d: [rebalanceHint(allocRows, tot)] }] : []),
     ...sigs.filter((x) => x.g.cls === "go").map((x) => ({ attr: `data-plan="${esc(x.p.id)}"`, cls: "info", lv: 0, t: `${x.p.sym} 跌到補倉點，可多扣 ${x.g.n} 期`, d: ["有閒錢再補，沒有就照常扣；別為了等補倉而少扣。"] }))];
-  const sat = act.filter(isSatStock).map((h) => ({ h, e: addEval(h, mv) }));
+  const sat = act.filter((h) => isSatStock(h) && !noBuy(h.k)).map((h) => ({ h, e: addEval(h, mv) }));
+  const vs = vsEtf(), conc = concentration(act, mv);
   const alHtml = (a) => `<div class="al ${a.cls}"><i></i><div class="alc"><div class="alh">${a.attr ? `<button class="alm" type="button" ${a.attr}><b>${esc(a.t)}</b></button>` : `<b class="alm">${esc(a.t)}</b>`}${a.ack ? `<button class="btn sm ack" type="button" data-ack="${esc(a.ack)}">知道了</button>` : ""}</div>${a.attr ? `<button class="alm" type="button" ${a.attr}>${a.d.map((x) => `<em>${esc(x)}</em>`).join("")}</button>` : `<div class="alm">${a.d.map((x) => `<em>${esc(x)}</em>`).join("")}</div>`}</div></div>`;
   const mkPct = (m) => allocRows.find((r) => r.m === m);
   let cumT = 0;
@@ -1336,7 +1407,23 @@ function renderInvest() {
     ${tot > 0 ? `<div class="abar">${allocRows.map((r) => `<i class="${r.m.toLowerCase()}" style="width:${(r.cur * 100).toFixed(2)}%"></i>`).join("")}${allocRows.slice(0, 2).map((r) => { cumT += r.tgt; return `<u style="left:${(cumT * 100).toFixed(2)}%"></u>`; }).join("")}</div>
     <div class="aleg">${allocRows.map((r) => `<span class="${Math.abs(r.dev) > 0.05 ? "off" : ""}"><i class="${r.m.toLowerCase()}"></i>${MK[r.m]}<b class="num">${(r.cur * 100).toFixed(1)}%</b><small>目標 ${(r.tgt * 100).toFixed(0)}</small></span>`).join("")}</div>
     ${needReb ? (() => { const sp = nextMonthSplit(allocRows, tot); return sp ? `<div class="nm"><div class="nmh">下個月 ${fmt(sp.M)} 台幣這樣分<small>不用賣，用新錢慢慢補回目標</small></div>${sp.rows.map((r) => `<div class="nmr"><span>${esc(r.p.sym)} <em>${esc(r.p.name)}</em></span><b class="num">${fmt(r.amt)}</b><small>${r.fixed ? "平台自動扣，照常" : r.amt === 0 ? `這個月先停（平常 ${fmt(r.p.amt)}）` : r.amt === r.p.amt ? "照平常" : (r.amt > r.p.amt ? "比平常多 " : "比平常少 ") + fmt(Math.abs(r.amt - r.p.amt))}</small></div>`).join("")}</div>` : ""; })() : ""}` : `<div class="empty">記下第一筆買進後，這裡會顯示台股、美股、加密貨幣的比例</div>`}
+    ${vs ? `<div class="sub">跟全買 ETF 比<small>台股換 0050、美股換 VT</small></div>
+    <div class="vs"><div><small>你實際</small><b class="num">${fmt(vs.act)}</b></div><div><small>全買 ETF</small><b class="num">${fmt(vs.etf)}</b></div></div>
+    <p class="vsl">自己挑的${Math.abs(vs.diff) < 1 ? "跟全買 ETF 一樣" : `比全買 ETF <b class="${vs.diff > 0 ? "up" : "down"}">${vs.diff > 0 ? "多" : "少"} ${fmt(Math.abs(vs.diff))} 台幣</b>`}（這些股票共投入 ${fmt(vs.buyT)}）</p>
+    <details class="more" data-k="vs-more"${od("vs-more")}><summary>每一檔怎麼算</summary>
+      <div class="scroll"><table class="tbl"><thead><tr><th>標的</th><th class="r">實際</th><th class="r">換成 ETF</th><th class="r">差</th></tr></thead><tbody>${vs.rows.map((r) => `<tr><td>${esc(r.sym)}<div class="tiny">換 ${r.bk}</div></td><td class="r num">${fmt(r.act)}</td><td class="r num">${fmt(r.etf)}</td><td class="r num ${signCls(r.diff)}">${r.diff > 0 ? "+" : r.diff < 0 ? "−" : ""}${fmt(Math.abs(r.diff))}</td></tr>`).join("")}</tbody></table></div>
+      <p class="tiny" style="margin:6px 0 0">每筆買進改成同一天、同金額的 0050（台股）或 VT（美股），賣出也照同金額賣掉。ETF 用含息還原價，你的實際值含已領股利；單位台幣，美股用現在匯率換算。加密貨幣不比。</p></details>` : ""}
   </div>
+  ${conc.length ? `<div class="card"><h2>太集中的持股<span class="r">單一個股上限 4%</span></h2>
+    <p class="tiny" style="color:var(--ink);margin:0">兩條路的數字，選哪條由你決定。假設價格不變、每月 ${fmt(S.settings.investMonthly)} 台幣都不再投入這幾檔。</p>
+    <div class="list">${conc.map((c) => `<div class="cc">
+      <div class="cch"><span class="ccn"><b>${esc(c.h.sym)}</b><span>${esc(c.h.name || "")}</span></span><b class="num ccw">${pctAbs(c.w, 0)}</b></div>
+      <div class="ccr"><span>不賣，只用新錢稀釋</span><b>${c.months ? `約 ${c.months > 24 ? (c.months / 12).toFixed(1) + " 年" : c.months + " 個月"}` : "－"}</b></div>
+      <div class="ccr"><span>直接降到 4%</span><b>${c.q ? `賣 ${fmtQ(c.q)} 股` : "－"}</b></div>
+      ${isNum(c.realT) ? `<div class="ccr sub2"><span>賣掉會實現</span><b class="num ${signCls(c.realT)}">${c.realT > 0 ? "+" : c.realT < 0 ? "−" : ""}${fmt(Math.abs(c.realT))} 台幣</b></div>` : ""}
+      <div class="ccb">${noBuy(c.h.k) ? `<span class="chip">已標不再買進</span><button class="btn sm" type="button" data-nobuy="${esc(c.h.k)}">取消</button>` : `<button class="btn sm" type="button" data-nobuy="${esc(c.h.k)}">標成不再買進</button><span class="tiny">標了之後不再提醒比重和虧損</span>`}</div>
+    </div>`).join("")}</div>
+  </div>` : ""}
   <div class="card"><h2>本月定期定額<span class="r num">${fmt(monthBuysTWD(mo))} / ${fmt(st.investMonthly)}</span></h2>
     ${monthFull ? `<div class="tiny" style="margin:-4px 0 4px">這個月額度用完了，下面的提示給下個月參考</div>` : ""}
     <div class="list">${sigs.map(({ p, g, d }) => { const a = addLv(p); return `<details class="pl" data-k="pl-${esc(p.id)}"${od("pl-" + p.id)}><summary><span class="pn"><b>${esc(p.sym)}</b><span>${esc(p.name)}</span></span><span class="pa num">${fmt(d)}<small>/ ${fmt(p.amt)}</small></span><span class="pg"><span class="chip ${d >= p.amt * 0.9 ? "okc" : g.cls}">${d >= p.amt * 0.9 ? "已扣" : esc(g.label)}</span></span><span class="pact"><button class="btn sm" type="button" data-plan="${esc(p.id)}">記這筆</button></span></summary>
@@ -1364,6 +1451,11 @@ function renderInvest() {
     </tbody></table></div>${trades.length > 60 ? `<div class="tiny">只列最近 60 筆，完整紀錄可在設定匯出 CSV</div>` : ""}</details>
   </div>`;
   $$("details.pl .pact button").forEach((b) => b.addEventListener("click", (e) => e.preventDefault()));
+  $$("[data-nobuy]").forEach((b) => b.onclick = () => {
+    const k = b.dataset.nobuy, st = S.settings; st.noBuy = Object.assign({}, st.noBuy);
+    if (st.noBuy[k]) delete st.noBuy[k]; else st.noBuy[k] = today();
+    saveSettings(); toast(st.noBuy[k] ? "已標成不再買進" : "已取消");
+  });
   $("#dcaAi").onclick = dcaAsk;
   $$("[data-plan]").forEach((b) => b.onclick = () => { const p = st.plans.find((x) => x.id === b.dataset.plan); const pr = priceOf(p.m, p.sym); const px = pr ? pr.p : NaN; const mu = /([\d.]+)\s*USDT/.exec(p.auto || ""); tradeForm(null, { m: p.m, sym: p.sym, name: p.name, bk: p.bk || "", note: p.auto ? "定投自動扣款" : "定期定額", p: isNum(px) ? px : "", q: mu && isNum(px) ? +(+mu[1] / px).toFixed(8) : isNum(px) ? +(p.amt / toTWD(p.m, px, fxNow())).toFixed(p.m === "CR" ? 6 : p.m === "US" ? 4 : 0) : "" }); });
   $$("[data-hold]").forEach((b) => b.onclick = () => holdSheet(H.find((h) => h.k === b.dataset.hold)));
