@@ -235,17 +235,31 @@ def _quarterly(tk):
 
 
 def _fetch_info(t):
+    """Yahoo 在大量請求時會間歇回 401（Invalid Crumb），但季報走的是另一個端點、通常還抓得到。
+    所以 info 失敗就重試一次；還是失敗但季報有抓到，就回傳「只有季報」的部分資料，由呼叫端跟舊快取合併。"""
     import yfinance as yf
-    try:
-        tk = yf.Ticker(t)
-        info = tk.info or {}
-    except Exception as e:  # noqa
-        return t, None, str(e)
-    if not info or len(info) < 5:
-        return t, None, "empty"
-    d = {v: to_num(info.get(k)) for k, v in FUND_KEYS.items()}
-    d["qs"] = _quarterly(tk)
-    return t, d, None
+    tk = yf.Ticker(t)
+    info, err = None, None
+    for k in range(2):
+        try:
+            info = tk.info or {}
+            if len(info) >= 5:
+                break
+            err = "empty"
+        except Exception as e:  # noqa
+            err = str(e)[:120]
+        info = None
+        if k == 0:
+            time.sleep(3)
+    qs = _quarterly(tk)
+    if info:
+        d = {v: to_num(info.get(k)) for k, v in FUND_KEYS.items()}
+        d["qs"] = qs
+        return t, d, None
+    if qs:
+        eps4 = [q[4] for q in qs[-4:] if q[4] is not None]
+        return t, {"qs": qs, "eps": sum(eps4) if len(eps4) == 4 else None, "_partial": True}, None
+    return t, None, err or "empty"
 
 
 def update_fundamentals(market, tickers, today):
@@ -265,14 +279,23 @@ def update_fundamentals(market, tickers, today):
     cap = 3000 if len(cache) < len(tickers) * 0.5 else max(400, len(tickers) // FUND_MAX_AGE_DAYS + 50)
     todo = stale[:cap]
     log(f"基本面：快取 {len(cache)} 檔，這次更新 {len(todo)} 檔")
-    fails, done = 0, 0
+    fails, done, part, cool = 0, 0, 0, 0
     with ThreadPoolExecutor(max_workers=2) as ex:
         for i in range(0, len(todo), 40):
             batch = todo[i:i + 40]
             got = list(ex.map(_fetch_info, batch))
             bad = 0
             for t, d, err in got:
-                if d:
+                if d and d.pop("_partial", False):
+                    # 只有季報：保留舊快取的本益比、市值等欄位，季報換新；日期不更新，下次還會再試完整資料
+                    old = dict(cache.get(t) or {})
+                    old["qs"] = d["qs"]
+                    if d.get("eps") is not None:
+                        old["eps"] = d["eps"]
+                    old.setdefault("_d", "")
+                    cache[t] = old
+                    part += 1
+                elif d:
                     d["_d"] = tstr
                     cache[t] = d
                     done += 1
@@ -280,10 +303,16 @@ def update_fundamentals(market, tickers, today):
                     bad += 1
             fails = fails + bad if bad == len(batch) else 0
             if fails >= 80:
-                log("  基本面連續失敗太多（可能被 Yahoo 限流），這次先停止，下次更新會從沒抓到的開始補")
-                break
+                if cool >= 3:
+                    log("  基本面連續失敗太多（可能被 Yahoo 限流），這次先停止，下次更新會從沒抓到的開始補")
+                    break
+                cool += 1
+                fails = 0
+                log(f"  Yahoo 限流，先停 90 秒再試（第 {cool} 次）")
+                time.sleep(90)
+                continue
             time.sleep(2.5 if bad else 1.5)
-    log(f"  基本面更新完成 {done} 檔")
+    log(f"  基本面更新完成 {done} 檔，另有 {part} 檔只更新到季報")
     keep = set(tickers)
     cache = {k: v for k, v in cache.items() if k in keep}
     save_json(path, cache)
