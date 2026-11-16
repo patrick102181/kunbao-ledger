@@ -2270,6 +2270,37 @@ def run_core():
            "note": "核心層全天候：固定比例，或用近 36 個月報酬算風險平價（每個資產對整體波動的貢獻一樣）"}
     save_json(os.path.join(DATA, "core.json"), out)
     log("核心層完成：", out["assets"])
+    run_bench()
+
+
+# ───────────────────────── 對照組：0050、VT 每日還原價（含息） ─────────────────────────
+BENCH = {"0050": "0050.TW", "VT": "VT"}
+
+
+def run_bench():
+    """App 的「跟全買 ETF 比」用：每筆台股買賣假設改成同金額的 0050、美股改成 VT。
+    價格用 Yahoo 的還原價（股利再投入），近 5 年每日收盤，寫到 data/bench.json"""
+    d = yf_download(list(BENCH.values()), "5y", "1d", chunk=5, pause=1).get("Close", pd.DataFrame())
+    out = {"updated": datetime.now(TPE).strftime("%Y-%m-%d %H:%M"), "note": "Yahoo 還原價（含息），每日收盤", "px": {}}
+    for k, t in BENCH.items():
+        if t not in d:
+            continue
+        c = d[t].dropna()
+        c = c[c > 0]
+        # Yahoo 偶爾漏調整分割（0050 在 2025 年 1 拆 4）：單日價格變成 1/2～1/10 左右就把之前的價格一起縮
+        r = c / c.shift(1)
+        for day in r[(r < 0.55) | (r > 1.9)].index:
+            x = float(r[day])
+            f = min((1 / 2, 1 / 3, 1 / 4, 1 / 5, 1 / 10, 2, 3, 4, 5, 10), key=lambda q: abs(math.log(x / q)))
+            if abs(math.log(x / f)) < 0.12:
+                log(f"  {k} {day.date()} 價格跳成 {x:.3f} 倍，當成分割沒調整")
+                c[c.index < day] *= f
+        if len(c) < 100:
+            continue
+        out["px"][k] = {"d": [x.strftime("%Y-%m-%d") for x in c.index], "c": [round(float(v), 4) for v in c.values]}
+    if out["px"]:
+        save_json(os.path.join(DATA, "bench.json"), out)
+        log("對照組完成：", {k: len(v["d"]) for k, v in out["px"].items()})
 
 
 # ───────────────────────── 今日判讀（規則組句，不用 AI） ─────────────────────────
