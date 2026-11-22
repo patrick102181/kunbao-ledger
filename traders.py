@@ -28,24 +28,38 @@ TRADERS = {
 }
 
 # 情境（繁體關鍵字比對）。順序就是 App 上按鈕的順序。
-SITU = [
-    ("drop", "大跌時", r"熊市|暴跌|大跌|下跌|恐慌|抄底|底部|大底|回撤|腰斬|割肉|崩盤|血洗|熊"),
-    ("dca", "定投", r"定投|定期|囤幣|長期持有|拿住|拿得住|長期主義|慢就是快|持有|複利|躺平"),
-    ("btc", "比特幣", r"BTC|比特幣|大餅|\bbtc\b|減半"),
-    ("us", "美股", r"美股|納指|納斯達克|標普|輝達|英偉達|半導體|科技股|ETF|QQQ|SPY|台積電|NVDA"),
-    ("risk", "倉位風控", r"倉位|風控|停損|止損|現金流|槓桿|爆倉|分散|配置|出金|梭哈"),
-    ("mind", "心態", r"心態|耐心|紀律|貪婪|恐懼|情緒|焦慮|踏空|FOMO|認知|人性|後悔"),
-    ("cycle", "週期", r"週期|牛市|宏觀|降息|升息|流動性|美聯儲|聯準會"),
+SITU = [   # (代號, 按鈕字, 一句說明, 比對用關鍵字)
+    ("drop", "大跌時", "跌的時候怎麼撐、怎麼想", r"熊市|暴跌|大跌|下跌|恐慌|抄底|底部|大底|回撤|腰斬|割肉|崩盤|血洗|熊"),
+    ("hold", "長期抱", "怎麼抱得住、為什麼要抱", r"定投|定期|囤幣|長期持有|拿住|拿得住|長期主義|慢就是快|持有|複利|躺平"),
+    ("alloc", "分配錢", "錢怎麼分、怎麼控制風險", r"倉位|風控|停損|止損|現金流|槓桿|爆倉|分散|配置|出金|梭哈"),
+    ("mind", "穩心態", "不被情緒帶著走", r"心態|耐心|紀律|貪婪|恐懼|情緒|焦慮|踏空|FOMO|認知|人性|後悔"),
 ]
 # 心法（站方整理的思維模型）手挑跟長期定投、大跌心態、資產安全有關的
-KEEP_MODELS = {  # 標題關鍵字 → 放在哪些情境（站方自動標的不準，手動指定）
-    "四步穿越牛熊": ["drop", "dca", "mind", "cycle"], "敦刻爾克撤退": ["cycle", "risk"],
-    "人生底線思維": ["drop", "risk", "mind"], "做時代的股東": ["us", "dca"],
-    "技術分析祛魅": ["mind", "risk"], "長期複利的身心": ["mind"],
-    "熊市的兩種逼籌": ["drop", "btc", "mind"], "戰術上的勤奮": ["dca", "mind"],
-    "抄底看無人問津": ["drop", "cycle"], "Beta，錯當成": ["risk", "cycle", "mind"],
-    "資產安全底線": ["btc", "risk"],
+KEEP_MODELS = {   # 原標題關鍵字 → (情境, 白話標題, 白話一句)；站方原文術語太多，這裡照原意改寫成白話
+    "資產安全底線": (["alloc"], "大錢不要一直放在平台上",
+        "被盜或碰到黑心平台一次，可能就把一年的獲利賠光。長期要放的和平常買賣的分開放，利息高得不合理的平台別碰。"),
+    "四步穿越牛熊": (["drop", "hold"], "先活下來，再等好價格",
+        "不碰可能歸零的高槓桿；選好標的後別追高，等它跌進便宜的區間再分批買。"),
+    "敦刻爾克撤退": (["alloc"], "漲過頭時，分批收一點回來",
+        "帳面上賺的不算真的賺。市場過熱時照計畫分批賣，不必賣在最高點，賣了也別衝動買回來。"),
+    "人生底線思維": (["drop", "mind"], "生活開銷壓低，跌的時候才撐得住",
+        "順風時別把房貸、分期拉滿，留好生活預備金；跌下來就接受波動，不要做會毀掉自己的操作。"),
+    "做時代的股東": (["hold"], "用到厲害的新產品，去找背後賺錢的公司",
+        "技術革命最大的錢常在上游（晶片、記憶體、光通訊）。與其只當用戶，不如當它的股東。"),
+    "技術分析祛魅": (["mind"], "線圖是參考，不是預言",
+        "指標只是工具，別認定市場一定照你畫的線走；看錯就認，不要死扛。"),
+    "長期複利的身心": (["mind"], "睡好、少看雜訊，才抱得久",
+        "顧好睡眠和健康，退掉一直喊單、讓你焦慮的群組；賺到錢也別一下把生活水準拉高。"),
+    "熊市的兩種逼籌": (["drop", "mind"], "熊市會用兩招逼你下車：跌很深、跌很久",
+        "下跌途中的大反彈，常常不是新一輪上漲的開始；別因為反彈就一口氣把錢全押進去。"),
+    "戰術上的勤奮": (["hold", "mind"], "選對方向，比天天看盤重要",
+        "大錢不是熬夜看盤刷出來的。定期跳出來想想錢在往哪裡流，沒把握時寧可等。"),
+    "抄底看無人問津": (["drop"], "沒人討論的時候，通常比較便宜",
+        "真正的買點常冷清到沒人聊；全網都在曬賺錢的時候，反而要小心。"),
+    "Beta，錯當成": (["alloc", "mind"], "行情好賺到錢，不代表自己很會",
+        "連贏幾次最容易飄。牛市裡加槓桿死撐，前面靠行情賺的，可能一次就吐回去。"),
 }
+BROAD = r"BTC|比特幣|大餅|減半|美股|納指|標普|輝達|英偉達|半導體|ETF|台積電|NVDA|宏觀|降息|流動性"
 NOISE = re.compile(r"空投|擼毛|土狗|Meme|meme|MEME|撸|打新|互動拿|抽獎|轉發|關注我|返傭|邀請碼|開單|做空|空單|多單|起飛|必漲|發財|暴富|百倍|十倍|千倍|翻倍|拉盤|帶單|做多|開多|開空|平倉|上倉位|合約|GMGN|Bot|十倍股|\$[A-Z]{2,}")
 
 def tc(s):
@@ -82,10 +96,10 @@ for key, (name, handle, doms) in TRADERS.items():
         note = tc(x.get("shortNote") or "")
         head = t[:120]
         # 情境要「真的在講這件事」：摘要或開頭就提到，或全文提到至少兩次；只在角落順口帶過的不算
-        tags = [k for k, _, rx in SITU if re.search(rx, note) or re.search(rx, head) or len(re.findall(rx, t)) >= 2]
-        if not tags:
+        tags = [k for k, _, _, rx in SITU if re.search(rx, note) or re.search(rx, head) or len(re.findall(rx, t)) >= 2]
+        if not tags and not re.search(BROAD, t):   # 不屬於 4 個情境的，有講到比特幣、美股等才留（給搜尋用）
             continue
-        main = [k for k, _, rx in SITU if re.search(rx, note)]   # 站方摘要就在講這件事的，App 排前面
+        main = [k for k, _, _, rx in SITU if re.search(rx, note)]   # 站方摘要就在講這件事的，App 排前面
         items.append({
             "w": key, "d": (x.get("date") or "")[:10], "s": x.get("qualityScore") or 0,
             "g": tags, "n": note, "t": clip(t, 420),
@@ -99,12 +113,8 @@ for key, (name, handle, doms) in TRADERS.items():
             hit = [v for k, v in KEEP_MODELS.items() if k in title]
             if not hit:
                 continue
-            q = tc(x.get("quote")); body = q + tc(x.get("summary")) + "".join(tc(r) for r in x.get("rules") or [])
-            tags = hit[0]
-            models.append({
-                "w": key, "title": title, "q": clip(q, 200), "sum": tc(x.get("summary")),
-                "rules": [tc(r) for r in (x.get("rules") or [])][:3], "g": tags,
-            })
+            tags, plain, line = hit[0]
+            models.append({"w": key, "title": plain, "q": line, "g": tags, "orig": title})
 
 items.sort(key=lambda x: (-x["s"], x["d"]), reverse=False)
 out = {
@@ -112,7 +122,7 @@ out = {
     "source": "https://github.com/suoha888/Trader-Archives",
     "credit": "梭哈.AI（@SUOHA_AI）整理，MIT 授權",
     "who": {k: {"n": v[0], "x": v[1]} for k, v in TRADERS.items()},
-    "situ": [[k, lab] for k, lab, _ in SITU],
+    "situ": [[k, lab, desc] for k, lab, desc, _ in SITU],
     "models": models,
     "items": items,
 }
@@ -126,4 +136,4 @@ os.makedirs(os.path.dirname(OUT), exist_ok=True)
 json.dump(out, open(OUT, "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"))
 print("推文", len(items), "心法", len(models), "大小", os.path.getsize(OUT) // 1024, "KB")
 print(dict(stat))
-print({lab: sum(1 for i in items if k in i["g"]) for k, lab, _ in SITU})
+print({lab: sum(1 for i in items if k in i["g"]) for k, lab, _, _ in SITU})

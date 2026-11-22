@@ -159,23 +159,20 @@ main,.card{min-width:0}
 .scroll{overflow-x:auto}
 .empty{padding:14px 0;color:var(--muted);font-size:14px}
 .aiout{white-space:pre-wrap;font-size:14px;background:var(--paper);border-left:4px solid var(--blue);padding:10px 12px}
-/* 高手怎麼看：情境 4 欄方格（7 個情境＋全部，手機上不會擠成一排）、語錄是左邊黃條的引文 */
-.seg.g4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr))}
-.seg.g4 button{border-left:1.5px solid var(--ink);border-top:1.5px solid var(--ink)}
-.seg.g4 button:nth-child(4n+1){border-left:0}
-.seg.g4 button:nth-child(-n+4){border-top:0}
+/* 高手怎麼看：4 個情境一排、心法是灰底框、每則語錄 = 粗體白話一句＋兩行灰字原話（點了展開） */
 .tds{display:flex;gap:8px;margin-top:10px}
 .tds input{flex:1;min-width:0}
-.tdm{border:1.5px solid var(--ink);background:var(--paper);padding:10px 12px;margin-top:10px}
-.tdm b{display:block;font-weight:900;font-size:14px;line-height:1.4}
-.tdm p{margin:6px 0 0;font-size:14px}
-.tdm ul{margin:6px 0 0;padding-left:18px;font-size:13px;color:var(--ink)}
+.tdm{border:1.5px solid var(--ink);background:var(--paper);padding:12px;margin-top:12px}
+.tdm .lb{display:inline-block;font-size:12px;font-weight:700;background:var(--yellow);color:var(--ink);padding:1px 6px}
+.tdm b{display:block;font-weight:900;font-size:16px;line-height:1.45;margin-top:6px}
+.tdm p{margin:6px 0 0;font-size:14px;line-height:1.7}
 .tdm .who{display:block;margin-top:6px;font-size:12px;color:var(--muted)}
-.tdq{border-left:4px solid var(--yellow);padding:2px 0 2px 12px;margin-top:14px}
-.tdq .t{margin:0;font-size:14px;line-height:1.7;white-space:pre-wrap;overflow-wrap:anywhere;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:6;overflow:hidden;cursor:pointer}
-.tdq.open .t{display:block;-webkit-line-clamp:unset}
-.tdq .m{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;margin-top:6px;font-size:12px;color:var(--muted)}
-.tdq .m b{color:var(--ink);font-weight:700}
+.tdq{border-left:4px solid var(--yellow);padding:2px 0 2px 12px;margin-top:16px}
+.tdq b.h{display:block;font-weight:900;font-size:15px;line-height:1.5}
+.tdq .t{margin:4px 0 0;font-size:13px;line-height:1.65;color:var(--muted);white-space:pre-wrap;overflow-wrap:anywhere;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;cursor:pointer}
+.tdq.open .t{display:block;-webkit-line-clamp:unset;color:var(--ink)}
+.tdq .m{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;margin-top:6px;font-size:12px;color:var(--muted)}
+.tdq .m .tdx{color:var(--ink);font-weight:700;cursor:pointer}
 .tdq .m a{margin-left:auto;color:var(--blue);font-weight:700;text-decoration:none;border-bottom:1.5px solid var(--blue)}
 mark.td{background:var(--yellow);color:var(--ink);padding:0 1px}
 .toast{position:fixed;left:50%;bottom:calc(150px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:30;background:var(--ink);color:#fff;border-radius:0;font-size:14px;max-width:90%}
@@ -1546,7 +1543,7 @@ function renderRecs() {
 
 /* ───────── 高手怎麼看：Trader-Archives（梭哈.AI 整理，MIT）挑出跟長期定投有關的原則與踩坑，traders.py 產生 data/traders.json ───────── */
 let TD = { d: null, loading: false, err: "", sit: "", q: "", page: 0 };
-const TD_N = 4;   // 一批幾則
+const TD_N = 3;   // 一批幾則
 const TD_SYN = [["停損", "止損"], ["比特幣", "BTC", "大餅"], ["輝達", "英偉達", "NVDA"], ["定投", "定期定額"], ["槓桿", "杠杆"]];
 async function loadTraders() {
   if (TD.d || TD.loading) return;
@@ -1559,8 +1556,8 @@ async function loadTraders() {
 function tdAuto() {   // 依現在市場自動挑情境：VIX 偏高或大盤訊號偏弱 → 先看「大跌時」
   const vix = R.us && R.us.overview && R.us.overview.vix && R.us.overview.vix.px;
   const weak = R.macro && R.macro.tactical && R.macro.tactical.on;
-  if ((isNum(vix) && vix >= 25) || weak) return ["drop", `${isNum(vix) && vix >= 25 ? "VIX " + fmt(vix, 1) + "，" : ""}市場偏弱，先看高手大跌時怎麼想`];
-  return ["dca", "市場沒有大波動，先看高手怎麼看長期持有"];
+  if ((isNum(vix) && vix >= 25) || weak) return ["drop", "現在市場偏弱，先看高手大跌時怎麼想"];
+  return ["hold", "市場還算平穩，先看高手怎麼長期抱"];
 }
 function tdTerms(q) {
   const ws = q.split(/\s+/).filter(Boolean);
@@ -1580,29 +1577,37 @@ function tdSnip(x, terms) {   // 搜尋時從命中處前面一點開始顯示�
   const nl = x.lastIndexOf("\n", at);   // 命中那一段的開頭在 60 字內就從段首開始，否則往前 30 字，並去掉開頭的標點與空白
   return "…" + x.slice(nl >= 0 && at - nl <= 60 ? nl + 1 : at - 30).replace(/^[\s，。、；：！？,.;:!?）)」』]+/, "");
 }
+function tdPrev(x, terms) { return tdSnip(x, terms).replace(/\s*\n+\s*/g, " ").trim(); }   // 兩行預覽：換行壓成空格
+function tdMix(list) {   // 同一位交易員不要連著出現：依排序輪流取
+  const by = new Map(); list.forEach((x) => { if (!by.has(x.w)) by.set(x.w, []); by.get(x.w).push(x); });
+  const qs = [...by.values()], out = [];
+  while (out.length < list.length) qs.forEach((q) => { if (q.length) out.push(q.shift()); });
+  return out;
+}
 function tdCard() {
   if (!TD.d) { if (!TD.loading && !TD.err) setTimeout(loadTraders, 0); return `<div class="card"><h2>高手怎麼看</h2><div class="empty">${TD.err ? esc(TD.err) : "讀取中…"}</div></div>`; }
   const d = TD.d, who = (k) => (d.who[k] || {}).n || k;
   const [autoSit, autoNote] = tdAuto();
   const sit = TD.sit || autoSit, terms = TD.q ? tdTerms(TD.q) : null;
-  const lab = Object.fromEntries(d.situ);
+  const S = Object.fromEntries(d.situ.map(([k, lab, desc]) => [k, { lab, desc }]));
   const pri = (x) => (x.p || []).includes(sit) ? 1 : 0;   // 摘要就在講這個情境的排前面
   const rank = (a, b) => (terms ? 0 : pri(b) - pri(a)) || b.s - a.s || (b.d > a.d ? 1 : -1);
-  const list = (terms ? d.items.filter((x) => tdHit(x.t + " " + x.n, terms)) : d.items.filter((x) => sit === "all" || x.g.includes(sit))).slice().sort(rank);
-  const models = terms ? d.models.filter((m) => tdHit(m.title + m.q + m.sum + m.rules.join(""), terms)) : sit === "all" ? [] : d.models.filter((m) => m.g.includes(sit));
+  const list = (terms ? d.items.filter((x) => tdHit(x.t + " " + x.n, terms)) : d.items.filter((x) => x.g.includes(sit))).slice().sort(rank);
+  const mixed = terms ? list : [...tdMix(list.filter(pri)), ...tdMix(list.filter((x) => !pri(x)))];
+  const models = terms ? d.models.filter((m) => tdHit(m.title + m.q, terms)) : d.models.filter((m) => m.g.includes(sit));
   const pages = Math.max(1, Math.ceil(list.length / TD_N)), pg = TD.page % pages;
-  const shown = list.slice(pg * TD_N, pg * TD_N + TD_N);
-  const mPick = models.length ? [models[pg % models.length]] : [];   // 心法一次一條，跟著「換一批」輪
+  const shown = mixed.slice(pg * TD_N, pg * TD_N + TD_N);
+  const m = models.length ? models[pg % models.length] : null;   // 心法一次一條，跟著「換一批」輪
   const tx = (x) => terms ? tdMark(x, terms) : esc(x);
-  const snip = (x) => tdSnip(x, terms);
-  return `<div class="card" id="tdCard"><h2>高手怎麼看<span class="r">${Object.keys(d.who).length} 位交易員・${fmt(d.items.length)} 則</span></h2>
-    <p class="tiny" style="color:var(--ink);margin:0 0 10px">${terms ? `搜尋「${esc(TD.q)}」：找到 ${list.length} 則` : TD.sit ? `正在看「${esc(lab[sit] || "全部")}」` : esc(autoNote)}</p>
-    <div class="seg g4" id="tdSeg">${[...d.situ, ["all", "全部"]].map(([k, v]) => `<button type="button" data-td="${k}" class="${!terms && k === sit ? "on" : ""}">${esc(v)}</button>`).join("")}</div>
-    <form class="tds" id="tdF"><input id="tdQ" type="search" enterkeyhint="search" autocomplete="off" placeholder="搜尋：停損、減半、輝達…" value="${esc(TD.q)}"><button class="btn sm" type="submit">搜尋</button></form>
-    ${mPick.map((m) => `<div class="tdm"><b>心法｜${tx(m.title)}</b><p>${tx(m.sum || m.q)}</p>${m.rules.length ? `<ul>${m.rules.map((r) => `<li>${tx(r)}</li>`).join("")}</ul>` : ""}<span class="who">${esc(who(m.w))}・站方整理的思維模型</span></div>`).join("")}
-    ${shown.length ? shown.map((x) => `<div class="tdq"><p class="t" data-full="${esc(x.t)}">${tx(snip(x.t))}</p><div class="m"><b>${esc(who(x.w))}</b><span class="num">${esc(x.d)}</span><span class="chip">${esc(x.k)}</span>${x.u ? `<a href="${esc(x.u)}" target="_blank" rel="noopener">原文</a>` : ""}</div></div>`).join("") : `<div class="empty">${terms ? "沒有找到，換個詞試試（例如：熊市、倉位、ETF）" : "這個情境沒有資料"}</div>`}
-    <div class="btns" style="margin-top:12px;align-items:center">${pages > 1 ? `<button class="btn sm" type="button" id="tdMore">換一批</button><span class="tiny num">${pg + 1} / ${pages}</span>` : ""}${terms ? `<button class="btn sm" type="button" id="tdClr">清除搜尋</button>` : ""}</div>
-    <p class="tiny" style="margin:10px 0 0">這些是交易員自己的看法，多數人做短線或幣圈，不一定適合你的定期定額；要不要扣款、補倉，照「投資」頁回測過的規則。只收「原則」與「踩坑」，盤中喊單不收；點文字可展開全文。資料來自 <a href="${esc(d.source)}" target="_blank" rel="noopener" style="color:inherit">Trader-Archives</a>（${esc(d.credit)}），${esc(d.generated)} 整理。</p>
+  const lead = terms ? `搜尋「${esc(TD.q)}」：找到 ${list.length} 則` : TD.sit ? esc(S[sit].lab + "：" + S[sit].desc) : esc(autoNote);
+  return `<div class="card" id="tdCard"><h2>高手怎麼看<span class="r">${Object.keys(d.who).length} 位交易員的經驗</span></h2>
+    <p style="margin:0 0 10px;font-size:14px">${lead}</p>
+    <div class="seg" id="tdSeg">${d.situ.map(([k, lab]) => `<button type="button" data-td="${k}" class="${!terms && k === sit ? "on" : ""}">${esc(lab)}</button>`).join("")}</div>
+    <form class="tds" id="tdF"><input id="tdQ" type="search" enterkeyhint="search" autocomplete="off" placeholder="搜尋：比特幣、美股、停損…" value="${esc(TD.q)}"><button class="btn sm" type="submit">搜尋</button></form>
+    ${m ? `<div class="tdm"><span class="lb">一句話心法</span><b>${tx(m.title)}</b><p>${tx(m.q)}</p><span class="who">— ${esc(who(m.w))}</span></div>` : ""}
+    ${shown.length ? shown.map((x) => `<div class="tdq"><b class="h">${tx(x.n || x.t.slice(0, 20))}</b><p class="t" data-full="${esc(x.t)}">${tx(tdPrev(x.t, terms))}</p><div class="m"><span class="tdx">看原話 ▾</span><span>${esc(who(x.w))}・${esc(x.d)}</span>${x.u ? `<a href="${esc(x.u)}" target="_blank" rel="noopener">原文</a>` : ""}</div></div>`).join("") : `<div class="empty">${terms ? "沒有找到，換個詞試試（例如：熊市、ETF、減半）" : "這個情境沒有資料"}</div>`}
+    <div class="btns" style="margin-top:14px;align-items:center">${pages > 1 ? `<button class="btn sm" type="button" id="tdMore">換一批</button><span class="tiny num">${pg + 1} / ${pages}</span>` : ""}${terms ? `<button class="btn sm" type="button" id="tdClr">清除搜尋</button>` : ""}</div>
+    <p class="tiny" style="margin:12px 0 0">交易員個人經驗，不是投資建議；要不要扣款、補倉，照「投資」頁的規則。來源：<a href="${esc(d.source)}" target="_blank" rel="noopener" style="color:inherit">Trader-Archives</a>（梭哈.AI 整理）</p>
   </div>`;
 }
 function tdBind() {
@@ -1612,9 +1617,14 @@ function tdBind() {
   $("#tdF", c).onsubmit = (e) => { e.preventDefault(); const q = $("#tdQ", c).value.trim(); keep(() => { TD.q = q; TD.page = 0; }); };
   const m = $("#tdMore", c); if (m) m.onclick = () => keep(() => { TD.page++; });
   const cl = $("#tdClr", c); if (cl) cl.onclick = () => keep(() => { TD.q = ""; TD.page = 0; });
-  $$(".tdq .t", c).forEach((t) => t.onclick = () => {   // 展開時換回全文
-    const open = t.parentElement.classList.toggle("open");
-    if (TD.q) { const terms = tdTerms(TD.q), full = t.dataset.full; t.innerHTML = tdMark(open ? full : tdSnip(full, terms), terms); }
+  $$(".tdq", c).forEach((q) => {   // 點原話或「看原話」都能展開／收合
+    const t = $(".t", q), x = $(".tdx", q);
+    const tog = () => {
+      const open = q.classList.toggle("open"); x.textContent = open ? "收起 ▴" : "看原話 ▾";
+      const terms = TD.q ? tdTerms(TD.q) : null, full = t.dataset.full, v = open ? full : tdPrev(full, terms);
+      t.innerHTML = terms ? tdMark(v, terms) : esc(v);
+    };
+    t.onclick = tog; x.onclick = tog;
   });
 }
 
