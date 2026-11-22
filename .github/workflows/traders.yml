@@ -1,0 +1,53 @@
+name: 更新高手語錄
+
+# 每週日從 Trader-Archives（梭哈.AI 整理，MIT）抓最新推文，挑出跟長期定投有關的原則與踩坑，寫到 data/traders.json
+# 整個歸檔站約 1.9GB，這裡只抓 *_featured.json 和 *_mental_models.json（約 26MB）
+on:
+  schedule:
+    - cron: "37 1 * * 0"   # 台灣時間週日 09:37
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: traders
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: 安裝套件
+        run: pip install opencc-python-reimplemented
+
+      - name: 只抓需要的資料檔
+        run: |
+          git clone -q --depth 1 --filter=blob:none --sparse https://github.com/suoha888/Trader-Archives /tmp/ta
+          git -C /tmp/ta sparse-checkout set --no-cone '/*/data/*_featured.json' '/*/data/*_mental_models.json'
+
+      - name: 整理語錄
+        run: python traders.py /tmp/ta
+
+      - name: 存回 GitHub
+        run: |
+          git config user.name "kunbao-ledger-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data/traders.json
+          if git diff --cached --quiet -- data/traders.json; then
+            echo "語錄沒有變化"
+            exit 0
+          fi
+          git commit -m "更新高手語錄 $(TZ=Asia/Taipei date '+%Y-%m-%d')"
+          for i in 1 2 3; do
+            git pull --rebase -q && git push && exit 0
+            sleep 5
+          done
+          exit 1
