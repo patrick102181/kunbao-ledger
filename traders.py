@@ -116,6 +116,12 @@ out = {
     "models": models,
     "items": items,
 }
+try:   # 內容沒變就沿用舊日期，免得每天排程都多一筆沒意義的 commit
+    old = json.load(open(OUT, encoding="utf-8"))
+    if old.get("items") == out["items"] and old.get("models") == out["models"]:
+        out["generated"] = old.get("generated", out["generated"])
+except (OSError, ValueError):
+    pass
 os.makedirs(os.path.dirname(OUT), exist_ok=True)
 json.dump(out, open(OUT, "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"))
 print("推文", len(items), "心法", len(models), "大小", os.path.getsize(OUT) // 1024, "KB")

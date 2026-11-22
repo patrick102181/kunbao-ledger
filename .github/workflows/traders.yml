@@ -1,10 +1,10 @@
 name: 更新高手語錄
 
-# 每週日從 Trader-Archives（梭哈.AI 整理，MIT）抓最新推文，挑出跟長期定投有關的原則與踩坑，寫到 data/traders.json
+# 每天從 Trader-Archives（梭哈.AI 整理，MIT）抓最新推文，挑出跟長期定投有關的原則與踩坑，寫到 data/traders.json
 # 整個歸檔站約 1.9GB，這裡只抓 *_featured.json 和 *_mental_models.json（約 26MB）
 on:
   schedule:
-    - cron: "37 1 * * 0"   # 台灣時間週日 09:37
+    - cron: "17 0 * * *"   # 台灣時間每天 08:17
   workflow_dispatch:
 
 permissions:
